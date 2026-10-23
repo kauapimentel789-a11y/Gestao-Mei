@@ -30,11 +30,13 @@ Princípios:
 ## 3. Estrutura de diretórios
 
 ```
-app/                    rotas do Expo Router
-  (auth)/               login, cadastro, recuperar senha
-  (onboarding)/         criar empresa (nome, tipo de negócio, valor da hora)
-  (tabs)/               5 abas, rótulos por tipo de negócio
 src/
+  app/                  rotas do Expo Router (padrão do SDK 58)
+    (auth)/             login, cadastro, recuperar senha
+    (onboarding)/       criar empresa (nome, tipo de negócio, link e valor da hora)
+    (app)/(tabs)/       5 abas, rótulos por tipo de negócio
+    (app)/configuracoes
+    nova-senha          destino do link de recuperação
   theme/                tokens do design (cores, tipografia, raios, sombras)
   lib/                  supabase client, formatação BRL/datas, erros
   features/<domínio>/   api (queries/mutations), schemas Zod, componentes, regras puras
@@ -134,9 +136,9 @@ Status derivados (não gravados): título `pending` / `partial` / `paid` / `over
 ## 10. Ordem de implementação (onda 1)
 
 1. ✅ Documentação e plano.
-2. Base do app (Expo, TS estrito, Expo Router, lint, Jest, tokens de tema) e config do Supabase.
-3. Migração 0001: perfis, empresas, membros, `create_organization`, RLS + testes de isolamento.
-4. Auth e onboarding com tipo de negócio.
+2. ✅ Base do app (Expo SDK 58, TS estrito, Expo Router, ESLint, Jest, tokens de tema) e cliente Supabase com sessão no SecureStore.
+3. ✅ Migração 0001: perfis, empresas, membros, `create_organization`, RLS + testes de isolamento.
+4. ✅ Auth (entrar, cadastro, recuperar e redefinir senha) e onboarding com tipo de negócio. Abas por tipo; módulos ainda não construídos aparecem como "Em construção".
 5. Clientes, itens e pedidos/vendas.
 6. Estoque e movimentações.
 7. Financeiro essencial (contas, categorias, títulos, baixas, transferências, caixa do período).
