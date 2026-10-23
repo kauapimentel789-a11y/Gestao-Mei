@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;background:#E9E9EE;font-family:Manrope,system-ui,sans-serif;color:#0B0B0F}a{color:#FF6A00}a:hover{color:#C2410C}button{font-family:inherit}:focus-visible{outline:2px solid #FF6A00;outline-offset:2px}.gf-scroll::-webkit-scrollbar{display:none}.gf-scroll{scrollbar-width:none}input,select,textarea{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;gap:56px;justify-content:center;align-items:center;padding:40px 24px;font-family:Manrope,system-ui,sans-serif;color:#0B0B0F">
+  <div style="width:300px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:12px"><img src="assets/logo-tile-dark.png" alt="Aljava Tech" style="width:52px;height:52px;border-radius:16px;object-fit:cover"><div><div style="font-weight:800;font-size:15px;letter-spacing:.28em">ALJAVA</div><div style="font-weight:700;font-size:11px;letter-spacing:.5em;color:#FF6A00">TECH</div></div></div>
+    <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#FF6A00;font-weight:700">Protótipo · Android</div>
+    <h1 style="margin:0;font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.05">Gestão Fácil</h1>
+    <p style="margin:0;font-size:14px;line-height:1.55;color:#4B5563;text-wrap:pretty">Pedidos, estoque, clientes, pagamentos e custo por produto. Clique em tudo no celular ao lado.</p>
+    <button onClick="{{ pushLate }}" style="display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 18px;border:0;border-radius:14px;background:#0B0B0F;color:#fff;font-weight:700;font-size:14px;cursor:pointer" style-hover="background:#1F2937">Simular aviso de atraso<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg></button>
+    <button onClick="{{ openLink }}" style="display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 18px;border:1.5px solid #D1D5DB;border-radius:14px;background:#fff;color:#0B0B0F;font-weight:700;font-size:14px;cursor:pointer" style-hover="border-color:#FF6A00">Abrir link como cliente<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></button>
+    <button onClick="{{ reset }}" style="align-self:flex-start;background:none;border:0;padding:6px 0;color:#C2410C;font-weight:700;font-size:13px;cursor:pointer">Reiniciar dados de exemplo</button>
+  </div>
+
+  <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="412px,892px">
+    <div style="height:100%;position:relative;display:flex;flex-direction:column;overflow:hidden;background:#F5F5F7;font-family:Manrope,system-ui,sans-serif;color:#0B0B0F;font-size:15px;line-height:1.4">
+      <div class="gf-scroll" ref="{{ scrollRef }}" style="flex:1;overflow-y:auto;padding-bottom:110px">
+
+        <!-- INÍCIO -->
+        <sc-if value="{{ is.inicio }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:16px 20px 8px;display:flex;align-items:center;gap:12px">
+            <img src="assets/logo-tile-dark.png" alt="" style="width:44px;height:44px;border-radius:14px;object-fit:cover">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;color:#6B7280;font-weight:600">{{ home.dataLabel }}</div>
+              <div style="font-size:20px;font-weight:800;letter-spacing:-.01em">{{ home.saud }}, Ana</div>
+            </div>
+            <button onClick="{{ pushLate }}" aria-label="Avisos" style="position:relative;width:44px;height:44px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 10px rgba(11,11,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#0B0B0F">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
+              <sc-if value="{{ home.hasLate }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;border:2px solid #F5F5F7;background:#FF6A00;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ home.lateCount }}</span></sc-if>
+            </button>
+          </div>
+
+          <div style="margin:12px 20px 0;padding:22px;border-radius:26px;color:#fff;position:relative;overflow:hidden;background:radial-gradient(circle at 92% -10%, rgba(255,106,0,.65), rgba(255,106,0,0) 55%), linear-gradient(140deg,#1F2937 0%,#0B0B0F 100%);box-shadow:0 16px 32px rgba(11,11,15,.22)">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13px;color:#D1D5DB;font-weight:600">Vendas em outubro</div>
+              <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.12)">{{ home.pedidosMes }}</div>
+            </div>
+            <div style="font-size:34px;font-weight:800;letter-spacing:-.02em;margin:6px 0 18px">{{ home.vendasFmt }}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14)">
+              <div><div style="font-size:12px;color:#9CA3AF">Lucro estimado</div><div style="font-size:17px;font-weight:800">{{ home.lucroFmt }}</div><div style="font-size:11px;color:#FFB27A;font-weight:700">{{ home.margemTxt }}</div></div>
+              <div role="button" onClick="{{ tabs.pagamentos.go }}" style="cursor:pointer"><div style="font-size:12px;color:#9CA3AF">A receber</div><div style="font-size:17px;font-weight:800">{{ home.receberFmt }}</div><div style="font-size:11px;color:#D1D5DB;font-weight:600">Ver pagamentos ›</div></div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:20px 20px 4px">
+            <div role="button" onClick="{{ openNovo }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <div style="width:60px;height:60px;border-radius:20px;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(255,106,0,.32)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></div>
+              <div style="font-size:12px;font-weight:700">Novo pedido</div>
+            </div>
+            <div role="button" onClick="{{ tabs.pagamentos.go }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <div style="width:60px;height:60px;border-radius:20px;background:#FFF1E6;color:#FF6A00;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"></path><path d="m6 11 6 6 6-6"></path><path d="M19 21H5"></path></svg></div>
+              <div style="font-size:12px;font-weight:700">Receber</div>
+            </div>
+            <div role="button" onClick="{{ tabs.estoque.go }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <div style="width:60px;height:60px;border-radius:20px;background:#FFF1E6;color:#FF6A00;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path></svg></div>
+              <div style="font-size:12px;font-weight:700">Estoque</div>
+            </div>
+            <div role="button" onClick="{{ copyLink }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer">
+              <div style="width:60px;height:60px;border-radius:20px;background:#FFF1E6;color:#FF6A00;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+              <div style="font-size:12px;font-weight:700">Copiar link</div>
+            </div>
+          </div>
+
+          <sc-if value="{{ home.hasLate }}" hint-placeholder-val="{{ true }}">
+            <div role="button" onClick="{{ home.openLate }}" style="margin:16px 20px 0;padding:14px 16px;border-radius:20px;background:#FF6A00;color:#fff;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;cursor:pointer;box-shadow:0 10px 22px rgba(255,106,0,.28)" style-hover="background:#F25F00">
+              <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></div>
+              <div><div style="font-weight:800;font-size:16px">{{ home.lateTitle }}</div><div style="font-size:12px;font-weight:500">{{ home.lateSub }}</div></div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+            </div>
+          </sc-if>
+
+          <div style="margin:16px 20px 0;padding:18px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+              <div style="font-weight:800;font-size:16px">Vendas por produto</div>
+              <button onClick="{{ tabs.estoque.go }}" style="background:none;border:0;color:#FF6A00;font-weight:700;font-size:13px;cursor:pointer;padding:4px 0">Ver custos</button>
+            </div>
+            <div style="display:grid;grid-template-columns:132px 1fr;gap:16px;align-items:center">
+              <div style="width:132px;height:132px;border-radius:50%;background:{{ home.donutBg }};display:flex;align-items:center;justify-content:center">
+                <div style="width:96px;height:96px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                  <div style="font-size:11px;color:#6B7280;font-weight:600">Pedidos</div>
+                  <div style="font-size:24px;font-weight:800">{{ home.abertosN }}</div>
+                  <div style="font-size:10px;color:#6B7280">em aberto</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+                <sc-for list="{{ home.legend }}" as="g" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px">
+                    <span style="width:10px;height:10px;border-radius:50%;background:{{ g.cor }}"></span>
+                    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">{{ g.nome }}</span>
+                    <span style="font-weight:800">{{ g.pct }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin:16px 20px 0;padding:14px 4px 6px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 14px 6px">
+              <div style="font-weight:800;font-size:16px">Para hoje</div>
+              <button onClick="{{ home.verPedidos }}" style="background:none;border:0;color:#FF6A00;font-weight:700;font-size:13px;cursor:pointer;padding:4px 0">Ver todos</button>
+            </div>
+            <sc-for list="{{ home.hoje }}" as="o" hint-placeholder-count="3">
+              <div role="button" onClick="{{ o.open }}" style="display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-radius:16px;cursor:pointer" style-hover="background:#F7F7F9">
+                <div style="width:44px;height:44px;border-radius:14px;background:#FFF1E6;color:#C2410C;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">{{ o.ini }}</div>
+                <div style="min-width:0"><div style="font-weight:700">{{ o.cliente }}</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.num }} · {{ o.itens }}</div><div style="font-size:12px;font-weight:700;color:{{ o.whenColor }}">{{ o.when }}</div></div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div style="font-weight:800;font-size:14px">{{ o.totalFmt }}</div><span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:{{ o.tagBg }};color:{{ o.tagColor }}">{{ o.tagLabel }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ home.hasBaixo }}" hint-placeholder-val="{{ true }}">
+            <div style="margin:16px 20px 0;padding:14px 4px 6px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 14px 6px">
+                <div style="font-weight:800;font-size:16px">Estoque baixo</div>
+                <button onClick="{{ home.verEstoque }}" style="background:none;border:0;color:#FF6A00;font-weight:700;font-size:13px;cursor:pointer;padding:4px 0">Repor</button>
+              </div>
+              <sc-for list="{{ home.baixo }}" as="b" hint-placeholder-count="3">
+                <div role="button" onClick="{{ b.go }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;cursor:pointer" style-hover="background:#F7F7F9">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#FF6A00;flex:none"></span>
+                  <div style="flex:1;font-weight:600;font-size:14px">{{ b.nome }}</div>
+                  <div style="font-weight:800;font-size:14px;color:#C2410C">{{ b.qtdTxt }}</div>
+                  <div style="font-size:12px;color:#6B7280;width:60px;text-align:right">{{ b.minTxt }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="margin:16px 20px 0;padding:18px;border-radius:24px;background:#0B0B0F;color:#fff;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#FF6A00;font-weight:700">Link de encomenda</div>
+            <div style="font-weight:800;font-size:17px">gestaofacil.app/ana-atelie</div>
+            <div style="font-size:13px;color:#D1D5DB">Seus clientes escolhem os produtos e a data. O pedido cai direto aqui.</div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button onClick="{{ copyLink }}" style="flex:1;min-height:46px;border:0;border-radius:14px;background:#FF6A00;color:#fff;font-weight:700;font-size:14px;cursor:pointer" style-hover="background:#F25F00">Copiar link</button>
+              <button onClick="{{ openLink }}" style="flex:1;min-height:46px;border:1.5px solid #374151;border-radius:14px;background:transparent;color:#fff;font-weight:700;font-size:14px;cursor:pointer" style-hover="border-color:#FF6A00">Ver como cliente</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- PEDIDOS -->
+        <sc-if value="{{ is.pedidos }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 20px 12px"><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">Pedidos</div></div>
+          <div class="gf-scroll" style="overflow-x:auto;padding:0 20px 14px">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:16px;background:#EBEBEF;width:max-content">
+              <sc-for list="{{ ped.filtros }}" as="f" hint-placeholder-count="4">
+                <button onClick="{{ f.pick }}" style="min-height:38px;padding:0 14px;border:0;border-radius:12px;background:{{ f.bg }};color:{{ f.fg }};box-shadow:{{ f.sh }};font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">{{ f.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin:0 20px;padding:6px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <sc-for list="{{ ped.lista }}" as="o" hint-placeholder-count="5">
+              <div role="button" onClick="{{ o.open }}" style="display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-radius:16px;cursor:pointer" style-hover="background:#F7F7F9">
+                <div style="width:44px;height:44px;border-radius:14px;background:#FFF1E6;color:#C2410C;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">{{ o.ini }}</div>
+                <div style="min-width:0"><div style="font-weight:700">{{ o.cliente }}</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.num }} · {{ o.itens }}</div><div style="font-size:12px;font-weight:700;color:{{ o.whenColor }}">{{ o.when }}</div></div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div style="font-weight:800;font-size:14px">{{ o.totalFmt }}</div><span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:{{ o.tagBg }};color:{{ o.tagColor }}">{{ o.tagLabel }}</span><div style="font-size:11px;color:#6B7280">{{ o.restFmt }}</div></div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ ped.vazio }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 16px;color:#6B7280;font-size:14px">Nada por aqui.</div></sc-if>
+          </div>
+        </sc-if>
+
+        <!-- PEDIDO DETALHE -->
+        <sc-if value="{{ is.pedido }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:12px 20px">
+            <button onClick="{{ back }}" aria-label="Voltar" style="width:44px;height:44px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 10px rgba(11,11,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#0B0B0F"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <div style="text-align:center;font-weight:800;font-size:17px">Pedido {{ pd.num }}</div>
+            <div></div>
+          </div>
+          <sc-if value="{{ pd.late }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:4px 20px 0;padding:14px 16px;border-radius:20px;background:#FF6A00;color:#fff;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+              <div><div style="font-weight:800;font-size:16px">{{ pd.lateMsg }}</div><div style="font-size:12px">Entrega combinada: {{ pd.when }}</div></div>
+            </div>
+          </sc-if>
+          <div style="margin:14px 20px 0;padding:18px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:19px">{{ pd.cliente }}</div><div style="font-size:13px;color:#6B7280">{{ pd.tel }} · {{ pd.when }}</div></div>
+              <a href="{{ pd.wa }}" target="_blank" aria-label="WhatsApp" style="width:44px;height:44px;border-radius:50%;background:#FFF1E6;color:#FF6A00;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg></a>
+            </div>
+            <sc-if value="{{ pd.viaLink }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;display:inline-flex;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:#FFF1E6;color:#C2410C">Recebido pelo link de encomenda</div></sc-if>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:18px">
+              <sc-for list="{{ pd.steps }}" as="st" hint-placeholder-count="4">
+                <div role="button" onClick="{{ st.set }}" style="cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:44px">
+                  <div style="height:6px;border-radius:3px;background:{{ st.bar }}"></div>
+                  <div style="font-size:12px;font-weight:700;color:{{ st.color }}">{{ st.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin:14px 20px 0;padding:14px 18px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="font-weight:800;font-size:15px;margin-bottom:6px">Itens</div>
+            <sc-for list="{{ pd.itens }}" as="i" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:8px 0;border-bottom:1px solid #F1F1F4">
+                <div style="font-weight:600">{{ i.nome }}</div><div style="font-weight:800">{{ i.sub }}</div>
+                <div style="font-size:12px;color:#6B7280">{{ i.qtdTxt }}</div>
+              </div>
+            </sc-for>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px 12px;padding-top:12px;font-size:14px">
+              <div style="color:#6B7280">Lucro estimado</div><div style="font-weight:700">{{ pd.lucroFmt }}</div>
+              <div style="color:#6B7280">Pago ({{ pd.metodo }})</div><div style="font-weight:700">{{ pd.pagoFmt }}</div>
+              <div style="font-weight:800;font-size:18px">Total</div><div style="font-weight:800;font-size:18px">{{ pd.totalFmt }}</div>
+            </div>
+          </div>
+          <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+            <sc-if value="{{ pd.hasRest }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ pd.receber }}" style="display:flex;justify-content:space-between;align-items:center;min-height:56px;padding:0 20px;border:0;border-radius:18px;background:#FF6A00;color:#fff;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 10px 22px rgba(255,106,0,.3)" style-hover="background:#F25F00"><span>Registrar pagamento</span><span>{{ pd.restFmt }}</span></button>
+            </sc-if>
+            <sc-if value="{{ pd.podeEntregar }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ pd.entregar }}" style="display:flex;justify-content:space-between;align-items:center;min-height:56px;padding:0 20px;border:0;border-radius:18px;background:#0B0B0F;color:#fff;font-weight:800;font-size:15px;cursor:pointer" style-hover="background:#1F2937"><span>Marcar como entregue</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+            </sc-if>
+            <sc-if value="{{ pd.concluido }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:10px;align-items:center;padding:16px;border-radius:18px;background:#fff;font-weight:800"><span style="width:28px;height:28px;border-radius:50%;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Entregue e pago</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- NOVO PEDIDO -->
+        <sc-if value="{{ is.novo }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:12px 20px">
+            <button onClick="{{ back }}" aria-label="Voltar" style="width:44px;height:44px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 10px rgba(11,11,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#0B0B0F"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <div style="text-align:center;font-weight:800;font-size:17px">Novo pedido</div>
+            <div></div>
+          </div>
+          <div style="padding:8px 20px 0;display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:12px;font-weight:700;color:#6B7280">Cliente</label>
+            <select value="{{ nv.cid }}" onChange="{{ nv.onCliente }}" style="min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:15px;color:#0B0B0F">
+              <option value="">Selecione o cliente</option>
+              <sc-for list="{{ nv.clientes }}" as="c" hint-placeholder-count="0"><option value="{{ c.id }}">{{ c.nome }}</option></sc-for>
+            </select>
+          </div>
+          <div style="margin:16px 20px 0;padding:8px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="font-weight:800;font-size:15px;padding:8px 14px 4px">Itens</div>
+            <sc-for list="{{ nv.itens }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;background:{{ i.bg }}">
+                <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">{{ i.nome }}</div><div style="font-size:12px;color:#6B7280">{{ i.precoFmt }}</div></div>
+                <button onClick="{{ i.dec }}" aria-label="Menos" style="width:36px;height:36px;border-radius:50%;border:0;background:#F3F4F6;color:#0B0B0F;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                <div style="width:22px;text-align:center;font-weight:800;font-size:16px">{{ i.qtd }}</div>
+                <button onClick="{{ i.inc }}" aria-label="Mais" style="width:36px;height:36px;border-radius:50%;border:0;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px 0">
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:12px;font-weight:700;color:#6B7280">Entrega</label><input type="date" value="{{ nv.data }}" onChange="{{ nv.onData }}" style="min-height:50px;padding:0 12px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:14px"></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:12px;font-weight:700;color:#6B7280">Horário</label><input type="time" value="{{ nv.hora }}" onChange="{{ nv.onHora }}" style="min-height:50px;padding:0 12px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:14px"></div>
+          </div>
+          <div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:12px;font-weight:700;color:#6B7280">Forma de pagamento</label>
+            <div style="display:flex;gap:4px;padding:4px;border-radius:16px;background:#EBEBEF">
+              <sc-for list="{{ nv.metodos }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.pick }}" style="flex:1;min-height:42px;border:0;border-radius:12px;background:{{ m.bg }};color:{{ m.fg }};box-shadow:{{ m.sh }};font-weight:700;font-size:13px;cursor:pointer">{{ m.label }}</button></sc-for>
+            </div>
+          </div>
+          <div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:12px;font-weight:700;color:#6B7280">Quando paga</label>
+            <div style="display:flex;gap:4px;padding:4px;border-radius:16px;background:#EBEBEF">
+              <sc-for list="{{ nv.modos }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.pick }}" style="flex:1;min-height:42px;border:0;border-radius:12px;background:{{ m.bg }};color:{{ m.fg }};box-shadow:{{ m.sh }};font-weight:700;font-size:12px;cursor:pointer">{{ m.label }}</button></sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ nv.showSinal }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:6px">
+              <label style="font-size:12px;font-weight:700;color:#6B7280">Valor do sinal (R$)</label>
+              <input inputmode="decimal" placeholder="{{ nv.sinalPh }}" value="{{ nv.sinal }}" onChange="{{ nv.onSinal }}" style="min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:15px">
+            </div>
+          </sc-if>
+          <div style="margin:16px 20px 0;padding:16px 18px;border-radius:20px;background:#0B0B0F;color:#fff;display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:14px">
+            <div style="color:#9CA3AF">Custo dos produtos</div><div style="font-weight:700">{{ nv.custoFmt }}</div>
+            <div style="color:#9CA3AF">Lucro estimado</div><div style="font-weight:800;color:#FFB27A">{{ nv.lucroFmt }}</div>
+            <div style="color:#9CA3AF">Fica para receber</div><div style="font-weight:700">{{ nv.restFmt }}</div>
+          </div>
+          <div style="padding:16px 20px">
+            <sc-if value="{{ nv.hasErro }}" hint-placeholder-val="{{ false }}"><div style="color:#C2410C;font-size:13px;font-weight:700;margin-bottom:8px">{{ nv.erro }}</div></sc-if>
+            <button onClick="{{ nv.save }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;min-height:56px;padding:0 20px;border:0;border-radius:18px;background:#FF6A00;color:#fff;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 10px 22px rgba(255,106,0,.3)" style-hover="background:#F25F00"><span>Salvar pedido</span><span>{{ nv.totalFmt }}</span></button>
+          </div>
+        </sc-if>
+
+        <!-- ESTOQUE -->
+        <sc-if value="{{ is.estoque }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 20px 12px"><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">Estoque</div></div>
+          <div style="padding:0 20px 14px">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:16px;background:#EBEBEF">
+              <sc-for list="{{ est.tabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.pick }}" style="flex:1;min-height:42px;border:0;border-radius:12px;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.sh }};font-weight:700;font-size:14px;cursor:pointer">{{ t.label }}</button></sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ est.isProd }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:0 20px 10px;font-size:13px;color:#6B7280">Toque num produto para ver a ficha técnica, o custo e o lucro.</div>
+            <div style="margin:0 20px;padding:6px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+              <sc-for list="{{ est.produtos }}" as="p" hint-placeholder-count="4">
+                <div role="button" onClick="{{ p.open }}" style="display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-radius:16px;cursor:pointer" style-hover="background:#F7F7F9">
+                  <div style="width:44px;height:44px;border-radius:14px;background:#1F2937;color:#FF6A00;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">{{ p.ini }}</div>
+                  <div style="min-width:0"><div style="font-weight:700;font-size:14px">{{ p.nome }}</div><div style="font-size:12px;color:#6B7280">Custo {{ p.custoFmt }} · Venda {{ p.precoFmt }}</div><div style="font-size:12px;font-weight:600;color:{{ p.estColor }}">{{ p.estTxt }}</div></div>
+                  <div style="text-align:right"><div style="font-weight:800;font-size:16px;color:{{ p.margemColor }}">{{ p.margemTxt }}</div><div style="font-size:11px;color:#6B7280">margem</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ est.isIns }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 20px;padding:6px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+              <sc-for list="{{ est.insumos }}" as="i" hint-placeholder-count="6">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                    <div style="display:flex;gap:6px;align-items:center"><span style="font-weight:700;font-size:14px">{{ i.nome }}</span><sc-if value="{{ i.low }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FF6A00;color:#fff">Repor</span></sc-if></div>
+                    <div style="font-size:11px;color:#6B7280">{{ i.custoTxt }} · {{ i.minTxt }}</div>
+                    <div style="height:6px;border-radius:3px;background:#EEF0F3;overflow:hidden"><div style="height:6px;border-radius:3px;width:{{ i.barW }};background:{{ i.barColor }}"></div></div>
+                  </div>
+                  <button onClick="{{ i.dec }}" aria-label="Menos" style="width:34px;height:34px;border-radius:50%;border:0;background:#F3F4F6;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                  <div style="width:52px;text-align:center;font-weight:800;font-size:13px">{{ i.qtdTxt }}</div>
+                  <button onClick="{{ i.inc }}" aria-label="Mais" style="width:34px;height:34px;border-radius:50%;border:0;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <!-- FICHA TÉCNICA -->
+        <sc-if value="{{ is.produto }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:12px 20px">
+            <button onClick="{{ back }}" aria-label="Voltar" style="width:44px;height:44px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 10px rgba(11,11,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#0B0B0F"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <div style="text-align:center;font-weight:800;font-size:17px">Ficha técnica</div>
+            <div></div>
+          </div>
+          <div style="margin:4px 20px 0;padding:20px;border-radius:26px;color:#fff;background:radial-gradient(circle at 92% -10%, rgba(255,106,0,.55), rgba(255,106,0,0) 55%), linear-gradient(140deg,#1F2937 0%,#0B0B0F 100%)">
+            <div style="font-size:13px;color:#D1D5DB;font-weight:600">{{ pr.nome }}</div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin:4px 0 16px"><div style="font-size:32px;font-weight:800;letter-spacing:-.02em">{{ pr.lucroFmt }}</div><div style="font-size:12px;color:#9CA3AF">de lucro por unidade</div></div>
+            <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#374151">
+              <div style="width:{{ pr.costW }};background:#9CA3AF;transition:width .3s"></div>
+              <div style="width:{{ pr.lucroW }};background:#FF6A00;transition:width .3s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px"><span style="color:#D1D5DB">Custo {{ pr.custoFmt }} ({{ pr.custoPct }})</span><span style="font-weight:800;color:#FFB27A">Margem {{ pr.margemTxt }}</span></div>
+          </div>
+          <div style="margin:14px 20px 0;padding:16px 18px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05);display:flex;flex-direction:column;gap:10px">
+            <label style="font-size:12px;font-weight:700;color:#6B7280">Preço de venda (R$)</label>
+            <div style="display:flex;gap:8px">
+              <input inputmode="decimal" value="{{ pr.precoStr }}" onChange="{{ pr.onPreco }}" style="flex:1;min-width:0;min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:18px;font-weight:800">
+              <button onClick="{{ pr.aplicar }}" style="min-height:50px;padding:0 14px;border:0;border-radius:14px;background:#FFF1E6;color:#C2410C;font-weight:800;font-size:13px;cursor:pointer">Usar {{ pr.sugFmt }}</button>
+            </div>
+            <div style="font-size:12px;color:#6B7280">Preço sugerido para 50% de margem: {{ pr.sugFmt }}</div>
+          </div>
+          <div style="margin:14px 20px 0;padding:14px 18px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="font-weight:800;font-size:15px;margin-bottom:4px">Insumos por unidade</div>
+            <sc-for list="{{ pr.linhas }}" as="l" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:9px 0;border-bottom:1px solid #F1F1F4;font-size:14px">
+                <div style="font-weight:600">{{ l.nome }}</div><div style="color:#6B7280">{{ l.qtdTxt }}</div><div style="width:70px;text-align:right;font-weight:700">{{ l.custoFmt }}</div>
+              </div>
+            </sc-for>
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:9px 0;border-bottom:1px solid #F1F1F4;font-size:14px">
+              <div style="font-weight:600">Mão de obra</div><div style="color:#6B7280">{{ pr.maoTxt }}</div><div style="width:70px;text-align:right;font-weight:700">{{ pr.maoFmt }}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding:12px 0 4px;font-weight:800;font-size:16px"><div>Custo total</div><div>{{ pr.custoFmt }}</div></div>
+          </div>
+          <div style="margin:14px 20px 0;padding:14px 18px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05);display:flex;align-items:center;gap:10px">
+            <div style="flex:1"><div style="font-weight:800">Pronto em estoque</div><div style="font-size:12px;color:#6B7280">{{ pr.estMin }}</div></div>
+            <button onClick="{{ pr.decEst }}" aria-label="Menos" style="width:36px;height:36px;border-radius:50%;border:0;background:#F3F4F6;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+            <div style="width:28px;text-align:center;font-weight:800;font-size:17px">{{ pr.estoque }}</div>
+            <button onClick="{{ pr.incEst }}" aria-label="Mais" style="width:36px;height:36px;border-radius:50%;border:0;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+          </div>
+        </sc-if>
+
+        <!-- CLIENTES -->
+        <sc-if value="{{ is.clientes }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 20px 12px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;font-size:26px;font-weight:800;letter-spacing:-.02em">Clientes</div>
+            <button onClick="{{ cl.toggleForm }}" aria-label="Novo cliente" style="width:44px;height:44px;border-radius:50%;border:0;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 14px rgba(255,106,0,.3)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+          </div>
+          <sc-if value="{{ cl.showForm }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 20px 12px;padding:16px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05);display:flex;flex-direction:column;gap:10px">
+              <div style="font-weight:800">Novo cliente</div>
+              <input value="{{ cl.fNome }}" onChange="{{ cl.onNome }}" placeholder="Nome" style="min-height:48px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;font-size:15px">
+              <input inputmode="tel" value="{{ cl.fTel }}" onChange="{{ cl.onTel }}" placeholder="WhatsApp (11) 90000-0000" style="min-height:48px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;font-size:15px">
+              <button onClick="{{ cl.salvar }}" style="min-height:48px;border:0;border-radius:14px;background:#0B0B0F;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Salvar cliente</button>
+            </div>
+          </sc-if>
+          <div style="padding:0 20px 14px;position:relative">
+            <input placeholder="Buscar por nome" value="{{ cl.busca }}" onChange="{{ cl.onBusca }}" style="width:100%;min-height:48px;padding:0 14px 0 44px;border-radius:16px;border:0;background:#fff;box-shadow:0 2px 10px rgba(11,11,15,.05);font-size:15px">
+            <svg style="position:absolute;left:36px;top:15px;color:#9CA3AF" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          </div>
+          <div style="margin:0 20px;padding:6px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <sc-for list="{{ cl.lista }}" as="c" hint-placeholder-count="6">
+              <div role="button" onClick="{{ c.open }}" style="display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-radius:16px;cursor:pointer" style-hover="background:#F7F7F9">
+                <div style="width:44px;height:44px;border-radius:50%;background:#1F2937;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">{{ c.ini }}</div>
+                <div style="min-width:0"><div style="font-weight:700">{{ c.nome }}</div><div style="font-size:12px;color:#6B7280">{{ c.sub }}</div></div>
+                <div style="text-align:right"><div style="font-weight:800;font-size:14px;color:#C2410C">{{ c.deveFmt }}</div><div style="font-size:11px;color:#6B7280">{{ c.deveLbl }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- CLIENTE DETALHE -->
+        <sc-if value="{{ is.cliente }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:12px 20px">
+            <button onClick="{{ back }}" aria-label="Voltar" style="width:44px;height:44px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 10px rgba(11,11,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#0B0B0F"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <div style="text-align:center;font-weight:800;font-size:17px">Cliente</div>
+            <div></div>
+          </div>
+          <div style="margin:4px 20px 0;padding:20px;border-radius:26px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="font-weight:800;font-size:22px">{{ cd.nome }}</div>
+            <div style="font-size:13px;color:#6B7280">{{ cd.tel }} · {{ cd.bairro }}</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px">
+              <div style="padding:12px;border-radius:16px;background:#F5F5F7"><div style="font-size:11px;color:#6B7280;font-weight:600">Pedidos</div><div style="font-weight:800;font-size:18px">{{ cd.n }}</div></div>
+              <div style="padding:12px;border-radius:16px;background:#F5F5F7"><div style="font-size:11px;color:#6B7280;font-weight:600">Pagou</div><div style="font-weight:800;font-size:14px">{{ cd.pagoFmt }}</div></div>
+              <div style="padding:12px;border-radius:16px;background:#FFF1E6"><div style="font-size:11px;color:#C2410C;font-weight:600">Em aberto</div><div style="font-weight:800;font-size:14px;color:#C2410C">{{ cd.deveFmt }}</div></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button onClick="{{ cd.novo }}" style="flex:1;min-height:48px;border:0;border-radius:14px;background:#FF6A00;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Novo pedido</button>
+              <a href="{{ cd.wa }}" target="_blank" style="flex:1;min-height:48px;border-radius:14px;background:#0B0B0F;color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none">WhatsApp</a>
+            </div>
+          </div>
+          <div style="margin:14px 20px 0;padding:14px 4px 6px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <div style="font-weight:800;font-size:15px;padding:0 14px 6px">Histórico</div>
+            <sc-for list="{{ cd.rows }}" as="o" hint-placeholder-count="3">
+              <div role="button" onClick="{{ o.open }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 14px;border-radius:16px;cursor:pointer" style-hover="background:#F7F7F9">
+                <div style="min-width:0"><div style="font-weight:700">{{ o.num }} · {{ o.when }}</div><div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.itens }}</div></div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div style="font-weight:800;font-size:14px">{{ o.totalFmt }}</div><span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:{{ o.tagBg }};color:{{ o.tagColor }}">{{ o.tagLabel }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- PAGAMENTOS -->
+        <sc-if value="{{ is.pagamentos }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 20px 12px"><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">Pagamentos</div></div>
+          <div style="margin:0 20px;padding:20px;border-radius:26px;color:#fff;background:radial-gradient(circle at 92% -10%, rgba(255,106,0,.6), rgba(255,106,0,0) 55%), linear-gradient(140deg,#1F2937 0%,#0B0B0F 100%)">
+            <div style="font-size:13px;color:#D1D5DB;font-weight:600">A receber</div>
+            <div style="font-size:32px;font-weight:800;letter-spacing:-.02em;margin:4px 0 14px">{{ pg.receberFmt }}</div>
+            <div style="font-size:12px;color:#9CA3AF">Recebido em outubro</div>
+            <div style="font-size:17px;font-weight:800;margin-bottom:12px">{{ pg.recebidoFmt }}</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <sc-for list="{{ pg.porMetodo }}" as="m" hint-placeholder-count="3">
+                <div style="padding:10px;border-radius:14px;background:rgba(255,255,255,.08)"><div style="font-size:11px;color:#D1D5DB">{{ m.label }}</div><div style="font-weight:800;font-size:13px">{{ m.val }}</div></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="padding:16px 20px 14px">
+            <div style="display:flex;gap:4px;padding:4px;border-radius:16px;background:#EBEBEF">
+              <sc-for list="{{ pg.tabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.pick }}" style="flex:1;min-height:42px;border:0;border-radius:12px;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.sh }};font-weight:700;font-size:14px;cursor:pointer">{{ t.label }}</button></sc-for>
+            </div>
+          </div>
+          <div style="margin:0 20px;padding:6px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+            <sc-if value="{{ pg.isReceber }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ pg.receber }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px">
+                  <div role="button" onClick="{{ r.open }}" style="flex:1;min-width:0;cursor:pointer">
+                    <div style="font-weight:700">{{ r.cliente }}</div>
+                    <div style="font-size:12px;color:{{ r.subColor }}">{{ r.num }} · {{ r.sub }}</div>
+                  </div>
+                  <button onClick="{{ r.receber }}" style="min-height:44px;padding:0 14px;border:0;border-radius:14px;background:#FFF1E6;color:#C2410C;font-weight:800;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-end;justify-content:center" style-hover="background:#FFE2CC"><span>{{ r.restFmt }}</span><span style="font-size:10px;font-weight:700">Receber</span></button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ pg.vazio }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 16px;color:#6B7280;font-size:14px">Nada a receber. Tudo pago.</div></sc-if>
+            </sc-if>
+            <sc-if value="{{ pg.isRecebidos }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ pg.recebidos }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;padding:10px 14px">
+                  <div style="width:36px;height:36px;border-radius:12px;background:#F3F4F6;color:#FF6A00;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"></path><path d="m6 11 6 6 6-6"></path></svg></div>
+                  <div style="min-width:0"><div style="font-weight:700;font-size:14px">{{ r.desc }}</div><div style="font-size:12px;color:#6B7280">{{ r.sub }}</div></div>
+                  <div style="font-weight:800;font-size:14px">+ {{ r.valorFmt }}</div>
+                </div>
+              </sc-for>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- LINK (VISÃO DO CLIENTE) -->
+        <sc-if value="{{ is.link }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 8px 8px 16px;background:#0B0B0F;color:#D1D5DB;font-size:12px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span style="flex:1">Visão do cliente · gestaofacil.app/ana-atelie</span>
+            <button onClick="{{ back }}" style="min-height:36px;padding:0 12px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:12px;cursor:pointer">Sair</button>
+          </div>
+          <sc-if value="{{ lk.form }}" hint-placeholder-val="{{ true }}">
+            <div style="margin:16px 20px 0;padding:22px;border-radius:26px;color:#fff;background:radial-gradient(circle at 92% -10%, rgba(255,106,0,.6), rgba(255,106,0,0) 55%), linear-gradient(140deg,#1F2937 0%,#0B0B0F 100%)">
+              <div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#FF6A00;font-weight:700">Encomendas</div>
+              <div style="font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 6px">Ana Ateliê</div>
+              <div style="font-size:14px;color:#D1D5DB;text-wrap:pretty">Escolha os produtos e a data. A Ana confirma pelo WhatsApp.</div>
+            </div>
+            <div style="margin:14px 20px 0;padding:8px 4px;border-radius:24px;background:#fff;box-shadow:0 4px 24px rgba(11,11,15,.05)">
+              <sc-for list="{{ lk.itens }}" as="i" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;background:{{ i.bg }}">
+                  <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">{{ i.nome }}</div><div style="font-size:12px;color:#6B7280">{{ i.desc }}</div><div style="font-size:14px;font-weight:800;margin-top:2px">{{ i.precoFmt }}</div></div>
+                  <button onClick="{{ i.dec }}" aria-label="Menos" style="width:36px;height:36px;border-radius:50%;border:0;background:#F3F4F6;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+                  <div style="width:20px;text-align:center;font-weight:800;font-size:16px">{{ i.qtd }}</div>
+                  <button onClick="{{ i.inc }}" aria-label="Mais" style="width:36px;height:36px;border-radius:50%;border:0;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+              <input value="{{ lk.nome }}" onChange="{{ lk.onNome }}" placeholder="Seu nome" style="min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:15px">
+              <input inputmode="tel" value="{{ lk.tel }}" onChange="{{ lk.onTel }}" placeholder="WhatsApp com DDD" style="min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:15px">
+              <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:12px;font-weight:700;color:#6B7280">Para quando?</label><input type="date" value="{{ lk.data }}" onChange="{{ lk.onData }}" style="min-height:50px;padding:0 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:15px"></div>
+              <textarea value="{{ lk.obs }}" onChange="{{ lk.onObs }}" placeholder="Observações: aroma, cor da fita, recado no cartão…" style="min-height:80px;padding:12px 14px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;font-size:14px;resize:vertical"></textarea>
+              <sc-if value="{{ lk.hasErro }}" hint-placeholder-val="{{ false }}"><div style="color:#C2410C;font-size:13px;font-weight:700">{{ lk.erro }}</div></sc-if>
+              <button onClick="{{ lk.send }}" style="display:flex;justify-content:space-between;align-items:center;min-height:56px;padding:0 20px;border:0;border-radius:18px;background:#FF6A00;color:#fff;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 10px 22px rgba(255,106,0,.3)" style-hover="background:#F25F00"><span>Enviar encomenda</span><span>{{ lk.totalFmt }}</span></button>
+              <div style="font-size:12px;color:#6B7280">Pagamento combinado depois: Pix, dinheiro ou cartão.</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ lk.sent }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:56px 24px 16px;display:flex;flex-direction:column;gap:12px">
+              <div style="width:64px;height:64px;border-radius:22px;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 24px rgba(255,106,0,.35)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+              <div style="font-size:28px;font-weight:800;letter-spacing:-.02em">Encomenda enviada</div>
+              <div style="font-size:15px;color:#4B5563">Obrigada, {{ lk.primeiro }}! A Ana vai confirmar pelo WhatsApp em breve.</div>
+              <button onClick="{{ back }}" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:0 18px;border:0;border-radius:16px;background:#0B0B0F;color:#fff;font-weight:800;font-size:14px;cursor:pointer"><span>Voltar para o app da Ana</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showFab }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ openNovo }}" aria-label="Novo pedido" style="position:absolute;right:20px;bottom:88px;width:58px;height:58px;border-radius:50%;border:0;background:#FF6A00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 12px 24px rgba(255,106,0,.4)" style-hover="background:#F25F00"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+      </sc-if>
+
+      <sc-if value="{{ showTabs }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:none;height:72px;display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(11,11,15,.06);padding:0 6px">
+          <button onClick="{{ tabs.inicio.go }}" style="background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;color:{{ tabs.inicio.color }};font-weight:{{ tabs.inicio.weight }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Início</button>
+          <button onClick="{{ tabs.pedidos.go }}" style="position:relative;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;color:{{ tabs.pedidos.color }};font-weight:{{ tabs.pedidos.weight }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>Pedidos
+            <sc-if value="{{ home.hasLate }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:12px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#FF6A00;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ home.lateCount }}</span></sc-if>
+          </button>
+          <button onClick="{{ tabs.estoque.go }}" style="background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;color:{{ tabs.estoque.color }};font-weight:{{ tabs.estoque.weight }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>Estoque</button>
+          <button onClick="{{ tabs.clientes.go }}" style="background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;color:{{ tabs.clientes.color }};font-weight:{{ tabs.clientes.weight }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Clientes</button>
+          <button onClick="{{ tabs.pagamentos.go }}" style="background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;color:{{ tabs.pagamentos.color }};font-weight:{{ tabs.pagamentos.weight }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Pagamentos</button>
+        </div>
+      </sc-if>
+
+      <div role="button" onClick="{{ openNotif }}" style="position:absolute;top:8px;left:10px;right:10px;z-index:20;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:22px;background:#fff;box-shadow:0 16px 40px rgba(11,11,15,.22);cursor:pointer;transition:transform .45s cubic-bezier(.2,.8,.2,1);transform:{{ notifT }}">
+        <img src="assets/logo-tile-dark.png" alt="" style="width:40px;height:40px;border-radius:12px;object-fit:cover">
+        <div style="min-width:0">
+          <div style="font-size:11px;color:#6B7280;font-weight:600">Gestão Fácil · agora</div>
+          <div style="font-weight:800;font-size:14px">{{ notif.title }}</div>
+          <div style="font-size:12px;color:#4B5563">{{ notif.body }}</div>
+        </div>
+        <button onClick="{{ closeNotif }}" aria-label="Fechar" style="width:32px;height:32px;border-radius:50%;border:0;background:#F3F4F6;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+      </div>
+
+      <div style="position:absolute;left:20px;right:20px;bottom:92px;z-index:15;padding:14px 18px;border-radius:16px;background:#0B0B0F;color:#fff;font-size:14px;font-weight:600;pointer-events:none;transition:opacity .2s,transform .2s;opacity:{{ toastO }};transform:{{ toastT }}">{{ toast }}</div>
+    </div>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;autoNotify&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Protótipo&quot;},&quot;valorHora&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:25,&quot;min&quot;:5,&quot;max&quot;:120,&quot;unit&quot;:&quot;R$/h&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Custos&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;inicio&quot;,&quot;options&quot;:[&quot;inicio&quot;,&quot;pedidos&quot;,&quot;estoque&quot;,&quot;clientes&quot;,&quot;pagamentos&quot;,&quot;link&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Protótipo&quot;}}">
+const NOW = new Date(2026, 9, 23, 14, 30);
+const D = (d, h, m) => new Date(2026, 9, d, h, m || 0);
+const MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MESF = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const brl = v => (Math.round(v * 100) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const num = v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const pad = n => String(n).padStart(2, '0');
+const dayDiff = d => { const a = new Date(d); a.setHours(0,0,0,0); const b = new Date(NOW); b.setHours(0,0,0,0); return Math.round((a - b) / 864e5); };
+const hhmm = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+const dayTxt = d => { const k = dayDiff(d); return k === 0 ? 'Hoje' : k === 1 ? 'Amanhã' : k === -1 ? 'Ontem' : d.getDate() + ' ' + MES[d.getMonth()]; };
+const whenTxt = d => dayTxt(d) + ', ' + hhmm(d);
+const STEP = { un: 1, kg: 0.1, ml: 50, m: 1 };
+const digits = t => (t || '').replace(/\D/g, '');
+const parseN = t => { const n = parseFloat(String(t).replace(/\./g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
+
+function seed() {
+  const insumos = [
+    { id: 'i1', nome: 'Cera de soja', un: 'kg', custo: 38, qtd: 2.4, min: 3 },
+    { id: 'i2', nome: 'Essência aromática', un: 'ml', custo: 0.45, qtd: 380, min: 200 },
+    { id: 'i3', nome: 'Pote de vidro 200g', un: 'un', custo: 4.2, qtd: 9, min: 12 },
+    { id: 'i4', nome: 'Pavio', un: 'un', custo: 0.35, qtd: 120, min: 50 },
+    { id: 'i5', nome: 'Base glicerinada', un: 'kg', custo: 32, qtd: 1.8, min: 1 },
+    { id: 'i6', nome: 'Chocolate 50%', un: 'kg', custo: 54, qtd: 0.8, min: 1 },
+    { id: 'i7', nome: 'Manteiga', un: 'kg', custo: 42, qtd: 1.5, min: 1 },
+    { id: 'i8', nome: 'Caixa kraft', un: 'un', custo: 2.8, qtd: 40, min: 20 },
+    { id: 'i9', nome: 'Fita de cetim', un: 'm', custo: 0.6, qtd: 25, min: 10 },
+    { id: 'i10', nome: 'Cesta de vime', un: 'un', custo: 18, qtd: 3, min: 4 },
+    { id: 'i11', nome: 'Itens de café (kit)', un: 'un', custo: 42, qtd: 4, min: 3 }
+  ];
+  const produtos = [
+    { id: 'p1', nome: 'Vela aromática 200g', desc: 'Cera de soja, 40 h de queima', preco: 49.9, estoque: 6, min: 4, mao: 20, ficha: [['i1',0.18],['i2',12],['i3',1],['i4',1],['i9',0.5]] },
+    { id: 'p2', nome: 'Kit 3 sabonetes', desc: 'Glicerina, aromas sortidos', preco: 39.9, estoque: 3, min: 5, mao: 25, ficha: [['i5',0.3],['i2',6],['i8',1],['i9',0.6]] },
+    { id: 'p3', nome: 'Caixa de brownies (6 un)', desc: 'Meio amargo, feito no dia', preco: 45, estoque: 0, min: 0, mao: 40, ficha: [['i6',0.25],['i7',0.15],['i8',1]] },
+    { id: 'p4', nome: 'Cesta café da manhã', desc: 'Para 2 pessoas, com cartão', preco: 159, estoque: 1, min: 0, mao: 60, ficha: [['i10',1],['i11',1],['i6',0.1],['i8',2],['i9',1.5]] }
+  ];
+  const clientes = [
+    { id: 'c1', nome: 'Maria Souza', tel: '(11) 98234-1120', bairro: 'Vila Mariana' },
+    { id: 'c2', nome: 'João Pereira', tel: '(11) 99120-4471', bairro: 'Moema' },
+    { id: 'c3', nome: 'Carla Mendes', tel: '(11) 97455-0093', bairro: 'Saúde' },
+    { id: 'c4', nome: 'Rafael Lima', tel: '(11) 98877-2310', bairro: 'Ipiranga' },
+    { id: 'c5', nome: 'Beatriz Alves', tel: '(11) 99654-7781', bairro: 'Jabaquara' },
+    { id: 'c6', nome: 'Patrícia Rocha', tel: '(11) 98012-3345', bairro: 'Cambuci' }
+  ];
+  const P = Object.fromEntries(produtos.map(p => [p.id, p]));
+  const mk = (n, cid, itens, entrega, status, pago, metodo, origem) => ({ id: 'o' + n, num: n, cid, itens: itens.map(([pid, qtd]) => ({ pid, qtd, preco: P[pid].preco })), entrega, status, pago, metodo, origem: origem || 'app' });
+  const pedidos = [
+    mk(1038,'c1',[['p1',3]],D(20,15),'entregue',149.7,'Pix'),
+    mk(1039,'c3',[['p2',2]],D(19,11),'entregue',79.8,'Cartão'),
+    mk(1040,'c2',[['p4',1]],D(18,8),'entregue',159,'Pix'),
+    mk(1041,'c5',[['p1',1]],D(21,16),'entregue',0,'Dinheiro'),
+    mk(1042,'c1',[['p4',1]],D(22,10),'pronto',80,'Pix'),
+    mk(1043,'c2',[['p3',2]],D(23,11),'producao',0,'Dinheiro'),
+    mk(1044,'c3',[['p1',2],['p2',1]],D(23,17),'pronto',139.7,'Cartão'),
+    mk(1045,'c4',[['p1',1]],D(24,10),'producao',25,'Pix'),
+    mk(1046,'c5',[['p3',1],['p1',1]],D(25,15),'novo',0,'Pix','link'),
+    mk(1047,'c6',[['p2',2]],D(26,14),'producao',0,'Dinheiro')
+  ];
+  const pagamentos = pedidos.filter(o => o.pago > 0).map(o => ({ id: 'pg' + o.num, oid: o.id, valor: o.pago, metodo: o.metodo, data: new Date(Math.min(o.entrega.getTime() - 2 * 864e5, NOW.getTime() - 864e5)) }));
+  return { insumos, produtos, clientes, pedidos, pagamentos };
+}
+
+class Component extends DCLogic {
+  state = Object.assign(seed(), { screen: 'inicio', params: {}, stack: [], pedFiltro: 'abertos', estTab: 'produtos', pagTab: 'receber', busca: '', draft: null, link: null, toast: '', toastOn: false, notif: { title: '', body: '' }, notifOn: false, cliForm: null, precoStr: null, nextNum: 1048 });
+  scrollRef = React.createRef();
+
+  componentDidMount() {
+    const s = this.props.startScreen;
+    if (s === 'link') this.openLink(); else if (s && s !== 'inicio') this.tab(s);
+    if (this.props.autoNotify ?? true) this.t0 = setTimeout(() => this.pushLate(), 3000);
+  }
+  componentWillUnmount() { [this.t0, this.t1, this.t2, this.t3].forEach(clearTimeout); }
+
+  vh() { return this.props.valorHora ?? 25; }
+  P(id) { return this.state.produtos.find(p => p.id === id); }
+  I(id) { return this.state.insumos.find(i => i.id === id); }
+  C(id) { return this.state.clientes.find(c => c.id === id) || { nome: '—', tel: '', bairro: '' }; }
+  cost(p) { return p.ficha.reduce((s, [iid, q]) => s + q * this.I(iid).custo, 0) + p.mao / 60 * this.vh(); }
+  total(o) { return o.itens.reduce((s, i) => s + i.qtd * i.preco, 0); }
+  ocost(o) { return o.itens.reduce((s, i) => s + i.qtd * this.cost(this.P(i.pid)), 0); }
+  rest(o) { return Math.max(0, this.total(o) - o.pago); }
+  late(o) { return o.status !== 'entregue' && o.entrega < NOW; }
+  top() { const el = this.scrollRef.current; if (el) el.scrollTop = 0; }
+
+  go(screen, params) { this.setState(s => ({ stack: [...s.stack, { screen: s.screen, params: s.params }], screen, params: params || {} }), () => this.top()); }
+  back = () => this.setState(s => { const st = [...s.stack]; const p = st.pop() || { screen: 'inicio', params: {} }; return { stack: st, screen: p.screen, params: p.params }; }, () => this.top());
+  tab(screen, extra) { this.setState(Object.assign({ screen, params: {}, stack: [] }, extra || {}), () => this.top()); }
+
+  toastMsg(msg) { clearTimeout(this.t1); this.setState({ toast: msg, toastOn: true }); this.t1 = setTimeout(() => this.setState({ toastOn: false }), 2200); }
+  push(n) { clearTimeout(this.t2); this.setState({ notif: n, notifOn: true }); this.t2 = setTimeout(() => this.setState({ notifOn: false }), 6500); }
+  pushLate = () => {
+    const l = this.state.pedidos.filter(o => this.late(o)).sort((a, b) => a.entrega - b.entrega);
+    if (!l.length) return this.push({ title: 'Nenhum pedido atrasado', body: 'Tudo em dia por aqui.', to: 'inicio' });
+    const f = l[0];
+    this.push({ title: l.length === 1 ? '1 pedido atrasado' : l.length + ' pedidos atrasados', body: `#${f.num} ${this.C(f.cid).nome}: entrega era ${whenTxt(f.entrega).toLowerCase()}` + (l.length > 1 ? `, e mais ${l.length - 1}.` : '.'), to: 'late' });
+  };
+  openNotif = () => {
+    const n = this.state.notif; this.setState({ notifOn: false });
+    if (n.to === 'late') this.tab('pedidos', { pedFiltro: 'atrasados' });
+    else if (n.to === 'pedido') { this.tab('pedidos', { pedFiltro: 'abertos' }); this.go('pedido', { id: n.id }); }
+    else this.tab('inicio');
+  };
+  closeNotif = e => { e.stopPropagation(); this.setState({ notifOn: false }); };
+
+  updPed(id, fn) { this.setState(s => ({ pedidos: s.pedidos.map(o => o.id === id ? fn(o) : o) })); }
+  receber(id) {
+    const o = this.state.pedidos.find(x => x.id === id); const v = this.rest(o); if (v <= 0) return;
+    this.setState(s => ({ pedidos: s.pedidos.map(x => x.id === id ? { ...x, pago: this.total(x) } : x), pagamentos: [{ id: 'pg' + Date.now(), oid: id, valor: v, metodo: o.metodo, data: NOW }, ...s.pagamentos] }));
+    this.toastMsg(`Recebido ${brl(v)} de ${this.C(o.cid).nome.split(' ')[0]}`);
+  }
+
+  newDraft(cid) { return { cid: cid || '', qty: {}, data: '2026-10-24', hora: '15:00', metodo: 'Pix', modo: 'Na entrega', sinal: '', tried: false }; }
+  openNovo = cid => { this.setState({ draft: this.newDraft(typeof cid === 'string' ? cid : '') }); this.go('novo'); };
+  setDraft(p) { this.setState(s => ({ draft: { ...s.draft, ...p } })); }
+  draftQty(pid, d) { this.setState(s => ({ draft: { ...s.draft, qty: { ...s.draft.qty, [pid]: Math.max(0, (s.draft.qty[pid] || 0) + d) } } })); }
+  saveDraft() {
+    const s = this.state, d = s.draft;
+    const itens = Object.entries(d.qty).filter(([, q]) => q > 0).map(([pid, qtd]) => ({ pid, qtd, preco: this.P(pid).preco }));
+    if (!d.cid || !itens.length) return this.setDraft({ tried: true });
+    const tot = itens.reduce((a, i) => a + i.qtd * i.preco, 0);
+    const pago = d.modo === 'Pago agora' ? tot : d.modo === 'Sinal + restante' ? Math.min(tot, parseN(d.sinal) || tot / 2) : 0;
+    const n = s.nextNum, id = 'o' + n;
+    const o = { id, num: n, cid: d.cid, itens, entrega: new Date(d.data + 'T' + (d.hora || '12:00')), status: 'producao', pago, metodo: d.metodo, origem: 'app' };
+    this.setState(st => ({ pedidos: [...st.pedidos, o], nextNum: n + 1, pagamentos: pago > 0 ? [{ id: 'pg' + n, oid: id, valor: pago, metodo: d.metodo, data: NOW }, ...st.pagamentos] : st.pagamentos }));
+    this.tab('pedidos', { pedFiltro: 'abertos' }); this.go('pedido', { id });
+    this.toastMsg(`Pedido #${n} salvo`);
+  }
+
+  openLink = () => { this.setState({ link: { qty: {}, nome: '', tel: '', data: '2026-10-28', obs: '', sent: false, tried: false } }); this.go('link'); };
+  setLink(p) { this.setState(s => ({ link: { ...s.link, ...p } })); }
+  linkQty(pid, d) { this.setState(s => ({ link: { ...s.link, qty: { ...s.link.qty, [pid]: Math.max(0, (s.link.qty[pid] || 0) + d) } } })); }
+  sendLink() {
+    const s = this.state, L = s.link;
+    const itens = Object.entries(L.qty).filter(([, q]) => q > 0).map(([pid, qtd]) => ({ pid, qtd, preco: this.P(pid).preco }));
+    if (!L.nome.trim() || digits(L.tel).length < 10 || !itens.length) return this.setLink({ tried: true });
+    let c = s.clientes.find(x => digits(x.tel) === digits(L.tel));
+    const novos = c ? s.clientes : [...s.clientes, (c = { id: 'c' + Date.now(), nome: L.nome.trim(), tel: L.tel, bairro: 'Novo cliente' })];
+    const n = s.nextNum, id = 'o' + n, tot = itens.reduce((a, i) => a + i.qtd * i.preco, 0);
+    const o = { id, num: n, cid: c.id, itens, entrega: new Date(L.data + 'T14:00'), status: 'novo', pago: 0, metodo: 'Pix', origem: 'link' };
+    this.setState({ clientes: novos, pedidos: [...s.pedidos, o], nextNum: n + 1, link: { ...L, sent: true } });
+    const qn = itens.reduce((a, i) => a + i.qtd, 0);
+    clearTimeout(this.t3);
+    this.t3 = setTimeout(() => this.push({ title: 'Nova encomenda pelo link', body: `${L.nome.trim()} · ${qn} ${qn > 1 ? 'itens' : 'item'} · ${brl(tot)} para ${dayTxt(o.entrega).toLowerCase()}`, to: 'pedido', id }), 1400);
+  }
+
+  adjIns(id, dir) { this.setState(s => ({ insumos: s.insumos.map(i => i.id === id ? { ...i, qtd: Math.max(0, Math.round((i.qtd + dir * STEP[i.un]) * 100) / 100) } : i) })); }
+  adjEst(id, dir) { this.setState(s => ({ produtos: s.produtos.map(p => p.id === id ? { ...p, estoque: Math.max(0, p.estoque + dir) } : p) })); }
+  setPreco(id, str) { const n = parseFloat(String(str).replace(',', '.')); this.setState(s => ({ precoStr: str, produtos: n > 0 ? s.produtos.map(p => p.id === id ? { ...p, preco: n } : p) : s.produtos })); }
+
+  reset = () => { this.setState(Object.assign(seed(), { screen: 'inicio', params: {}, stack: [], pedFiltro: 'abertos', draft: null, link: null, cliForm: null, precoStr: null, nextNum: 1048, busca: '' }), () => this.top()); this.toastMsg('Dados de exemplo restaurados'); };
+  copyLink = () => { try { navigator.clipboard.writeText('https://gestaofacil.app/ana-atelie').catch(() => {}); } catch (e) {} this.toastMsg('Link copiado. Cole no WhatsApp ou Instagram.'); };
+
+  renderVals() {
+    const s = this.state, sc = s.screen;
+    const is = {}; ['inicio','pedidos','pedido','novo','estoque','produto','clientes','cliente','pagamentos','link'].forEach(k => is[k] = sc === k);
+    const tabOf = { inicio: 'inicio', pedidos: 'pedidos', pedido: 'pedidos', novo: 'pedidos', estoque: 'estoque', produto: 'estoque', clientes: 'clientes', cliente: 'clientes', pagamentos: 'pagamentos' }[sc];
+    const tabs = {}; ['inicio','pedidos','estoque','clientes','pagamentos'].forEach(k => { const a = tabOf === k; tabs[k] = { color: a ? '#FF6A00' : '#6B7280', bar: a ? '#FF6A00' : 'transparent', weight: a ? '800' : '600', go: () => this.tab(k) }; });
+    const lateL = s.pedidos.filter(o => this.late(o));
+    const row = o => {
+      const l = this.late(o), t = this.total(o), r = this.rest(o);
+      const map = { novo: ['tag tag-outline', o.origem === 'link' ? 'Novo · link' : 'Novo'], producao: ['tag tag-neutral', 'Em produção'], pronto: ['tag pronto', 'Pronto'], entregue: ['tag entregue', 'Entregue'] };
+      let [cls, lab] = map[o.status]; if (l) { cls = 'tag tag-accent'; lab = 'Atrasado'; }
+      const TAG = { 'tag tag-outline': ['#FFF1E6', '#C2410C'], 'tag tag-neutral': ['#EEF0F3', '#374151'], 'tag pronto': ['#1F2937', '#FFFFFF'], 'tag entregue': ['#F3F4F6', '#6B7280'], 'tag tag-accent': ['#FF6A00', '#FFFFFF'] };
+      return { ini: this.C(o.cid).nome.split(' ').map(w => w[0]).slice(0, 2).join(''), tagBg: TAG[cls][0], tagColor: TAG[cls][1], id: o.id, num: '#' + o.num, cliente: this.C(o.cid).nome, itens: o.itens.map(i => i.qtd + '× ' + this.P(i.pid).nome).join(', '), when: whenTxt(o.entrega), whenColor: l ? '#C2410C' : '#6B7280', totalFmt: brl(t), tagClass: cls, tagLabel: lab, restFmt: r > 0.005 ? 'Falta ' + brl(r) : 'Pago', open: () => this.go('pedido', { id: o.id }) };
+    };
+    const byDate = (a, b) => a.entrega - b.entrega;
+
+    // Início
+    const h = NOW.getHours();
+    const out = s.pedidos.filter(o => o.entrega.getMonth() === 9);
+    const vendas = out.reduce((a, o) => a + this.total(o), 0);
+    const lucro = out.reduce((a, o) => a + this.total(o) - this.ocost(o), 0);
+    const receber = s.pedidos.reduce((a, o) => a + this.rest(o), 0);
+    const abertos = s.pedidos.filter(o => o.status !== 'entregue');
+    const baixo = [
+      ...s.insumos.filter(i => i.qtd < i.min).map(i => ({ nome: i.nome, qtdTxt: num(i.qtd) + ' ' + i.un, minTxt: 'mín. ' + num(i.min), go: () => this.tab('estoque', { estTab: 'insumos' }) })),
+      ...s.produtos.filter(p => p.min > 0 && p.estoque < p.min).map(p => ({ nome: p.nome, qtdTxt: p.estoque + ' un', minTxt: 'mín. ' + p.min, go: () => { this.tab('estoque', { estTab: 'produtos' }); this.setState({ precoStr: null }); this.go('produto', { id: p.id }); } }))
+    ];
+    const COLS = ['#FF6A00', '#FFB27A', '#1F2937', '#9CA3AF'];
+    const porProd = s.produtos.map((p, i) => ({ nome: p.nome, v: out.reduce((a, o) => a + o.itens.filter(x => x.pid === p.id).reduce((b, x) => b + x.qtd * x.preco, 0), 0), cor: COLS[i % 4] }));
+    let acc = 0; const stops = porProd.map(x => { const a1 = acc / (vendas || 1) * 360; acc += x.v; const b1 = acc / (vendas || 1) * 360; return x.cor + ' ' + a1 + 'deg ' + b1 + 'deg'; });
+    const home = { donutBg: 'conic-gradient(' + stops.join(',') + ')', legend: porProd.map(x => ({ nome: x.nome, cor: x.cor, pct: Math.round(x.v / (vendas || 1) * 100) + '%', valFmt: brl(x.v) })), vendasFmt: brl(vendas), lucroFmt: brl(lucro), receberFmt: brl(receber), margemTxt: Math.round(lucro / (vendas || 1) * 100) + '% de margem', abertosN: abertos.length, pedidosMes: out.length + ' pedidos no mês',
+      saud: h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite',
+      dataLabel: DIAS[NOW.getDay()] + ', ' + NOW.getDate() + ' de ' + MESF[NOW.getMonth()],
+      hasLate: lateL.length > 0, lateCount: lateL.length,
+      lateTitle: lateL.length === 1 ? '1 pedido atrasado' : lateL.length + ' pedidos atrasados',
+      lateSub: 'Toque para ver e avisar os clientes',
+      openLate: () => this.tab('pedidos', { pedFiltro: 'atrasados' }),
+      kpis: [
+        { label: 'Vendas em out', val: brl(vendas), sub: out.length + ' pedidos', go: () => this.tab('pedidos', { pedFiltro: 'abertos' }) },
+        { label: 'Lucro estimado', val: brl(lucro), sub: Math.round(lucro / (vendas || 1) * 100) + '% das vendas', go: () => this.tab('estoque', { estTab: 'produtos' }) },
+        { label: 'A receber', val: brl(receber), sub: s.pedidos.filter(o => this.rest(o) > 0).length + ' pedidos', go: () => this.tab('pagamentos', { pagTab: 'receber' }) },
+        { label: 'Em aberto', val: String(abertos.length), sub: 'pedidos', go: () => this.tab('pedidos', { pedFiltro: 'abertos' }) }
+      ],
+      hoje: abertos.filter(o => dayDiff(o.entrega) <= 0).sort(byDate).map(row),
+      verPedidos: () => this.tab('pedidos', { pedFiltro: 'abertos' }),
+      hasBaixo: baixo.length > 0, baixo: baixo.slice(0, 4),
+      verEstoque: () => this.tab('estoque', { estTab: 'insumos' })
+    };
+
+    // Pedidos
+    const F = [['abertos','Abertos',o => o.status !== 'entregue'],['atrasados','Atrasados',o => this.late(o)],['hoje','Hoje',o => dayDiff(o.entrega) === 0],['entregues','Entregues',o => o.status === 'entregue']];
+    const fsel = F.find(x => x[0] === s.pedFiltro) || F[0];
+    const lista = s.pedidos.filter(fsel[2]).sort(fsel[0] === 'entregues' ? (a, b) => b.entrega - a.entrega : byDate).map(row);
+    const ped = { filtros: F.map(([k, l, f]) => ({ label: l + ' ' + s.pedidos.filter(f).length, checked: fsel[0] === k, bg: (fsel[0] === k) ? '#FFFFFF' : 'transparent', fg: (fsel[0] === k) ? '#FF6A00' : '#6B7280', sh: (fsel[0] === k) ? '0 2px 8px rgba(11,11,15,.10)' : 'none', pick: () => this.setState({ pedFiltro: k }) })), lista, vazio: !lista.length };
+
+    // Pedido detalhe
+    let pd = {};
+    if (is.pedido) {
+      const o = s.pedidos.find(x => x.id === s.params.id);
+      if (o) {
+        const c = this.C(o.cid), l = this.late(o), t = this.total(o), r = this.rest(o);
+        const hrs = Math.floor((NOW - o.entrega) / 36e5), dias = Math.floor(hrs / 24);
+        const K = ['novo','producao','pronto','entregue'], idx = K.indexOf(o.status);
+        pd = {
+          num: '#' + o.num, viaLink: o.origem === 'link', late: l,
+          lateMsg: hrs < 24 ? `Atrasado há ${Math.max(1, hrs)} h` : `Atrasado há ${dias} ${dias > 1 ? 'dias' : 'dia'}`,
+          when: whenTxt(o.entrega), cliente: c.nome, tel: c.tel,
+          wa: 'https://wa.me/55' + digits(c.tel) + '?text=' + encodeURIComponent(`Olá, ${c.nome.split(' ')[0]}! Sobre seu pedido #${o.num} da Ana Ateliê:`),
+          steps: ['Recebido','Produção','Pronto','Entregue'].map((lb, i) => ({ label: lb, n: '0' + (i + 1), bar: i <= idx ? '#FF6A00' : '#E5E7EB', color: i <= idx ? '#0B0B0F' : '#9CA3AF', set: () => this.updPed(o.id, x => ({ ...x, status: K[i] })) })),
+          itens: o.itens.map(i => ({ nome: this.P(i.pid).nome, qtdTxt: i.qtd + ' × ' + brl(i.preco), sub: brl(i.qtd * i.preco) })),
+          totalFmt: brl(t), pagoFmt: brl(o.pago), metodo: o.metodo, restFmt: brl(r), lucroFmt: brl(t - this.ocost(o)),
+          hasRest: r > 0.005, podeEntregar: o.status !== 'entregue', concluido: o.status === 'entregue' && r <= 0.005,
+          receber: () => this.receber(o.id),
+          entregar: () => { this.updPed(o.id, x => ({ ...x, status: 'entregue' })); this.toastMsg(`Pedido #${o.num} entregue`); }
+        };
+      }
+    }
+
+    // Novo pedido
+    const d = s.draft || this.newDraft();
+    const dItens = s.produtos.map(p => { const q = d.qty[p.id] || 0; return { nome: p.nome, precoFmt: brl(p.preco), qtd: q, bg: q > 0 ? '#FFF1E6' : 'transparent', inc: () => this.draftQty(p.id, 1), dec: () => this.draftQty(p.id, -1) }; });
+    const dTot = s.produtos.reduce((a, p) => a + (d.qty[p.id] || 0) * p.preco, 0);
+    const dCusto = s.produtos.reduce((a, p) => a + (d.qty[p.id] || 0) * this.cost(p), 0);
+    const dPago = d.modo === 'Pago agora' ? dTot : d.modo === 'Sinal + restante' ? Math.min(dTot, parseN(d.sinal) || dTot / 2) : 0;
+    const dErro = d.tried ? (!d.cid ? 'Escolha o cliente.' : !dTot ? 'Adicione pelo menos um item.' : '') : '';
+    const nv = {
+      cid: d.cid, clientes: s.clientes.map(c => ({ id: c.id, nome: c.nome })), onCliente: e => this.setDraft({ cid: e.target.value }),
+      itens: dItens, data: d.data, hora: d.hora, onData: e => this.setDraft({ data: e.target.value }), onHora: e => this.setDraft({ hora: e.target.value }),
+      metodos: ['Pix','Dinheiro','Cartão'].map(m => ({ label: m, checked: d.metodo === m, bg: (d.metodo === m) ? '#FFFFFF' : 'transparent', fg: (d.metodo === m) ? '#FF6A00' : '#6B7280', sh: (d.metodo === m) ? '0 2px 8px rgba(11,11,15,.10)' : 'none', pick: () => this.setDraft({ metodo: m }) })),
+      modos: ['Na entrega','Pago agora','Sinal + restante'].map(m => ({ label: m, checked: d.modo === m, bg: (d.modo === m) ? '#FFFFFF' : 'transparent', fg: (d.modo === m) ? '#FF6A00' : '#6B7280', sh: (d.modo === m) ? '0 2px 8px rgba(11,11,15,.10)' : 'none', pick: () => this.setDraft({ modo: m }) })),
+      showSinal: d.modo === 'Sinal + restante', sinal: d.sinal, sinalPh: '50%: ' + brl(dTot / 2), onSinal: e => this.setDraft({ sinal: e.target.value }),
+      totalFmt: brl(dTot), custoFmt: brl(dCusto), lucroFmt: brl(dTot - dCusto), restFmt: brl(dTot - dPago),
+      hasErro: !!dErro, erro: dErro, save: () => this.saveDraft()
+    };
+
+    // Estoque
+    const est = {
+      tabs: [['produtos','Produtos'],['insumos','Insumos']].map(([k, l]) => ({ label: l, checked: s.estTab === k, bg: (s.estTab === k) ? '#FFFFFF' : 'transparent', fg: (s.estTab === k) ? '#FF6A00' : '#6B7280', sh: (s.estTab === k) ? '0 2px 8px rgba(11,11,15,.10)' : 'none', pick: () => this.setState({ estTab: k }) })),
+      isProd: s.estTab === 'produtos', isIns: s.estTab === 'insumos',
+      produtos: s.produtos.map(p => { const c = this.cost(p), m = (p.preco - c) / p.preco, low = p.min > 0 && p.estoque < p.min; return { ini: p.nome[0], nome: p.nome, custoFmt: brl(c), precoFmt: brl(p.preco), margemTxt: Math.round(m * 100) + '%', margemColor: m < 0.2 ? '#C2410C' : '#0B0B0F', estTxt: p.min === 0 && p.estoque === 0 ? 'Sob encomenda' : p.estoque + ' em estoque', estColor: low ? '#C2410C' : '#6B7280', open: () => { this.setState({ precoStr: null }); this.go('produto', { id: p.id }); } }; }),
+      insumos: s.insumos.map(i => { const low = i.qtd < i.min; return { nome: i.nome, custoTxt: brl(i.custo) + '/' + i.un, minTxt: 'mín. ' + num(i.min) + ' ' + i.un, qtdTxt: num(i.qtd) + ' ' + i.un, low, barW: Math.min(100, i.qtd / (i.min * 2) * 100) + '%', barColor: low ? '#FF6A00' : '#6B7280', inc: () => this.adjIns(i.id, 1), dec: () => this.adjIns(i.id, -1) }; })
+    };
+
+    // Ficha técnica
+    let pr = {};
+    if (is.produto) {
+      const p = this.P(s.params.id);
+      const c = this.cost(p), lu = p.preco - c, m = lu / p.preco, sug = Math.ceil(c / 0.5) - 0.1;
+      const cw = Math.max(0, Math.min(100, c / p.preco * 100));
+      pr = {
+        nome: p.nome, custoFmt: brl(c), lucroFmt: brl(lu), margemTxt: Math.round(m * 100) + '%', custoPct: Math.round(cw) + '%',
+        lucroColor: m < 0.2 ? '#C2410C' : '#0B0B0F', costW: cw + '%', lucroW: (100 - cw) + '%',
+        precoStr: s.precoStr ?? p.preco.toFixed(2), onPreco: e => this.setPreco(p.id, e.target.value),
+        sugFmt: brl(sug), aplicar: () => this.setPreco(p.id, sug.toFixed(2)),
+        linhas: p.ficha.map(([iid, q]) => { const i = this.I(iid); return { nome: i.nome, qtdTxt: num(q) + ' ' + i.un, custoFmt: brl(q * i.custo) }; }),
+        maoTxt: `${p.mao} min × ${brl(this.vh())}/h`, maoFmt: brl(p.mao / 60 * this.vh()),
+        estoque: p.estoque, estMin: p.min ? 'Mínimo: ' + p.min + ' un' : 'Feito sob encomenda',
+        incEst: () => this.adjEst(p.id, 1), decEst: () => this.adjEst(p.id, -1)
+      };
+    }
+
+    // Clientes
+    const cf = s.cliForm;
+    const q = s.busca.trim().toLowerCase();
+    const cl = {
+      busca: s.busca, onBusca: e => this.setState({ busca: e.target.value }),
+      showForm: !!cf, fNome: cf ? cf.nome : '', fTel: cf ? cf.tel : '',
+      toggleForm: () => this.setState({ cliForm: cf ? null : { nome: '', tel: '' } }),
+      onNome: e => this.setState({ cliForm: { ...this.state.cliForm, nome: e.target.value } }),
+      onTel: e => this.setState({ cliForm: { ...this.state.cliForm, tel: e.target.value } }),
+      salvar: () => { if (!cf.nome.trim()) return; this.setState(st => ({ clientes: [{ id: 'c' + Date.now(), nome: cf.nome.trim(), tel: cf.tel, bairro: 'Novo cliente' }, ...st.clientes], cliForm: null })); this.toastMsg('Cliente cadastrado'); },
+      lista: s.clientes.filter(c => !q || c.nome.toLowerCase().includes(q)).map(c => { const ps = s.pedidos.filter(o => o.cid === c.id); const dv = ps.reduce((a, o) => a + this.rest(o), 0); return { ini: c.nome.split(' ').map(w => w[0]).slice(0, 2).join(''), nome: c.nome, sub: c.bairro + ' · ' + ps.length + (ps.length === 1 ? ' pedido' : ' pedidos'), deveFmt: dv > 0 ? brl(dv) : '', deveLbl: dv > 0 ? 'em aberto' : '', open: () => this.go('cliente', { id: c.id }) }; })
+    };
+    let cd = {};
+    if (is.cliente) {
+      const c = this.C(s.params.id); const ps = s.pedidos.filter(o => o.cid === c.id).sort((a, b) => b.entrega - a.entrega);
+      cd = { nome: c.nome, tel: c.tel, bairro: c.bairro, n: ps.length, pagoFmt: brl(ps.reduce((a, o) => a + o.pago, 0)), deveFmt: brl(ps.reduce((a, o) => a + this.rest(o), 0)), rows: ps.map(row), novo: () => this.openNovo(c.id), wa: 'https://wa.me/55' + digits(c.tel) };
+    }
+
+    // Pagamentos
+    const recL = s.pedidos.filter(o => this.rest(o) > 0.005).sort(byDate);
+    const mesPg = s.pagamentos.filter(p => p.data.getMonth() === 9);
+    const pg = {
+      receberFmt: brl(receber), recebidoFmt: brl(mesPg.reduce((a, p) => a + p.valor, 0)),
+      porMetodo: ['Pix','Dinheiro','Cartão'].map(m => ({ label: m, val: brl(mesPg.filter(p => p.metodo === m).reduce((a, p) => a + p.valor, 0)) })),
+      tabs: [['receber','A receber ' + recL.length],['recebidos','Recebidos']].map(([k, l]) => ({ label: l, checked: s.pagTab === k, bg: (s.pagTab === k) ? '#FFFFFF' : 'transparent', fg: (s.pagTab === k) ? '#FF6A00' : '#6B7280', sh: (s.pagTab === k) ? '0 2px 8px rgba(11,11,15,.10)' : 'none', pick: () => this.setState({ pagTab: k }) })),
+      isReceber: s.pagTab === 'receber', isRecebidos: s.pagTab === 'recebidos', vazio: !recL.length,
+      receber: recL.map(o => { const l = this.late(o); return { num: '#' + o.num, cliente: this.C(o.cid).nome, restFmt: brl(this.rest(o)), sub: (o.pago > 0 ? 'Sinal ' + brl(o.pago) + ' · ' : '') + o.metodo + ' · ' + (o.status === 'entregue' ? 'entregue ' + dayTxt(o.entrega).toLowerCase() : 'entrega ' + dayTxt(o.entrega).toLowerCase()), subColor: l || o.status === 'entregue' ? '#C2410C' : '#6B7280', receber: () => this.receber(o.id), open: () => this.go('pedido', { id: o.id }) }; }),
+      recebidos: [...s.pagamentos].sort((a, b) => b.data - a.data).map(p => { const o = s.pedidos.find(x => x.id === p.oid); return { desc: '#' + o.num + ' · ' + this.C(o.cid).nome, valorFmt: brl(p.valor), sub: p.metodo + ' · ' + dayTxt(p.data) + (p.valor < this.total(o) - 0.005 ? ' · sinal' : '') }; })
+    };
+
+    // Link
+    const L = s.link || { qty: {}, nome: '', tel: '', data: '', obs: '', sent: false, tried: false };
+    const lTot = s.produtos.reduce((a, p) => a + (L.qty[p.id] || 0) * p.preco, 0);
+    const lErro = L.tried ? (!lTot ? 'Escolha pelo menos um produto.' : !L.nome.trim() ? 'Diga seu nome.' : digits(L.tel).length < 10 ? 'Informe um WhatsApp com DDD.' : '') : '';
+    const lk = {
+      form: !L.sent, sent: L.sent, primeiro: (L.nome.trim().split(' ')[0]) || '',
+      itens: s.produtos.map(p => { const qq = L.qty[p.id] || 0; return { nome: p.nome, desc: p.desc, precoFmt: brl(p.preco), qtd: qq, bg: qq > 0 ? '#FFF1E6' : 'transparent', inc: () => this.linkQty(p.id, 1), dec: () => this.linkQty(p.id, -1) }; }),
+      nome: L.nome, tel: L.tel, data: L.data, obs: L.obs,
+      onNome: e => this.setLink({ nome: e.target.value }), onTel: e => this.setLink({ tel: e.target.value }), onData: e => this.setLink({ data: e.target.value }), onObs: e => this.setLink({ obs: e.target.value }),
+      totalFmt: brl(lTot), hasErro: !!lErro, erro: lErro, send: () => this.sendLink()
+    };
+
+    return {
+      is, tabs, home, ped, pd, nv, est, pr, cl, cd, pg, lk,
+      scrollRef: this.scrollRef, back: this.back, pushLate: this.pushLate, openLink: this.openLink, copyLink: this.copyLink, reset: this.reset,
+      openNovo: () => this.openNovo(''),
+      showTabs: sc !== 'link', showFab: sc === 'inicio' || sc === 'pedidos',
+      notif: s.notif, notifT: s.notifOn ? 'translateY(0)' : 'translateY(-140%)', openNotif: this.openNotif, closeNotif: this.closeNotif,
+      toast: s.toast, toastO: s.toastOn ? 1 : 0, toastT: s.toastOn ? 'translateY(0)' : 'translateY(8px)'
+    };
+  }
+}
+</script>
+</body>
+</html>
