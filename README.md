@@ -2,7 +2,27 @@
 
 SaaS mobile de gestão operacional e financeira para MEIs e pequenos negócios brasileiros: pedidos e vendas, estoque, produção e tarefas, ordens de serviço e financeiro. Funciona para três modelos de negócio: produção, revenda e prestação de serviços.
 
-Stack: Expo (React Native) + TypeScript + Expo Router + Supabase (Auth, Postgres com RLS).
+Stack: Expo SDK 58 (React Native) + TypeScript estrito + Expo Router + Supabase (Auth, Postgres com RLS) + TanStack Query + React Hook Form + Zod.
+
+## Como rodar
+
+1. **Supabase**: crie um projeto em [supabase.com](https://supabase.com). Aplique as migrações de `supabase/migrations/` em ordem (pelo SQL Editor, ou com a CLI: `supabase link --project-ref <ref>` e `supabase db push`).
+2. **Auth**: em Authentication → URL Configuration, adicione `gestaofacil://**` (e `exp://**` para desenvolvimento com Expo Go) em Redirect URLs, para o link de recuperação de senha voltar ao app.
+3. **App**:
+   ```bash
+   npm install
+   cp .env.example .env   # preencha URL e chave pública do projeto
+   npx expo start
+   ```
+
+## Verificações
+
+```bash
+npm run typecheck   # TypeScript
+npx eslint .        # lint
+npm test            # testes unitários (Jest)
+npm run test:db     # migrações + testes de RLS num Postgres local
+```
 
 ## Documentação
 
@@ -13,4 +33,4 @@ Stack: Expo (React Native) + TypeScript + Expo Router + Supabase (Auth, Postgres
 
 ## Status
 
-Em desenvolvimento, onda 1. Veja a seção 10 do plano técnico.
+Onda 1 em andamento: base do app, autenticação, onboarding com tipo de negócio e isolamento multiempresa prontos. Próximo: clientes, itens e pedidos. Detalhes na seção 10 do plano técnico.
