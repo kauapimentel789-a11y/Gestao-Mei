@@ -61,6 +61,7 @@ export interface OrderDetail {
   notes: string | null;
   problem_description: string | null;
   scheduled_for: string | null;
+  scheduled_minutes: number | null;
   subtotal_cents: number;
   discount_cents: number;
   total_cents: number;
@@ -166,7 +167,7 @@ export function useOrder(orgId: string, id: string) {
       const { data, error } = await supabase
         .from('orders')
         .select(
-          `id, organization_id, number, kind, status, channel, due_at, notes, problem_description, scheduled_for,
+          `id, organization_id, number, kind, status, channel, due_at, notes, problem_description, scheduled_for, scheduled_minutes,
            subtotal_cents, discount_cents, total_cents, cancel_reason, stock_consumed_at, created_at,
            customer:customers (id, name, phone, phone_digits),
            items:order_items (id, position, product_id, description, unit, quantity, unit_price_cents, discount_cents, line_total_cents),

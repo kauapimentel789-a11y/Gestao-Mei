@@ -50,7 +50,7 @@ begin
     raise exception 'order_closed' using errcode = '55000';
   end if;
   if p_minutes is not null and p_minutes not between 5 and 1440 then
-    raise exception 'invalid_minutes' using errcode = '22023';
+    raise exception 'invalid_duration' using errcode = '22023';
   end if;
   if v_order.scheduled_for is not distinct from p_scheduled_for and v_order.scheduled_minutes is not distinct from p_minutes then
     return v_order;
