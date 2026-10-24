@@ -65,6 +65,9 @@ const BY_MESSAGE: Record<string, string> = {
   assignee_not_member: 'Essa pessoa não faz parte da empresa.',
   task_cancelled: 'Essa tarefa foi cancelada e não pode mais mudar.',
   order_closed: 'Esse pedido já foi finalizado ou cancelado.',
+  forbidden: 'Só o dono ou um administrador pode fazer isso.',
+  limit_newer_exists: 'Já existe um limite com início depois dessa data. Use uma data mais recente.',
+  limit_same_date: 'Já existe um limite começando nessa data.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.

@@ -151,3 +151,11 @@ Status derivados (não gravados): título `pending` / `partial` / `paid` / `over
 
 Com isso a onda 2 fecha: transferências e o resumo financeiro já tinham entrado com o financeiro da onda 1.
 
+
+## 12. Ordem de implementação (onda 3)
+
+1. ✅ Faturamento do MEI (migração 0009): limite anual por empresa, com data de início de vigência e histórico (`revenue_limits`, `set_revenue_limit` só para dono ou admin; um novo valor encerra o anterior na véspera e não se reescreve o passado). `mei_revenue_year` devolve o faturamento mês a mês (títulos a receber de "vendas e serviços" pela competência, sem cancelados), os recebimentos ao lado, o limite aplicável ao ano e o que conferir: pedidos concluídos ou entregues sem recebimento lançado e lançamentos em "outras receitas". O valor do limite não vem no código. Alertas a partir de 70% e de 90%.
+2. Agenda e ordens de serviço.
+3. Orçamentos.
+4. Relatórios.
+5. Link público de encomenda (Edge Function).

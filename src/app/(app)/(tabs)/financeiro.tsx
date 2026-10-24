@@ -13,6 +13,8 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { useAccounts, useFinanceSummary, useOpenEntries, usePeriodEntries } from '@/features/finance/api';
 import { EntryRow } from '@/features/finance/EntryRow';
 import { cashNet, operatingResult, type PeriodMode, periodFor } from '@/features/finance/logic';
+import { useMeiYear } from '@/features/mei/api';
+import { LEVEL_TEXT, limitLevel, yearTotal } from '@/features/mei/logic';
 import { useOrg } from '@/features/organizations/useOrg';
 import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
@@ -120,6 +122,8 @@ export default function FinanceScreen() {
           </>
         )}
 
+        <MeiCard orgId={orgId} />
+
         <Card>
           <Pressable accessibilityRole="button" onPress={() => router.push('/financeiro/contas')} style={styles.accountsHead}>
             <Text style={styles.cardTitle}>Saldo nas contas</Text>
@@ -177,6 +181,34 @@ function Line({ label, value }: { label: string; value: number }) {
       <Text style={styles.lineLabel}>{label}</Text>
       <Text style={styles.lineValue}>{formatCents(value)}</Text>
     </View>
+  );
+}
+
+function MeiCard({ orgId }: { orgId: string }) {
+  const year = new Date().getFullYear();
+  const mei = useMeiYear(orgId, year);
+  const d = mei.data;
+  const total = d ? yearTotal(d.months) : 0;
+  const limit = d?.limit?.annual_limit_cents ?? null;
+  const level = limitLevel(total, limit);
+  return (
+    <Pressable accessibilityRole="button" onPress={() => router.push('/financeiro/mei')}>
+      <Card>
+        <View style={styles.accountsHead}>
+          <Text style={styles.cardTitle}>Faturamento do MEI em {year}</Text>
+          <ChevronRight size={18} color={colors.gray500} />
+        </View>
+        <Text style={styles.lineLabel}>
+          {!d
+            ? mei.error
+              ? 'Não foi possível carregar.'
+              : 'Carregando…'
+            : limit
+              ? `${formatCents(total)} de ${formatCents(limit)} (${Math.round((total / limit) * 100)}%)${level !== 'ok' && level !== 'none' ? ` · ${LEVEL_TEXT[level]}` : ''}`
+              : `${formatCents(total)} no ano · cadastre o limite anual para acompanhar`}
+        </Text>
+      </Card>
+    </Pressable>
   );
 }
 
