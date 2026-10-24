@@ -15,11 +15,13 @@ import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { type Customer, useCustomer } from '@/features/customers/api';
 import { CustomerPicker } from '@/features/customers/CustomerPicker';
+import { parseDateInput } from '@/features/finance/logic';
 import { CHANNEL_LABEL, type OrderChannel, type OrderItemInput, useCreateOrder } from '@/features/orders/api';
 import { draftTotals, parseQuantity } from '@/features/orders/logic';
 import { useOrg } from '@/features/organizations/useOrg';
 import { useProducts } from '@/features/products/api';
 import { SELLABLE_TYPES } from '@/features/products/types';
+import { useCreateQuote } from '@/features/quotes/api';
 import { parseDateTimeBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
@@ -36,13 +38,17 @@ interface CustomLine {
 const CHANNELS = (Object.keys(CHANNEL_LABEL) as OrderChannel[]).filter((c) => c !== 'link');
 
 export default function NewOrderScreen() {
-  const { clienteId } = useLocalSearchParams<{ clienteId?: string }>();
+  const { clienteId, orcamento } = useLocalSearchParams<{ clienteId?: string; orcamento?: string }>();
+  // Mesma tela para orçamento: sem origem, prazo nem agendamento; com validade.
+  const isQuote = orcamento === '1';
   const { orgId, config } = useOrg();
   const toast = useToast();
   const preselected = useCustomer(orgId, clienteId ?? '');
   const products = useProducts(orgId, { types: SELLABLE_TYPES, activeOnly: true });
   const create = useCreateOrder(orgId);
-  const isService = config.orderKind === 'service_order';
+  const createQuote = useCreateQuote(orgId);
+  const isService = !isQuote && config.orderKind === 'service_order';
+  const [validUntil, setValidUntil] = useState('');
 
   // Uma chave por tela: tocar duas vezes em salvar não cria dois pedidos.
   const [idempotencyKey] = useState(newId);
@@ -92,6 +98,25 @@ export default function NewOrderScreen() {
     if (draft.items.length === 0) return setError('Adicione pelo menos um item.');
     if (draft.discountCents === null) return setError('Desconto inválido. Ex.: 5,00');
     if (draft.totals.total < 0) return setError('O desconto não pode ser maior que o valor dos itens.');
+    if (isQuote) {
+      const valid = validUntil.trim() ? parseDateInput(validUntil) : null;
+      if (validUntil.trim() && !valid) return setError('Validade inválida. Use DD/MM/AAAA.');
+      try {
+        const quote = await createQuote.mutateAsync({
+          idempotencyKey,
+          customerId: customer?.id ?? null,
+          validUntil: valid,
+          notes,
+          discountCents: draft.discountCents,
+          items: draft.items.map(({ unitPriceCents: _p, ...i }) => i),
+        });
+        toast(`Orçamento #${quote.number} salvo`);
+        router.replace({ pathname: '/orcamentos/[id]', params: { id: quote.id } });
+      } catch (e) {
+        setError(friendlyError(e));
+      }
+      return;
+    }
     let when: Date | null = null;
     if (date.trim()) {
       when = parseDateTimeBR(date, time);
@@ -119,7 +144,7 @@ export default function NewOrderScreen() {
 
   return (
     <Screen>
-      <DetailBar title={`Novo ${config.orderNoun}`} />
+      <DetailBar title={isQuote ? 'Novo orçamento' : `Novo ${config.orderNoun}`} />
 
       <Card>
         <Text style={styles.label}>Cliente</Text>
@@ -222,22 +247,34 @@ export default function NewOrderScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.label}>{isService ? 'Agendamento' : 'Prazo de entrega'} (opcional)</Text>
-        <View style={styles.twoCols}>
-          <View style={styles.flex}>
-            <TextField label="Data" value={date} onChangeText={setDate} placeholder="DD/MM/AAAA" keyboardType="numbers-and-punctuation" />
-          </View>
-          <View style={styles.flex}>
-            <TextField label="Horário" value={time} onChangeText={setTime} placeholder="HH:MM" keyboardType="numbers-and-punctuation" />
-          </View>
-        </View>
-        <Text style={styles.label}>Origem</Text>
-        <Chips
-          accessibilityLabel="Origem"
-          value={channel}
-          onChange={setChannel}
-          options={CHANNELS.map((c) => ({ value: c, label: CHANNEL_LABEL[c] }))}
-        />
+        {isQuote ? (
+          <TextField
+            label="Válido até (opcional)"
+            value={validUntil}
+            onChangeText={setValidUntil}
+            placeholder="DD/MM/AAAA"
+            keyboardType="numbers-and-punctuation"
+          />
+        ) : (
+          <>
+            <Text style={styles.label}>{isService ? 'Agendamento' : 'Prazo de entrega'} (opcional)</Text>
+            <View style={styles.twoCols}>
+              <View style={styles.flex}>
+                <TextField label="Data" value={date} onChangeText={setDate} placeholder="DD/MM/AAAA" keyboardType="numbers-and-punctuation" />
+              </View>
+              <View style={styles.flex}>
+                <TextField label="Horário" value={time} onChangeText={setTime} placeholder="HH:MM" keyboardType="numbers-and-punctuation" />
+              </View>
+            </View>
+            <Text style={styles.label}>Origem</Text>
+            <Chips
+              accessibilityLabel="Origem"
+              value={channel}
+              onChange={setChannel}
+              options={CHANNELS.map((c) => ({ value: c, label: CHANNEL_LABEL[c] }))}
+            />
+          </>
+        )}
         <TextField label="Desconto (opcional)" value={discount} onChangeText={setDiscount} keyboardType="decimal-pad" placeholder="0,00" />
         <TextField label="Observações (opcional)" value={notes} onChangeText={setNotes} multiline style={styles.multiline} />
       </Card>
@@ -253,15 +290,19 @@ export default function NewOrderScreen() {
             <Text style={styles.summaryValue}>− {formatCents(draft.discountCents)}</Text>
           </View>
         ) : null}
-        <Text style={styles.summaryHint}>O total final é calculado pelo sistema ao salvar.</Text>
+        <Text style={styles.summaryHint}>
+          {isQuote
+            ? 'O total final é calculado pelo sistema ao salvar. Orçamento não mexe no estoque nem no financeiro até virar pedido.'
+            : 'O total final é calculado pelo sistema ao salvar.'}
+        </Text>
       </View>
 
       <FormError message={error} />
       <Button
-        label={`Salvar ${config.orderNoun}`}
+        label={isQuote ? 'Salvar orçamento' : `Salvar ${config.orderNoun}`}
         trailing={<Text style={styles.btnValue}>{formatCents(Math.max(0, draft.totals.total))}</Text>}
         onPress={save}
-        loading={create.isPending}
+        loading={create.isPending || createQuote.isPending}
       />
 
       <CustomerPicker

@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { ReceiptText } from 'lucide-react-native';
+import { FileText, ReceiptText } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { CircleButton } from '@/components/DetailBar';
 import { Fab } from '@/components/Fab';
 import { QueryStates } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
@@ -28,9 +29,12 @@ export default function OrdersScreen() {
   return (
     <View style={styles.flex}>
       <Screen>
-        <Text style={styles.title} accessibilityRole="header">
-          {config.tabLabels.pedidos}
-        </Text>
+        <View style={styles.header}>
+          <Text style={styles.title} accessibilityRole="header">
+            {config.tabLabels.pedidos}
+          </Text>
+          <CircleButton label="Orçamentos" icon={<FileText size={20} color={colors.ink} />} onPress={() => router.push('/orcamentos')} />
+        </View>
         <SearchField value={search} onChangeText={setSearch} placeholder="Buscar por nº ou cliente" />
         <SegmentedControl
           scrollable
@@ -73,6 +77,7 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   flex: { flex: 1 },
   title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
   list: { paddingVertical: 4, gap: 0 },
