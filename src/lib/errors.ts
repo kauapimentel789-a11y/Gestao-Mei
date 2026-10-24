@@ -61,6 +61,10 @@ const BY_MESSAGE: Record<string, string> = {
   duplicate_input: 'Esse insumo já está na receita.',
   invalid_minutes: 'Tempo de mão de obra inválido.',
   order_not_found: 'Pedido não encontrado ou cancelado.',
+  invalid_title: 'Informe um título entre 2 e 120 caracteres.',
+  assignee_not_member: 'Essa pessoa não faz parte da empresa.',
+  task_cancelled: 'Essa tarefa foi cancelada e não pode mais mudar.',
+  order_closed: 'Esse pedido já foi finalizado ou cancelado.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.

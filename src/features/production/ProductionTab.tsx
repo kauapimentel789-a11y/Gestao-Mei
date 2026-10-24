@@ -2,6 +2,7 @@
 // pedidos em aberto e as últimas produções registradas.
 import { router } from 'expo-router';
 import { ChefHat, ClipboardCheck } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -16,7 +17,7 @@ import { colors, fonts, radius } from '@/theme/tokens';
 
 import { useProductionDemand, useProductionRuns } from './api';
 
-export function ProductionTab() {
+export function ProductionTab({ header }: { header?: ReactNode }) {
   const { orgId, config } = useOrg();
   const demand = useProductionDemand(orgId);
   const runs = useProductionRuns(orgId);
@@ -27,6 +28,7 @@ export function ProductionTab() {
         <Text style={styles.title} accessibilityRole="header">
           {config.tabLabels.tarefas}
         </Text>
+        {header}
 
         <Card style={styles.list}>
           <Text style={styles.cardTitle}>Para produzir</Text>
