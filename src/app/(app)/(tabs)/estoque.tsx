@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
+import { ShoppingCart } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { CircleButton } from '@/components/DetailBar';
 import { Fab } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { useOrg } from '@/features/organizations/useOrg';
@@ -12,9 +14,12 @@ export default function StockScreen() {
   return (
     <View style={styles.flex}>
       <Screen>
-        <Text style={styles.title} accessibilityRole="header">
-          {config.tabLabels.estoque}
-        </Text>
+        <View style={styles.header}>
+          <Text style={styles.title} accessibilityRole="header">
+            {config.tabLabels.estoque}
+          </Text>
+          <CircleButton label="Compras" icon={<ShoppingCart size={20} color={colors.ink} />} onPress={() => router.push('/compras')} />
+        </View>
         <ItemsList />
         <View style={styles.fabSpace} />
       </Screen>
@@ -25,6 +30,7 @@ export default function StockScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
   fabSpace: { height: 70 },
 });

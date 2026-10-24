@@ -44,6 +44,9 @@ export interface EntryOverview {
   cancelled_at: string | null;
   cancel_reason: string | null;
   created_at: string;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  purchase_id: string | null;
 }
 
 export interface Payment {
@@ -81,7 +84,7 @@ export const financeKeys = {
 };
 
 const ENTRY_COLUMNS =
-  'id, direction, description, amount_cents, paid_cents, open_cents, status, competence_date, due_date, category_id, category_name, category_nature, customer_id, customer_name, order_id, order_number, notes, cancelled_at, cancel_reason, created_at';
+  'id, direction, description, amount_cents, paid_cents, open_cents, status, competence_date, due_date, category_id, category_name, category_nature, customer_id, customer_name, order_id, order_number, notes, cancelled_at, cancel_reason, created_at, supplier_id, supplier_name, purchase_id';
 const PAYMENT_COLUMNS = 'id, entry_id, account_id, amount_cents, paid_on, method, notes, reverses_payment_id, created_at';
 
 export function useFinanceSummary(orgId: string, from: string, to: string) {
@@ -237,6 +240,7 @@ export interface CreateEntryInput {
   dueDate: string;
   competenceDate: string;
   customerId: string | null;
+  supplierId: string | null;
   notes: string;
   idempotencyKey: string;
   /** Já recebido/pago: registra a baixa total junto. */
@@ -261,6 +265,7 @@ export function useCreateEntry(orgId: string) {
         p_paid_account_id: input.paid?.accountId ?? null,
         p_paid_method: input.paid?.method ?? null,
         p_paid_on: input.paid?.paidOn ?? null,
+        p_supplier_id: input.supplierId,
       });
       if (error) throw error;
       return data as { id: string };

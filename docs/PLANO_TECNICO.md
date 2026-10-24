@@ -142,3 +142,10 @@ Status derivados (não gravados): título `pending` / `partial` / `paid` / `over
 5. ✅ Clientes, itens e pedidos/vendas/OS (migrações 0002 e 0003). Criar, listar com filtros e busca, detalhe com status em etapas, cancelar com motivo e histórico. RPC `update_order` pronta no banco; a tela de edição de pedido ainda não existe.
 6. ✅ Estoque e movimentações (migração 0004): entrada, saída, ajuste por contagem, estorno, baixa do pedido e devolução no cancelamento, estoque baixo no Início. Teste de concorrência real com 20 conexões (`supabase/tests/40_inventory_concurrency_test.sh`).
 7. ✅ Financeiro essencial (migração 0005): contas com saldo inicial, categorias com natureza, títulos a receber e a pagar com baixas parciais, estorno e cancelamento, transferências, recebimento do pedido (um título por pedido, que acompanha total e cancelamento) e resumo do período (`finance_summary`) que separa caixa, resultado estimado por competência e valores em aberto. Ainda fora: custo das mercadorias vendidas no resultado, intervalo de datas personalizado, parcelas, faturamento anual do MEI (onda 3).
+
+## 11. Ordem de implementação (onda 2)
+
+1. ✅ Fornecedores e compras (migração 0006): a compra grava itens, entrada no estoque, custo médio ponderado e conta a pagar (natureza "compra de estoque") na mesma transação; pagamento à vista opcional; cancelamento estorna o estoque e cancela a conta (só sem pagamento). Lançamento manual de despesa aceita fornecedor.
+2. Produção com receitas (ficha técnica, consumo de insumos, custo estimado do produto).
+3. Tarefas (prioridade, prazo, responsável, vínculo com pedido).
+

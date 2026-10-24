@@ -77,6 +77,7 @@ export default function EntryDetailScreen() {
         <Info label="Competência" value={formatISODate(e.competence_date)} />
         <Info label="Categoria" value={`${e.category_name} (${NATURE_LABEL[e.category_nature].toLowerCase()})`} />
         {e.customer_name ? <Info label="Cliente" value={e.customer_name} /> : null}
+        {e.supplier_name ? <Info label="Fornecedor" value={e.supplier_name} /> : null}
         {e.notes ? <Info label="Observações" value={e.notes} /> : null}
         {e.cancelled_at ? <Info label="Cancelado" value={e.cancel_reason ?? ''} /> : null}
         {e.order_id ? (
@@ -131,7 +132,10 @@ export default function EntryDetailScreen() {
         ))}
       </Card>
 
-      {!e.cancelled_at && !e.order_id && e.paid_cents === 0 ? (
+      {e.purchase_id ? (
+        <TextLink label="Ver compra" onPress={() => router.push({ pathname: '/compras/[id]', params: { id: e.purchase_id! } })} />
+      ) : null}
+      {!e.cancelled_at && !e.order_id && !e.purchase_id && e.paid_cents === 0 ? (
         <TextLink
           label="Cancelar lançamento"
           onPress={() => {

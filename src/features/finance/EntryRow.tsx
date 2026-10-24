@@ -40,7 +40,7 @@ export function EntryRow({ entry }: { entry: EntryOverview }) {
         </Text>
         <Text style={styles.sub} numberOfLines={1}>
           {entry.status === 'paid' || entry.status === 'cancelled' ? '' : `Vence ${formatShortDate(entry.due_date)} · `}
-          {entry.customer_name ?? entry.category_name}
+          {entry.customer_name ?? entry.supplier_name ?? entry.category_name}
         </Text>
       </View>
       <View style={styles.right}>
