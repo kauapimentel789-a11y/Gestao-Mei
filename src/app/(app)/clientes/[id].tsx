@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { MessageCircle, Pencil, ReceiptText } from 'lucide-react-native';
+import { MessageCircle, NotebookPen, Pencil, ReceiptText } from 'lucide-react-native';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -8,6 +8,8 @@ import { CircleButton, DetailBar } from '@/components/DetailBar';
 import { ErrorCard } from '@/components/ErrorCard';
 import { QueryStates, Skeleton } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
+import { useCustomerAttendance, useCustomerNotes } from '@/features/agenda/api';
+import { NoteItem } from '@/features/agenda/ServiceNotes';
 import { useCustomer } from '@/features/customers/api';
 import { useCustomerOrders } from '@/features/orders/api';
 import { OrderRow } from '@/features/orders/OrderRow';
@@ -22,6 +24,7 @@ export default function CustomerDetailScreen() {
   const { orgId, config } = useOrg();
   const customer = useCustomer(orgId, id);
   const orders = useCustomerOrders(orgId, id);
+  const appointments = config.profile === 'appointments';
 
   if (customer.isPending) {
     return (
@@ -51,7 +54,7 @@ export default function CustomerDetailScreen() {
         title={c.name}
         right={
           <CircleButton
-            label="Editar cliente"
+            label={`Editar ${config.clientNoun}`}
             icon={<Pencil size={18} color={colors.ink} />}
             onPress={() => router.push({ pathname: '/clientes/form', params: { id: c.id } })}
           />
@@ -60,20 +63,26 @@ export default function CustomerDetailScreen() {
       <Card>
         {c.phone ? <Text style={styles.body}>{c.phone}</Text> : <Text style={styles.muted}>Sem telefone</Text>}
         {c.notes ? <Text style={styles.body}>{c.notes}</Text> : null}
-        <View style={styles.metrics}>
-          <View style={styles.metric}>
-            <Text style={styles.metricValue}>{valid.length}</Text>
-            <Text style={styles.muted}>{config.tabLabels.pedidos.toLowerCase()}</Text>
+        {appointments ? (
+          <Attendance customerId={c.id} total={total} />
+        ) : (
+          <View style={styles.metrics}>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{valid.length}</Text>
+              <Text style={styles.muted}>{config.tabLabels.pedidos.toLowerCase()}</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{formatCents(total)}</Text>
+              <Text style={styles.muted}>em {config.tabLabels.pedidos.toLowerCase()}</Text>
+            </View>
           </View>
-          <View style={styles.metric}>
-            <Text style={styles.metricValue}>{formatCents(total)}</Text>
-            <Text style={styles.muted}>em {config.tabLabels.pedidos.toLowerCase()}</Text>
-          </View>
-        </View>
+        )}
         <Button
           size="medium"
           label={`Novo ${config.orderNoun}`}
-          onPress={() => router.push({ pathname: '/pedidos/novo', params: { clienteId: c.id } })}
+          onPress={() =>
+            router.push(appointments ? { pathname: '/horarios/novo', params: { clienteId: c.id } } : { pathname: '/pedidos/novo', params: { clienteId: c.id } })
+          }
         />
         {wa ? (
           <Button
@@ -85,6 +94,7 @@ export default function CustomerDetailScreen() {
           />
         ) : null}
       </Card>
+      {appointments ? <CustomerNotes customerId={c.id} numbers={new Map((orders.data ?? []).map((o) => [o.id, o.number]))} /> : null}
       <Card style={styles.list}>
         <Text style={styles.cardTitle}>Histórico</Text>
         <QueryStates query={orders} isEmpty={orders.data?.length === 0} empty={{ icon: ReceiptText, title: 'Nenhum registro ainda.' }} />
@@ -95,6 +105,49 @@ export default function CustomerDetailScreen() {
         ))}
       </Card>
     </Screen>
+  );
+}
+
+function Attendance({ customerId, total }: { customerId: string; total: number }) {
+  const { orgId } = useOrg();
+  const stats = useCustomerAttendance(orgId, customerId);
+  const s = stats.data;
+  return (
+    <View style={styles.metrics}>
+      <View style={styles.metric}>
+        <Text style={styles.metricValue}>{s ? s.attended : '–'}</Text>
+        <Text style={styles.muted}>atendidos</Text>
+      </View>
+      <View style={styles.metric}>
+        <Text style={styles.metricValue}>{s ? s.noShows : '–'}</Text>
+        <Text style={styles.muted}>{s?.noShows === 1 ? 'falta' : 'faltas'}</Text>
+      </View>
+      <View style={styles.metric}>
+        <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit>
+          {formatCents(total)}
+        </Text>
+        <Text style={styles.muted}>no total</Text>
+      </View>
+    </View>
+  );
+}
+
+/** Ficha: anotações de todos os atendimentos, da mais nova para a mais antiga. */
+function CustomerNotes({ customerId, numbers }: { customerId: string; numbers: Map<string, number> }) {
+  const { orgId, config } = useOrg();
+  const notes = useCustomerNotes(orgId, customerId);
+  return (
+    <Card style={styles.list}>
+      <Text style={styles.cardTitle}>Ficha</Text>
+      <QueryStates
+        query={notes}
+        isEmpty={notes.data?.length === 0}
+        empty={{ icon: NotebookPen, title: 'Nenhuma anotação ainda.', description: `As anotações feitas em cada ${config.orderNoun} aparecem aqui.` }}
+      />
+      {notes.data?.map((n) => (
+        <NoteItem key={n.id} note={n} label={numbers.has(n.order_id) ? `${config.orderNoun} #${numbers.get(n.order_id)}` : undefined} />
+      ))}
+    </Card>
   );
 }
 

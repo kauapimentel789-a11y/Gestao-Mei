@@ -46,6 +46,7 @@ export default function ItemFormScreen() {
       cost: '',
       price: '',
       active: true,
+      duration: '',
     },
   });
   const [itemType, cost, price] = useWatch({ control, name: ['itemType', 'cost', 'price'] });
@@ -66,6 +67,7 @@ export default function ItemFormScreen() {
       cost: centsToText(p.cost_cents),
       price: centsToText(p.price_cents),
       active: p.active,
+      duration: p.duration_minutes ? String(p.duration_minutes) : '',
     });
   }, [existing.data, reset]);
 
@@ -176,6 +178,23 @@ export default function ItemFormScreen() {
             />
           )}
         />
+        {isService ? (
+          <Controller
+            control={control}
+            name="duration"
+            render={({ field, fieldState }) => (
+              <TextField
+                label="Duração na agenda, em minutos (opcional)"
+                value={field.value}
+                onChangeText={field.onChange}
+                error={fieldState.error?.message}
+                keyboardType="number-pad"
+                placeholder="Ex.: 50"
+                hint="Usada como duração padrão ao marcar um horário."
+              />
+            )}
+          />
+        ) : null}
         {margin !== null ? (
           <Text style={[styles.margin, margin < 0.2 && styles.marginLow]}>
             Margem estimada: {Math.round(margin * 100)}% ({formatCents((parseBRLToCents(price) ?? 0) - (parseBRLToCents(cost) ?? 0))} por {isService ? 'serviço' : 'unidade'})

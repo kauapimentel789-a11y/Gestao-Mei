@@ -22,9 +22,13 @@ interface Props {
   selectedId: string | null;
   onClose: () => void;
   onSelect: (customer: Customer | null) => void;
+  /** "cliente" ou "paciente". */
+  noun?: string;
+  /** Mostra a opção "Sem cliente" (padrão: sim). */
+  allowNone?: boolean;
 }
 
-export function CustomerPicker({ orgId, visible, selectedId, onClose, onSelect }: Props) {
+export function CustomerPicker({ orgId, visible, selectedId, onClose, onSelect, noun = 'cliente', allowNone = true }: Props) {
   const [search, setSearch] = useState('');
   const term = useDebounced(search, 250);
   const list = useCustomers(orgId, term);
@@ -65,7 +69,7 @@ export function CustomerPicker({ orgId, visible, selectedId, onClose, onSelect }
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <DetailBar title="Cliente" />
+          <DetailBar title={noun[0]!.toUpperCase() + noun.slice(1)} />
           {adding ? (
             <View style={styles.form}>
               <TextField label="Nome" value={name} onChangeText={setName} autoFocus />
@@ -80,7 +84,7 @@ export function CustomerPicker({ orgId, visible, selectedId, onClose, onSelect }
                 </View>
               ) : null}
               <FormError message={error} />
-              {!duplicate ? <Button label="Salvar cliente" onPress={() => create()} loading={save.isPending} /> : null}
+              {!duplicate ? <Button label={`Salvar ${noun}`} onPress={() => create()} loading={save.isPending} /> : null}
               <Button variant="outline" size="medium" label="Voltar para a lista" onPress={reset} />
             </View>
           ) : (
@@ -88,16 +92,18 @@ export function CustomerPicker({ orgId, visible, selectedId, onClose, onSelect }
               <SearchField value={search} onChangeText={setSearch} placeholder="Buscar por nome ou telefone" />
               <Pressable accessibilityRole="button" onPress={() => setAdding(true)} style={styles.addRow}>
                 <UserPlus size={18} color={colors.primaryText} />
-                <Text style={styles.addText}>Cadastrar cliente{search.trim() ? ` "${search.trim()}"` : ''}</Text>
+                <Text style={styles.addText}>Cadastrar {noun}{search.trim() ? ` "${search.trim()}"` : ''}</Text>
               </Pressable>
-              <Pressable accessibilityRole="radio" accessibilityState={{ checked: selectedId === null }} onPress={() => onSelect(null)} style={styles.row}>
-                <Text style={styles.name}>Sem cliente</Text>
-                {selectedId === null ? <Check size={18} color={colors.primary} /> : null}
-              </Pressable>
+              {allowNone ? (
+                <Pressable accessibilityRole="radio" accessibilityState={{ checked: selectedId === null }} onPress={() => onSelect(null)} style={styles.row}>
+                  <Text style={styles.name}>Sem {noun}</Text>
+                  {selectedId === null ? <Check size={18} color={colors.primary} /> : null}
+                </Pressable>
+              ) : null}
               <QueryStates
                 query={list}
                 isEmpty={list.data?.length === 0}
-                empty={{ icon: UserPlus, title: term ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado ainda.' }}
+                empty={{ icon: UserPlus, title: term ? `Nenhum ${noun} encontrado.` : `Nenhum ${noun} cadastrado ainda.` }}
               />
               {list.data?.map((c) => (
                 <Pressable

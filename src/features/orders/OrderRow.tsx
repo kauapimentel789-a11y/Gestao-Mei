@@ -35,7 +35,7 @@ export function OrderRow({ order, config }: { order: OrderSummary; config: Busin
       </View>
       <View style={styles.middle}>
         <Text style={styles.name} numberOfLines={1}>
-          {order.customer_name ?? 'Sem cliente'}
+          {order.customer_name ?? `Sem ${config.clientNoun}`}
         </Text>
         <Text style={styles.sub} numberOfLines={1}>
           #{order.number}
@@ -47,7 +47,7 @@ export function OrderRow({ order, config }: { order: OrderSummary; config: Busin
       </View>
       <View style={styles.right}>
         <Text style={styles.total}>{formatCents(order.total_cents)}</Text>
-        <StatusChip status={order.status} label={config.statusLabels[order.status]} late={late} />
+        <StatusChip status={order.status} label={order.no_show_at ? 'Faltou' : config.statusLabels[order.status]} late={late} />
       </View>
     </Pressable>
   );

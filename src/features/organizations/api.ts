@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { BusinessType } from '@/config/business';
+import { type BusinessType, type PracticeArea, profileToDb } from '@/config/business';
 import { parseBRLToCents } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 
@@ -14,6 +14,7 @@ export interface Organization {
   enabled_modules: BusinessType[];
   hourly_rate_cents: number;
   public_orders_enabled: boolean;
+  practice_area: PracticeArea | null;
 }
 
 export interface Membership {
@@ -21,7 +22,7 @@ export interface Membership {
   organization: Organization;
 }
 
-const COLUMNS = 'id, name, slug, business_type, enabled_modules, hourly_rate_cents, public_orders_enabled';
+const COLUMNS = 'id, name, slug, business_type, enabled_modules, hourly_rate_cents, public_orders_enabled, practice_area';
 
 export const organizationKeys = {
   mine: (userId: string) => ['organizations', 'mine', userId] as const,
@@ -48,9 +49,11 @@ export function useCreateOrganization(userId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateOrganizationInput): Promise<Organization> => {
+      const db = profileToDb(input.businessType, input.practiceArea ?? null);
       const { data, error } = await supabase.rpc('create_organization', {
         p_name: input.name,
-        p_business_type: input.businessType,
+        p_business_type: db.type,
+        p_practice_area: db.practiceArea,
         p_slug: input.slug,
         p_hourly_rate_cents: input.hourlyRate ? (parseBRLToCents(input.hourlyRate) ?? 0) : 0,
       });
@@ -78,6 +81,18 @@ export function useSetPublicOrders(userId: string | undefined) {
   return useMutation({
     mutationFn: async ({ organizationId, enabled }: { organizationId: string; enabled: boolean }) => {
       const { error } = await supabase.from('organizations').update({ public_orders_enabled: enabled }).eq('id', organizationId).select('id').single();
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
+  });
+}
+
+/** Área de atendimento (só em serviços; null volta ao modo de ordens de serviço). Dono ou admin; o RLS confere. */
+export function useSetPracticeArea(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ organizationId, area }: { organizationId: string; area: PracticeArea | null }) => {
+      const { error } = await supabase.from('organizations').update({ practice_area: area }).eq('id', organizationId).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),

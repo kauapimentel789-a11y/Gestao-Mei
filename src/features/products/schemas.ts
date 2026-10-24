@@ -24,6 +24,10 @@ export const productSchema = z
     cost: money,
     price: money,
     active: z.boolean(),
+    duration: z
+      .string()
+      .trim()
+      .refine((v) => v === '' || (/^\d{1,4}$/.test(v) && Number(v) >= 5 && Number(v) <= 1440), 'Use de 5 a 1440 minutos.'),
   })
   .refine((v) => !['finished', 'resale', 'service'].includes(v.itemType) || v.price !== '', {
     path: ['price'],

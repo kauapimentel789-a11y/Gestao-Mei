@@ -7,7 +7,7 @@ import type { ProductFormInput } from './schemas';
 import type { ItemType, Product } from './types';
 
 const COLUMNS =
-  'id, organization_id, item_type, name, description, sku, unit, track_stock, stock_qty, min_stock, cost_cents, price_cents, active';
+  'id, organization_id, item_type, name, description, sku, unit, track_stock, stock_qty, min_stock, cost_cents, price_cents, active, duration_minutes';
 
 export const productKeys = {
   all: (orgId: string) => ['products', orgId] as const,
@@ -55,6 +55,7 @@ function toRow(input: ProductFormInput) {
     cost_cents: cents(input.cost),
     price_cents: cents(input.price),
     active: input.active,
+    duration_minutes: input.itemType === 'service' && input.duration.trim() ? Number(input.duration) : null,
   };
 }
 

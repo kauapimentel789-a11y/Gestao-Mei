@@ -7,5 +7,5 @@ export function useOrg() {
   const { active } = useActiveOrganization();
   if (!active) throw new Error('useOrg sem empresa ativa');
   const org = active.organization;
-  return { org, orgId: org.id, role: active.role, config: getBusinessConfig(org.business_type) };
+  return { org, orgId: org.id, role: active.role, config: getBusinessConfig(org.business_type, org.practice_area) };
 }

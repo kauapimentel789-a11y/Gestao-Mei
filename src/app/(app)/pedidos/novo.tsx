@@ -404,6 +404,7 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
       <CustomerPicker
         orgId={orgId}
         visible={pickerOpen}
+        noun={config.clientNoun}
         selectedId={customer?.id ?? null}
         onClose={() => setPickerOpen(false)}
         onSelect={(c) => {
