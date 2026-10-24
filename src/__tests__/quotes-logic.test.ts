@@ -1,4 +1,4 @@
-import { isExpired, quoteLabel, quoteMessage } from '@/features/quotes/logic';
+import { centsToInput, isExpired, quoteLabel, quoteMessage, quoteToForm } from '@/features/quotes/logic';
 
 describe('validade', () => {
   it('vence só quando ainda está em aberto', () => {
@@ -34,5 +34,32 @@ describe('quoteMessage', () => {
     expect(text).toContain('Desconto');
     expect(text).toContain('*Total: R$');
     expect(text).toContain('Válido até 30/11/2026.');
+  });
+});
+
+describe('quoteToForm', () => {
+  it('itens do cadastro viram quantidade com o preço gravado; o resto vira avulso', () => {
+    const form = quoteToForm(
+      [
+        { product_id: 'bolo', description: 'Bolo', quantity: '2.000', unit_price_cents: 8500 },
+        { product_id: 'bolo', description: 'Bolo', quantity: '1', unit_price_cents: 8500 },
+        { product_id: 'antigo', description: 'Vela', quantity: '1.5', unit_price_cents: 1250 },
+        { product_id: null, description: 'Frete', quantity: '1', unit_price_cents: 1000 },
+        { product_id: 'bolo', description: 'Bolo promo', quantity: '1', unit_price_cents: 7000 },
+      ],
+      new Set(['bolo']),
+    );
+    expect(form.qty).toEqual({ bolo: 3 });
+    expect(form.prices).toEqual({ bolo: 8500 });
+    expect(form.custom).toEqual([
+      { description: 'Vela', quantity: '1,5', price: '12,50' },
+      { description: 'Frete', quantity: '1', price: '10,00' },
+      { description: 'Bolo promo', quantity: '1', price: '70,00' },
+    ]);
+  });
+
+  it('centsToInput', () => {
+    expect(centsToInput(5)).toBe('0,05');
+    expect(centsToInput(123456)).toBe('1234,56');
   });
 });
