@@ -54,7 +54,7 @@ export function ItemsList() {
             <Pressable
               key={p.id}
               accessibilityRole="button"
-              onPress={() => router.push({ pathname: '/itens/form', params: { id: p.id } })}
+              onPress={() => router.push({ pathname: '/itens/[id]', params: { id: p.id } })}
               style={({ pressed }) => [styles.row, i > 0 && styles.divider, pressed && styles.pressed, !p.active && styles.inactive]}
             >
               <View style={styles.avatar}>
@@ -83,9 +83,9 @@ export function ItemsList() {
           );
         })}
       </Card>
-      <Text style={styles.note}>
-        Entradas, saídas e ajustes de estoque chegam na próxima etapa. Por enquanto o saldo começa em zero.
-      </Text>
+      {items.some((p) => p.track_stock) ? (
+        <Text style={styles.note}>Toque num item para registrar entrada, saída ou ajuste de contagem.</Text>
+      ) : null}
     </>
   );
 }

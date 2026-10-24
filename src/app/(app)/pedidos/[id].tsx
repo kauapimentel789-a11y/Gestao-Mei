@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Check, MessageCircle } from 'lucide-react-native';
+import { Check, MessageCircle, PackageMinus } from 'lucide-react-native';
 import { useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -14,6 +14,7 @@ import { TextField } from '@/components/TextField';
 import { TextLink } from '@/components/TextLink';
 import { useToast } from '@/components/Toast';
 import type { OrderStatus } from '@/config/business';
+import { useConsumeOrder } from '@/features/inventory/api';
 import { CHANNEL_LABEL, useOrder, useSetOrderStatus } from '@/features/orders/api';
 import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
 import { StatusChip } from '@/features/orders/StatusChip';
@@ -36,8 +37,10 @@ export default function OrderDetailScreen() {
   const { orgId, org, config } = useOrg();
   const order = useOrder(orgId, id);
   const setStatus = useSetOrderStatus(orgId);
+  const consume = useConsumeOrder(orgId);
   const toast = useToast();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [negativeOpen, setNegativeOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const o = order.data;
@@ -54,6 +57,24 @@ export default function OrderDetailScreen() {
     } catch (e) {
       setError(friendlyError(e));
       return false;
+    }
+  };
+
+  const consumeStock = async (allowNegative: boolean) => {
+    if (!o) return;
+    setError(null);
+    try {
+      await consume.mutateAsync({ orderId: o.id, allowNegative });
+      setNegativeOpen(false);
+      toast(`Estoque do #${o.number} baixado`);
+    } catch (e) {
+      const err = e as { message?: string };
+      if (!allowNegative && err.message === 'insufficient_stock') {
+        setNegativeOpen(true);
+      } else {
+        setNegativeOpen(false);
+        setError(friendlyError(e));
+      }
     }
   };
 
@@ -178,6 +199,32 @@ export default function OrderDetailScreen() {
         <Text style={styles.hint}>Pagamentos e saldo a receber chegam com o módulo financeiro.</Text>
       </Card>
 
+      {o.tracks_stock && (o.stock_consumed_at || o.status !== 'cancelled') ? (
+        <Card>
+          <Text style={styles.cardTitle}>Estoque</Text>
+          {o.stock_consumed_at ? (
+            <Text style={styles.body}>
+              Itens baixados do estoque em {formatWhen(new Date(o.stock_consumed_at))}.
+              {o.status === 'cancelled' ? ' O cancelamento devolveu os itens ao estoque.' : ' Se cancelar, eles voltam ao estoque.'}
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.body}>
+                Os itens ainda não saíram do estoque. Baixe quando separar ou entregar; isso é feito uma vez só.
+              </Text>
+              <Button
+                variant="tint"
+                size="medium"
+                label="Baixar do estoque"
+                trailing={<PackageMinus size={18} color={colors.primaryText} />}
+                loading={consume.isPending}
+                onPress={() => consumeStock(false)}
+              />
+            </>
+          )}
+        </Card>
+      ) : null}
+
       {o.notes ? (
         <Card>
           <Text style={styles.cardTitle}>Observações</Text>
@@ -214,9 +261,23 @@ export default function OrderDetailScreen() {
         <TextLink label={`Cancelar ${noun}`} onPress={() => setCancelOpen(true)} />
       ) : null}
 
+      <Modal visible={negativeOpen} transparent animationType="fade" onRequestClose={() => setNegativeOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.dialog}>
+            <Text style={styles.dialogTitle}>Estoque insuficiente</Text>
+            <Text style={styles.body}>
+              Algum item ficaria com saldo negativo. Baixe assim mesmo só se o estoque estiver desatualizado; a autorização fica registrada.
+            </Text>
+            <Button variant="ink" size="medium" label="Voltar" onPress={() => setNegativeOpen(false)} />
+            <Button size="medium" label="Baixar assim mesmo" loading={consume.isPending} onPress={() => consumeStock(true)} />
+          </View>
+        </View>
+      </Modal>
+
       <CancelDialog
         visible={cancelOpen}
         noun={noun}
+        returnsStock={Boolean(o.stock_consumed_at)}
         loading={setStatus.isPending}
         onClose={() => setCancelOpen(false)}
         onConfirm={async (reason) => {
@@ -230,12 +291,14 @@ export default function OrderDetailScreen() {
 function CancelDialog({
   visible,
   noun,
+  returnsStock,
   loading,
   onClose,
   onConfirm,
 }: {
   visible: boolean;
   noun: string;
+  returnsStock: boolean;
   loading: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void;
@@ -248,7 +311,8 @@ function CancelDialog({
         <View style={styles.dialog}>
           <Text style={styles.dialogTitle}>Cancelar {noun}?</Text>
           <Text style={styles.body}>
-            O {noun} continua no histórico como cancelado. Essa ação não pode ser desfeita.
+            O {noun} continua no histórico como cancelado.{returnsStock ? ' Os itens baixados voltam ao estoque.' : ''} Essa ação não pode
+            ser desfeita.
           </Text>
           <TextField label="Motivo" value={reason} onChangeText={setReason} error={err} placeholder="Ex.: cliente desistiu" />
           <Button variant="ink" size="medium" label={`Manter ${noun}`} onPress={onClose} />

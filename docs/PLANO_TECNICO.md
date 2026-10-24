@@ -79,7 +79,7 @@ Onda 1 marcada com **(1)**, ondas seguintes com (2) e (3).
 - **(1)** `orders` — `kind` (`order` | `sale` | `service_order`), número sequencial por empresa (`order_counters`), cliente opcional, canal, status, prazo, desconto, totais calculados por trigger, campos de OS (problema relatado, agendamento) opcionais.
 - **(1)** `order_items` — produto, descrição e preço **copiados** no momento da venda, quantidade, desconto.
 - **(1)** `order_status_history` — de/para, por quem, quando, motivo.
-- **(1)** `inventory_movements` — tipo (`purchase_in`, `sale_out`, `production_consumption`, `service_consumption`, `adjustment`, `return`, `reversal`), quantidade com sinal, saldo antes/depois, motivo, referências (pedido, compra, tarefa, movimento revertido), autor. Saldo em `products.stock_qty` só muda pela RPC `inventory_move`, que trava a linha (`select ... for update`) e grava o movimento na mesma transação. Coluna protegida contra update direto por trigger.
+- **(1)** `inventory_movements` — tipo (`purchase`, `return`, `manual_in`, `sale`, `production_consumption`, `service_consumption`, `loss`, `manual_out`, `adjustment`, `reversal`), quantidade com sinal, saldo antes/depois, motivo, pedido, movimento estornado (um estorno por movimento), autorização de negativo, autor. Saldo em `products.stock_qty` só muda pelas RPCs `inventory_move`, `inventory_adjust`, `inventory_reverse` e `inventory_consume_order`, que travam a linha do item (`select ... for update`) e gravam o movimento na mesma transação; o app não tem permissão de escrita na coluna nem na tabela. Pedido baixa o estoque uma vez (`orders.stock_consumed_at`), e cancelar um pedido baixado estorna as saídas.
 - (2) `purchases` / `purchase_items` — compra gera entradas de estoque e um título a pagar na mesma transação.
 - (2) `tasks` / `task_history` — prioridade, status, prazo, responsável, pedido vinculado, `step_key` (único por pedido para não duplicar etapas geradas).
 
@@ -140,5 +140,5 @@ Status derivados (não gravados): título `pending` / `partial` / `paid` / `over
 3. ✅ Migração 0001: perfis, empresas, membros, `create_organization`, RLS + testes de isolamento.
 4. ✅ Auth (entrar, cadastro, recuperar e redefinir senha) e onboarding com tipo de negócio. Abas por tipo; módulos ainda não construídos aparecem como "Em construção".
 5. ✅ Clientes, itens e pedidos/vendas/OS (migrações 0002 e 0003). Criar, listar com filtros e busca, detalhe com status em etapas, cancelar com motivo e histórico. RPC `update_order` pronta no banco; a tela de edição de pedido ainda não existe.
-6. Estoque e movimentações.
+6. ✅ Estoque e movimentações (migração 0004): entrada, saída, ajuste por contagem, estorno, baixa do pedido e devolução no cancelamento, estoque baixo no Início. Teste de concorrência real com 20 conexões (`supabase/tests/40_inventory_concurrency_test.sh`).
 7. Financeiro essencial (contas, categorias, títulos, baixas, transferências, caixa do período).

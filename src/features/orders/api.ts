@@ -65,7 +65,10 @@ export interface OrderDetail {
   discount_cents: number;
   total_cents: number;
   cancel_reason: string | null;
+  stock_consumed_at: string | null;
   created_at: string;
+  /** Algum item do pedido controla estoque (dá para baixar do estoque). */
+  tracks_stock: boolean;
   customer: { id: string; name: string; phone: string | null; phone_digits: string | null } | null;
   items: OrderItem[];
   history: OrderHistoryEntry[];
@@ -164,7 +167,7 @@ export function useOrder(orgId: string, id: string) {
         .from('orders')
         .select(
           `id, organization_id, number, kind, status, channel, due_at, notes, problem_description, scheduled_for,
-           subtotal_cents, discount_cents, total_cents, cancel_reason, created_at,
+           subtotal_cents, discount_cents, total_cents, cancel_reason, stock_consumed_at, created_at,
            customer:customers (id, name, phone, phone_digits),
            items:order_items (id, position, product_id, description, unit, quantity, unit_price_cents, discount_cents, line_total_cents),
            history:order_status_history (id, from_status, to_status, reason, changed_at)`,
@@ -175,6 +178,13 @@ export function useOrder(orgId: string, id: string) {
       const order = data as unknown as OrderDetail;
       order.items.sort((a, b) => a.position - b.position);
       order.history.sort((a, b) => a.changed_at.localeCompare(b.changed_at));
+      const productIds = [...new Set(order.items.map((i) => i.product_id).filter((x): x is string => x != null))];
+      order.tracks_stock = false;
+      if (productIds.length) {
+        const tracked = await supabase.from('products').select('id').in('id', productIds).eq('track_stock', true).limit(1);
+        if (tracked.error) throw tracked.error;
+        order.tracks_stock = tracked.data.length > 0;
+      }
       return order;
     },
   });
