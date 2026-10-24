@@ -15,6 +15,14 @@ Stack: Expo SDK 58 (React Native) + TypeScript estrito + Expo Router + Supabase 
    npx expo start
    ```
 
+### Link público de encomenda
+
+O link `/e/<slug>` é uma página da versão web do app que conversa com a Edge Function `encomenda`.
+
+1. Publique a função: `supabase functions deploy encomenda` e defina um segredo para o limite de envios: `supabase secrets set PUBLIC_ORDER_SALT=<texto aleatório longo>`. A função usa a service role que o próprio Supabase injeta; ela nunca vai para o app.
+2. Gere a versão web: `npx expo export --platform web` e publique a pasta `dist` em qualquer hospedagem estática, redirecionando todas as rotas para `index.html` (o app roda como página única).
+3. Coloque o endereço publicado em `EXPO_PUBLIC_WEB_URL` no `.env`, para o app mostrar e compartilhar o link em Configurações.
+
 ## Verificações
 
 ```bash
@@ -33,4 +41,4 @@ npm run test:db     # migrações + testes de RLS num Postgres local
 
 ## Status
 
-Onda 1 pronta: autenticação, onboarding com tipo de negócio, clientes, itens, pedidos, estoque e financeiro essencial prontos. Onda 2 pronta: compras, fornecedores, produção com ficha técnica e tarefas. Detalhes nas seções 10 e 11 do plano técnico.
+Onda 1 pronta: autenticação, onboarding com tipo de negócio, clientes, itens, pedidos, estoque e financeiro essencial prontos. Onda 2 pronta: compras, fornecedores, produção com ficha técnica e tarefas. Onda 3 pronta: limite de faturamento do MEI, agenda e ordens de serviço, orçamentos, relatórios e link público de encomenda. Detalhes nas seções 10 a 12 do plano técnico.

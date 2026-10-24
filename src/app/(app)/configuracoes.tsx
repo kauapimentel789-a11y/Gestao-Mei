@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ChevronLeft, Pencil } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -11,9 +11,11 @@ import { useToast } from '@/components/Toast';
 import { getBusinessConfig } from '@/config/business';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
-import { useUpdateHourlyRate } from '@/features/organizations/api';
+import { useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
 import { HourlyRateDialog } from '@/features/organizations/HourlyRateDialog';
+import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
+import { publicOrderUrl } from '@/lib/publicLink';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, minTouch } from '@/theme/tokens';
 
@@ -27,6 +29,8 @@ export default function SettingsScreen() {
   const updateRate = useUpdateHourlyRate(session?.user.id);
   const toast = useToast();
   const [rateOpen, setRateOpen] = useState(false);
+  const setPublic = useSetPublicOrders(session?.user.id);
+  const link = publicOrderUrl(org.slug);
 
   return (
     <Screen>
@@ -44,7 +48,6 @@ export default function SettingsScreen() {
         <Text style={styles.cardTitle}>Empresa</Text>
         <Row label="Nome" value={org.name} />
         <Row label="Modelo de negócio" value={getBusinessConfig(org.business_type).label} />
-        <Row label="Link de encomenda" value={`gestaofacil.app/e/${org.slug}`} />
         {org.business_type !== 'resale' ? (
           <Row
             label="Valor da hora"
@@ -53,6 +56,38 @@ export default function SettingsScreen() {
           />
         ) : null}
         <Row label="Seu papel" value={ROLE_LABEL[active!.role]} />
+      </Card>
+
+      <Card>
+        <Text style={styles.cardTitle}>Link de encomenda</Text>
+        <Text style={styles.body}>
+          {org.public_orders_enabled
+            ? 'Ligado. Quem abrir o link vê os itens ativos com preço e envia o pedido, que chega como Recebido.'
+            : 'Desligado. Ligue para seus clientes fazerem pedidos por uma página, sem instalar nada.'}
+        </Text>
+        {link ? <Text style={styles.link} selectable>{link}</Text> : <Text style={styles.body}>Endereço da versão web não configurado (EXPO_PUBLIC_WEB_URL).</Text>}
+        <View style={styles.linkActions}>
+          {canEdit ? (
+            <Button
+              size="medium"
+              variant={org.public_orders_enabled ? 'tint' : 'primary'}
+              label={org.public_orders_enabled ? 'Desligar' : 'Ligar link'}
+              loading={setPublic.isPending}
+              onPress={() =>
+                setPublic.mutate(
+                  { organizationId: org.id, enabled: !org.public_orders_enabled },
+                  {
+                    onSuccess: () => toast(org.public_orders_enabled ? 'Link desligado' : 'Link ligado'),
+                    onError: (e) => toast(friendlyError(e)),
+                  },
+                )
+              }
+            />
+          ) : null}
+          {link && org.public_orders_enabled ? (
+            <Button size="medium" variant="tint" label="Compartilhar" onPress={() => Share.share({ message: `Faça seu pedido para ${org.name}: ${link}` })} />
+          ) : null}
+        </View>
       </Card>
 
       <Card style={styles.navCard}>
@@ -141,6 +176,9 @@ const styles = StyleSheet.create({
   },
   circlePlaceholder: { width: minTouch },
   cardTitle: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.ink },
+  body: { fontFamily: fonts.medium, fontSize: 13, color: colors.gray600, lineHeight: 19 },
+  link: { fontFamily: fonts.bold, fontSize: 14, color: colors.primaryText },
+  linkActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   row: {
     minHeight: 48,
     flexDirection: 'row',

@@ -89,6 +89,8 @@ function RootNavigator() {
       <Stack.Protected guard={signedIn && !recovering && hasOrg}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
+      {/* Página pública de encomenda: abre com ou sem login. */}
+      <Stack.Screen name="e/[slug]" />
     </Stack>
   );
 }

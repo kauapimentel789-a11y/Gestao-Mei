@@ -13,6 +13,7 @@ export interface Organization {
   business_type: BusinessType;
   enabled_modules: BusinessType[];
   hourly_rate_cents: number;
+  public_orders_enabled: boolean;
 }
 
 export interface Membership {
@@ -20,7 +21,7 @@ export interface Membership {
   organization: Organization;
 }
 
-const COLUMNS = 'id, name, slug, business_type, enabled_modules, hourly_rate_cents';
+const COLUMNS = 'id, name, slug, business_type, enabled_modules, hourly_rate_cents, public_orders_enabled';
 
 export const organizationKeys = {
   mine: (userId: string) => ['organizations', 'mine', userId] as const,
@@ -66,6 +67,17 @@ export function useUpdateHourlyRate(userId: string | undefined) {
   return useMutation({
     mutationFn: async ({ organizationId, cents }: { organizationId: string; cents: number }) => {
       const { error } = await supabase.from('organizations').update({ hourly_rate_cents: cents }).eq('id', organizationId).select('id').single();
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
+  });
+}
+
+export function useSetPublicOrders(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ organizationId, enabled }: { organizationId: string; enabled: boolean }) => {
+      const { error } = await supabase.from('organizations').update({ public_orders_enabled: enabled }).eq('id', organizationId).select('id').single();
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
