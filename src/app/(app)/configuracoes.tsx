@@ -9,6 +9,8 @@ import { NavRow } from '@/components/NavRow';
 import { Screen } from '@/components/Screen';
 import { useToast } from '@/components/Toast';
 import { getBusinessConfig } from '@/config/business';
+import { AlertsCard } from '@/features/alerts/AlertsCard';
+import { clearLateAlerts } from '@/features/alerts/LateOrderAlerts';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
 import { useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
@@ -90,6 +92,8 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
+      <AlertsCard />
+
       <Card style={styles.navCard}>
         <Text style={styles.cardTitle}>Cadastros</Text>
         <NavRow first label="Clientes" onPress={() => router.push('/clientes')} />
@@ -137,7 +141,14 @@ export default function SettingsScreen() {
       <Card>
         <Text style={styles.cardTitle}>Conta</Text>
         <Row label="E-mail" value={session?.user.email ?? ''} />
-        <Button label="Sair" variant="ink" onPress={() => supabase.auth.signOut()} />
+        <Button
+          label="Sair"
+          variant="ink"
+          onPress={async () => {
+            await clearLateAlerts().catch(() => undefined);
+            await supabase.auth.signOut();
+          }}
+        />
       </Card>
     </Screen>
   );

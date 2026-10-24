@@ -27,7 +27,7 @@ export interface QuoteDetail extends QuoteSummary {
   discount_cents: number;
   status_reason: string | null;
   customer_phone_digits: string | null;
-  items: { id: string; position: number; description: string; unit: string; quantity: string; unit_price_cents: number; line_total_cents: number }[];
+  items: { id: string; position: number; product_id: string | null; description: string; unit: string; quantity: string; unit_price_cents: number; line_total_cents: number }[];
   history: { id: number; from_status: QuoteStatus | null; to_status: QuoteStatus; reason: string | null; changed_at: string }[];
 }
 
@@ -64,7 +64,7 @@ export function useQuote(orgId: string, id: string) {
         supabase.from('quotes').select('notes, subtotal_cents, discount_cents, status_reason, customer:customers (phone_digits)').eq('id', id).single(),
         supabase
           .from('quote_items')
-          .select('id, position, description, unit, quantity, unit_price_cents, line_total_cents')
+          .select('id, position, product_id, description, unit, quantity, unit_price_cents, line_total_cents')
           .eq('quote_id', id)
           .order('position'),
         supabase.from('quote_status_history').select('id, from_status, to_status, reason, changed_at').eq('quote_id', id).order('id'),
@@ -115,6 +115,24 @@ export function useCreateQuote(orgId: string) {
       });
       if (error) throw error;
       return data as { id: string; number: number };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: quoteKeys.all(orgId) }),
+  });
+}
+
+export function useUpdateQuote(orgId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Omit<CreateQuoteInput, 'idempotencyKey'> & { quoteId: string }) => {
+      const { error } = await supabase.rpc('update_quote', {
+        p_quote_id: input.quoteId,
+        p_items: input.items,
+        p_customer_id: input.customerId,
+        p_valid_until: input.validUntil,
+        p_notes: input.notes || null,
+        p_discount_cents: input.discountCents,
+      });
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: quoteKeys.all(orgId) }),
   });

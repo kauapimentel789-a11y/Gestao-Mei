@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { ChevronRight, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
+import { ChevronRight, Link2, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { QueryStates } from '@/components/ListStates';
@@ -17,6 +17,7 @@ import { useTasks } from '@/features/tasks/api';
 import { filterTasks } from '@/features/tasks/logic';
 import { TaskRow } from '@/features/tasks/TaskRow';
 import { formatLongToday, greeting } from '@/lib/dates';
+import { publicOrderUrl } from '@/lib/publicLink';
 import { colors, fonts, minTouch, radius } from '@/theme/tokens';
 
 const logo = require('../../../../assets/brand/logo-tile-dark.png');
@@ -34,6 +35,7 @@ export default function HomeScreen() {
   const firstName = String(session?.user.user_metadata?.display_name ?? '').split(' ')[0];
   const c = counts.data;
   const plural = config.tabLabels.pedidos.toLowerCase();
+  const link = org.public_orders_enabled ? publicOrderUrl(org.slug) : null;
   const attention = [...(late.data ?? []), ...(today.data ?? []).filter((t) => !late.data?.some((l) => l.id === t.id))];
 
   return (
@@ -71,6 +73,13 @@ export default function HomeScreen() {
           onPress={() => router.push(org.business_type === 'services' ? '/itens' : '/estoque')}
           icon={<Package size={22} color={colors.primaryText} />}
         />
+        {link ? (
+          <QuickAction
+            label="Link de encomenda"
+            onPress={() => Share.share({ message: `Faça seu pedido para ${org.name}: ${link}` })}
+            icon={<Link2 size={22} color={colors.primaryText} />}
+          />
+        ) : null}
       </View>
 
       {c && c.late > 0 ? (

@@ -45,3 +45,38 @@ export function quoteMessage(q: QuoteMessageInput): string {
   if (q.notes) lines.push('', q.notes);
   return lines.join('\n');
 }
+
+/** 1250 → "12,50" (para preencher campos de valor). */
+export function centsToInput(cents: number): string {
+  return (cents / 100).toFixed(2).replace('.', ',');
+}
+
+export interface QuoteFormLine {
+  description: string;
+  quantity: string;
+  price: string;
+}
+
+/**
+ * Separa os itens de um orçamento salvo para a tela de edição: itens do
+ * cadastro ainda à venda viram quantidades (mantendo o preço gravado) e o
+ * resto vira item avulso.
+ */
+export function quoteToForm(
+  items: { product_id: string | null; description: string; quantity: string | number; unit_price_cents: number }[],
+  sellableIds: Set<string>,
+) {
+  const qty: Record<string, number> = {};
+  const prices: Record<string, number> = {};
+  const custom: QuoteFormLine[] = [];
+  for (const i of items) {
+    const q = Number(i.quantity);
+    if (i.product_id && sellableIds.has(i.product_id) && (prices[i.product_id] ?? i.unit_price_cents) === i.unit_price_cents) {
+      qty[i.product_id] = (qty[i.product_id] ?? 0) + q;
+      prices[i.product_id] = i.unit_price_cents;
+    } else {
+      custom.push({ description: i.description, quantity: String(q).replace('.', ','), price: centsToInput(i.unit_price_cents) });
+    }
+  }
+  return { qty, prices, custom };
+}

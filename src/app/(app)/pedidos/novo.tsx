@@ -8,20 +8,22 @@ import { Card } from '@/components/Card';
 import { Chips } from '@/components/Chips';
 import { DetailBar } from '@/components/DetailBar';
 import { FormError } from '@/components/FormError';
-import { QueryStates } from '@/components/ListStates';
+import { ErrorCard } from '@/components/ErrorCard';
+import { QueryStates, Skeleton } from '@/components/ListStates';
 import { QuantityStepper } from '@/components/QuantityStepper';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { type Customer, useCustomer } from '@/features/customers/api';
 import { CustomerPicker } from '@/features/customers/CustomerPicker';
-import { parseDateInput } from '@/features/finance/logic';
+import { formatISODate, parseDateInput } from '@/features/finance/logic';
 import { CHANNEL_LABEL, type OrderChannel, type OrderItemInput, useCreateOrder } from '@/features/orders/api';
 import { draftTotals, parseQuantity } from '@/features/orders/logic';
 import { useOrg } from '@/features/organizations/useOrg';
 import { useProducts } from '@/features/products/api';
 import { SELLABLE_TYPES } from '@/features/products/types';
-import { useCreateQuote } from '@/features/quotes/api';
+import { useCreateQuote, useQuote, useUpdateQuote } from '@/features/quotes/api';
+import { centsToInput, quoteToForm } from '@/features/quotes/logic';
 import { parseDateTimeBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
@@ -37,32 +39,100 @@ interface CustomLine {
 
 const CHANNELS = (Object.keys(CHANNEL_LABEL) as OrderChannel[]).filter((c) => c !== 'link');
 
+interface QuoteEdit {
+  quoteId: string;
+  customer: Customer | null;
+  qty: Record<string, number>;
+  /** Preço gravado no orçamento, por item do cadastro. */
+  prices: Record<string, number>;
+  custom: Omit<CustomLine, 'key'>[];
+  validUntil: string;
+  discount: string;
+  notes: string;
+}
+
 export default function NewOrderScreen() {
-  const { clienteId, orcamento } = useLocalSearchParams<{ clienteId?: string; orcamento?: string }>();
+  const { clienteId, orcamento, editarOrcamento } = useLocalSearchParams<{ clienteId?: string; orcamento?: string; editarOrcamento?: string }>();
+  if (editarOrcamento) return <EditQuoteLoader quoteId={editarOrcamento} />;
   // Mesma tela para orçamento: sem origem, prazo nem agendamento; com validade.
-  const isQuote = orcamento === '1';
+  return <OrderForm isQuote={orcamento === '1'} clienteId={clienteId} />;
+}
+
+/** Carrega o orçamento salvo e abre o formulário já preenchido. */
+function EditQuoteLoader({ quoteId }: { quoteId: string }) {
+  const { orgId } = useOrg();
+  const quote = useQuote(orgId, quoteId);
+  const products = useProducts(orgId, { types: SELLABLE_TYPES, activeOnly: true });
+  const customer = useCustomer(orgId, quote.data?.customer_id ?? '');
+  const q = quote.data;
+
+  if (quote.error || products.error || customer.error) {
+    return (
+      <Screen>
+        <DetailBar title="Editar orçamento" />
+        <ErrorCard message={friendlyError(quote.error ?? products.error ?? customer.error)} onRetry={() => quote.refetch()} />
+      </Screen>
+    );
+  }
+  if (!q || !products.data || (q.customer_id && !customer.data)) {
+    return (
+      <Screen>
+        <DetailBar title="Editar orçamento" />
+        <Skeleton rows={4} />
+      </Screen>
+    );
+  }
+  if (q.status !== 'draft' && q.status !== 'sent') {
+    return (
+      <Screen>
+        <DetailBar title="Editar orçamento" />
+        <Card>
+          <Text style={styles.selectText}>Só orçamentos em rascunho ou enviados podem ser editados.</Text>
+        </Card>
+      </Screen>
+    );
+  }
+  const form = quoteToForm(q.items, new Set(products.data.map((p) => p.id)));
+  return (
+    <OrderForm
+      isQuote
+      edit={{
+        quoteId,
+        customer: customer.data ?? null,
+        ...form,
+        validUntil: q.valid_until ? formatISODate(q.valid_until) : '',
+        discount: q.discount_cents ? centsToInput(q.discount_cents) : '',
+        notes: q.notes ?? '',
+      }}
+    />
+  );
+}
+
+function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?: string; edit?: QuoteEdit }) {
   const { orgId, config } = useOrg();
   const toast = useToast();
   const preselected = useCustomer(orgId, clienteId ?? '');
   const products = useProducts(orgId, { types: SELLABLE_TYPES, activeOnly: true });
   const create = useCreateOrder(orgId);
   const createQuote = useCreateQuote(orgId);
+  const updateQuote = useUpdateQuote(orgId);
   const isService = !isQuote && config.orderKind === 'service_order';
-  const [validUntil, setValidUntil] = useState('');
+  const [validUntil, setValidUntil] = useState(edit?.validUntil ?? '');
+  const prices = edit?.prices;
 
   // Uma chave por tela: tocar duas vezes em salvar não cria dois pedidos.
   const [idempotencyKey] = useState(newId);
   // undefined = ainda não escolhido; vindo do detalhe do cliente, começa com ele.
-  const [chosen, setCustomer] = useState<Customer | null | undefined>(undefined);
+  const [chosen, setCustomer] = useState<Customer | null | undefined>(edit ? edit.customer : undefined);
   const customer = chosen !== undefined ? chosen : (preselected.data ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [qty, setQty] = useState<Record<string, number>>({});
-  const [custom, setCustom] = useState<CustomLine[]>([]);
+  const [qty, setQty] = useState<Record<string, number>>(edit?.qty ?? {});
+  const [custom, setCustom] = useState<CustomLine[]>(() => (edit?.custom ?? []).map((l) => ({ ...l, key: newId() })));
   const [channel, setChannel] = useState<OrderChannel>('whatsapp');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const [discount, setDiscount] = useState('');
-  const [notes, setNotes] = useState('');
+  const [discount, setDiscount] = useState(edit?.discount ?? '');
+  const [notes, setNotes] = useState(edit?.notes ?? '');
   const [problem, setProblem] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -73,7 +143,14 @@ export default function NewOrderScreen() {
     let invalid: string | null = null;
     for (const [id, q] of Object.entries(qty)) {
       const p = productById.get(id);
-      if (q > 0 && p) items.push({ product_id: id, quantity: q, unitPriceCents: p.price_cents ?? 0 });
+      const kept = prices?.[id];
+      if (q > 0 && p) {
+        items.push(
+          kept !== undefined
+            ? { product_id: id, quantity: q, unit_price_cents: kept, unitPriceCents: kept }
+            : { product_id: id, quantity: q, unitPriceCents: p.price_cents ?? 0 },
+        );
+      }
     }
     for (const line of custom) {
       const q = parseQuantity(line.quantity);
@@ -90,7 +167,7 @@ export default function NewOrderScreen() {
       discountCents ?? 0,
     );
     return { items, invalid, discountCents, totals };
-  }, [qty, custom, discount, productById]);
+  }, [qty, custom, discount, productById, prices]);
 
   const save = async () => {
     setError(null);
@@ -102,6 +179,19 @@ export default function NewOrderScreen() {
       const valid = validUntil.trim() ? parseDateInput(validUntil) : null;
       if (validUntil.trim() && !valid) return setError('Validade inválida. Use DD/MM/AAAA.');
       try {
+        if (edit) {
+          await updateQuote.mutateAsync({
+            quoteId: edit.quoteId,
+            customerId: customer?.id ?? null,
+            validUntil: valid,
+            notes,
+            discountCents: draft.discountCents,
+            items: draft.items.map(({ unitPriceCents: _p, ...i }) => i),
+          });
+          toast('Orçamento atualizado');
+          router.back();
+          return;
+        }
         const quote = await createQuote.mutateAsync({
           idempotencyKey,
           customerId: customer?.id ?? null,
@@ -144,7 +234,7 @@ export default function NewOrderScreen() {
 
   return (
     <Screen>
-      <DetailBar title={isQuote ? 'Novo orçamento' : `Novo ${config.orderNoun}`} />
+      <DetailBar title={edit ? 'Editar orçamento' : isQuote ? 'Novo orçamento' : `Novo ${config.orderNoun}`} />
 
       <Card>
         <Text style={styles.label}>Cliente</Text>
@@ -185,7 +275,13 @@ export default function NewOrderScreen() {
             <View key={p.id} style={[styles.itemRow, q > 0 && styles.itemRowActive]}>
               <View style={styles.flex}>
                 <Text style={styles.itemName}>{p.name}</Text>
-                <Text style={styles.muted}>{p.price_cents != null ? formatCents(p.price_cents) : 'Sem preço'}</Text>
+                <Text style={styles.muted}>
+                  {prices?.[p.id] !== undefined
+                    ? `${formatCents(prices[p.id]!)} (preço do orçamento)`
+                    : p.price_cents != null
+                      ? formatCents(p.price_cents)
+                      : 'Sem preço'}
+                </Text>
               </View>
               <QuantityStepper
                 label={p.name}
@@ -299,10 +395,10 @@ export default function NewOrderScreen() {
 
       <FormError message={error} />
       <Button
-        label={isQuote ? 'Salvar orçamento' : `Salvar ${config.orderNoun}`}
+        label={edit ? 'Salvar alterações' : isQuote ? 'Salvar orçamento' : `Salvar ${config.orderNoun}`}
         trailing={<Text style={styles.btnValue}>{formatCents(Math.max(0, draft.totals.total))}</Text>}
         onPress={save}
-        loading={create.isPending || createQuote.isPending}
+        loading={create.isPending || createQuote.isPending || updateQuote.isPending}
       />
 
       <CustomerPicker

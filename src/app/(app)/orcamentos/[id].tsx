@@ -143,6 +143,7 @@ export default function QuoteDetailScreen() {
           />
           <FormError message={error} />
           <View style={styles.links}>
+            <TextLink label="Editar orçamento" onPress={() => router.push({ pathname: '/pedidos/novo', params: { editarOrcamento: q.id } })} />
             <TextLink label="Cliente recusou" onPress={() => setDialog('rejected')} />
             <TextLink label="Cancelar orçamento" onPress={() => setDialog('cancelled')} />
           </View>
