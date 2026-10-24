@@ -1,6 +1,6 @@
-import { router } from 'expo-router';
-import { CalendarPlus, ChevronRight, Link2, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
-import { type ReactNode, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { BadgeDollarSign, CalendarPlus, ChevronRight, Link2, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
+import { type ReactNode, useCallback, useState } from 'react';
 import { Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -10,17 +10,22 @@ import { AgendaRow } from '@/features/agenda/AgendaRow';
 import { useAgenda } from '@/features/agenda/api';
 import { canRemind, overlapping } from '@/features/agenda/logic';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { DasCard } from '@/features/das/DasCard';
+import { MoneyCard } from '@/features/finance/MoneyCard';
 import { toISODate } from '@/features/finance/logic';
 import { useLowStock } from '@/features/inventory/api';
 import { useOrderCounts, useOrders } from '@/features/orders/api';
 import { formatQuantity } from '@/features/orders/logic';
 import { OrderRow } from '@/features/orders/OrderRow';
 import { useOrg } from '@/features/organizations/useOrg';
+import { useSetupStatus } from '@/features/setup/api';
+import { SetupCard } from '@/features/setup/SetupCard';
 import { useTasks } from '@/features/tasks/api';
 import { filterTasks } from '@/features/tasks/logic';
 import { TaskRow } from '@/features/tasks/TaskRow';
 import { formatLongToday, formatTimeBR, greeting } from '@/lib/dates';
 import { publicOrderUrl } from '@/lib/publicLink';
+import { useDeviceFlag } from '@/lib/useDeviceFlag';
 import { colors, fonts, minTouch, radius } from '@/theme/tokens';
 
 const logo = require('../../../../assets/brand/logo-tile-dark.png');
@@ -49,6 +54,15 @@ export default function HomeScreen() {
   const todayAgenda = agenda.data ?? [];
   const next = todayAgenda.find((a) => canRemind(a));
   const conflicts = overlapping(todayAgenda);
+  const setup = useSetupStatus(orgId, config);
+  const [setupHidden, setSetupHidden] = useDeviceFlag(`gf.setup.hidden.${orgId}`);
+  const refetchSetup = setup.refetch;
+  // Ao voltar de um cadastro, os primeiros passos se atualizam.
+  useFocusEffect(
+    useCallback(() => {
+      refetchSetup();
+    }, [refetchSetup]),
+  );
   const attention = [...(late.data ?? []), ...(today.data ?? []).filter((t) => !late.data?.some((l) => l.id === t.id))];
 
   return (
@@ -98,6 +112,11 @@ export default function HomeScreen() {
         ) : (
           <QuickAction label={`Novo ${config.orderNoun}`} primary onPress={() => router.push('/pedidos/novo')} icon={<ReceiptText size={22} color={colors.white} />} />
         )}
+        <QuickAction
+          label="Venda rápida"
+          onPress={() => router.push('/financeiro/venda-rapida')}
+          icon={<BadgeDollarSign size={22} color={colors.primaryText} />}
+        />
         <QuickAction label={config.clientsLabel} onPress={() => router.push('/clientes')} icon={<Users size={22} color={colors.primaryText} />} />
         <QuickAction
           label={org.business_type === 'services' ? 'Serviços' : 'Itens'}
@@ -112,6 +131,10 @@ export default function HomeScreen() {
           />
         ) : null}
       </View>
+
+      {setup.status && setupHidden === false ? <SetupCard config={config} status={setup.status} onHide={() => setSetupHidden(true)} /> : null}
+
+      <DasCard />
 
       {!appointments && c && c.late > 0 ? (
         <Pressable accessibilityRole="button" onPress={() => router.push('/pedidos')} style={styles.lateBanner}>
@@ -149,6 +172,8 @@ export default function HomeScreen() {
         ))}
       </Card>
       )}
+
+      <MoneyCard orgId={orgId} />
 
       {lowItems.length > 0 ? (
         <Card style={styles.list}>
@@ -221,9 +246,9 @@ const styles = StyleSheet.create({
   heroValue: { fontFamily: fonts.extrabold, fontSize: 34, letterSpacing: -0.7, color: colors.white },
   heroRow: { flexDirection: 'row', gap: 16 },
   heroSub: { fontFamily: fonts.semibold, fontSize: 13, color: colors.primarySoft },
-  actions: { flexDirection: 'row', gap: 12 },
+  actions: { flexDirection: 'row', gap: 8 },
   action: { flex: 1, alignItems: 'center', gap: 6 },
-  actionTile: { width: 60, height: 60, borderRadius: radius.quickAction, backgroundColor: colors.primaryTint, alignItems: 'center', justifyContent: 'center' },
+  actionTile: { width: 56, height: 56, borderRadius: radius.quickAction, backgroundColor: colors.primaryTint, alignItems: 'center', justifyContent: 'center' },
   actionTilePrimary: { backgroundColor: colors.primary },
   actionLabel: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink, textAlign: 'center' },
   lateBanner: { backgroundColor: colors.primary, borderRadius: 20, padding: 16, gap: 2 },
