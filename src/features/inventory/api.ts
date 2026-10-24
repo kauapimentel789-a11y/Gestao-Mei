@@ -18,11 +18,13 @@ export interface Movement {
   order_id: string | null;
   reverses_movement_id: number | null;
   negative_authorized: boolean;
+  purchase_id: string | null;
+  production_run_id: string | null;
   created_at: string;
 }
 
-const MOVEMENT_COLUMNS =
-  'id, product_id, movement_type, quantity, balance_before, balance_after, reason, order_id, reverses_movement_id, negative_authorized, created_at';
+export const MOVEMENT_COLUMNS =
+  'id, product_id, movement_type, quantity, balance_before, balance_after, reason, order_id, reverses_movement_id, negative_authorized, purchase_id, production_run_id, created_at';
 
 export const inventoryKeys = {
   all: (orgId: string) => ['inventory', orgId] as const,

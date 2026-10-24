@@ -444,6 +444,33 @@ left join public.recipe_items i on i.recipe_id = r.id
 left join public.products ip on ip.id = i.input_product_id
 group by r.id, o.hourly_rate_cents;
 
+-- Produções com nome do produto e número do pedido, para as listas.
+create view public.production_run_summaries
+with (security_invoker = true)
+as
+select
+  r.id,
+  r.organization_id,
+  r.number,
+  r.status,
+  r.product_id,
+  p.name as product_name,
+  p.unit,
+  r.quantity,
+  r.materials_cost_cents,
+  r.labor_cost_cents,
+  r.unit_cost_cents,
+  r.missing_cost_inputs,
+  r.order_id,
+  o.number as order_number,
+  r.notes,
+  r.cancel_reason,
+  r.cancelled_at,
+  r.created_at
+from public.production_runs r
+join public.products p on p.id = r.product_id
+left join public.orders o on o.id = r.order_id;
+
 -- O que falta produzir para os pedidos em aberto (ainda não baixados).
 create view public.production_demand
 with (security_invoker = true)
@@ -477,8 +504,9 @@ alter table public.production_counters enable row level security;
 alter table public.production_runs enable row level security;
 
 revoke all on public.recipes, public.recipe_items, public.production_counters, public.production_runs from anon, authenticated;
-revoke all on public.recipe_costs, public.production_demand from anon, authenticated;
-grant select on public.recipes, public.recipe_items, public.production_runs, public.recipe_costs, public.production_demand to authenticated;
+revoke all on public.recipe_costs, public.production_demand, public.production_run_summaries from anon, authenticated;
+grant select on public.recipes, public.recipe_items, public.production_runs, public.recipe_costs, public.production_demand,
+  public.production_run_summaries to authenticated;
 
 create policy recipes_select on public.recipes
   for select to authenticated using (app.is_member(organization_id));

@@ -59,3 +59,15 @@ export function useCreateOrganization(userId: string | undefined) {
     onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
   });
 }
+
+/** Valor da hora de trabalho, usado no custo de mão de obra (dono ou admin; o RLS confere). */
+export function useUpdateHourlyRate(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ organizationId, cents }: { organizationId: string; cents: number }) => {
+      const { error } = await supabase.from('organizations').update({ hourly_rate_cents: cents }).eq('id', organizationId).select('id').single();
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
+  });
+}

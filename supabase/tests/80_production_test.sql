@@ -153,6 +153,7 @@ select test.assert((select to_produce_qty || ':' || has_recipe from public.produ
   = '3.000:false', 'demanda mostra produto ainda sem receita');
 insert into ids select 'p3', (public.register_production((select v from ids where k='vela'), 5, gen_random_uuid(), p_order_id => (select v from ids where k='o1'), p_allow_negative => true)).id;
 select test.assert((select order_id from public.production_runs where id = (select v from ids where k='p3')) = (select v from ids where k='o1'), 'produção vinculada ao pedido');
+select test.assert((select product_name || ':' || order_number from public.production_run_summaries where id = (select v from ids where k='p3')) = 'Vela:1', 'resumo mostra produto e pedido');
 select test.assert((select to_produce_qty from public.production_demand where product_id = (select v from ids where k='vela')) = 0, 'produzido para o pedido zera a falta');
 
 select test.assert(not exists (
@@ -169,6 +170,7 @@ select test.assert(test.row_count('select * from public.recipe_items') = 0, 'out
 select test.assert(test.row_count('select * from public.production_runs') = 0, 'outra empresa não vê produções');
 select test.assert(test.row_count('select * from public.recipe_costs') = 0, 'outra empresa não vê custos de receita');
 select test.assert(test.row_count('select * from public.production_demand') = 0, 'outra empresa não vê demanda');
+select test.assert(test.row_count('select * from public.production_run_summaries') = 0, 'outra empresa não vê resumo de produções');
 select test.assert_fails($$select public.save_recipe((select v from ids where k='vela'), jsonb_build_array(jsonb_build_object('product_id', (select v from ids where k='cera'), 'quantity', 1)))$$,
   'não edita receita alheia', 'P0002');
 select test.assert_fails($$select public.register_production((select v from ids where k='vela'), 1, gen_random_uuid())$$, 'não produz em empresa alheia', 'P0002');

@@ -16,6 +16,8 @@ import { type Movement, useMovements, useReverseMovement } from '@/features/inve
 import { formatSigned, type MoveMode, MOVEMENT_LABEL } from '@/features/inventory/logic';
 import { formatQuantity } from '@/features/orders/logic';
 import { useOrg } from '@/features/organizations/useOrg';
+import { useRecipeCost } from '@/features/production/api';
+import { formatMinutes } from '@/features/production/logic';
 import { useProduct } from '@/features/products/api';
 import { ITEM_TYPE_LABEL, isLowStock } from '@/features/products/types';
 import { formatWhen } from '@/lib/dates';
@@ -96,6 +98,8 @@ export default function ItemDetailScreen() {
         </Text>
       </Card>
 
+      {p.item_type === 'finished' || p.item_type === 'component' ? <RecipeCard productId={p.id} hasStock={p.track_stock} /> : null}
+
       {p.track_stock ? (
         <>
           <View style={styles.actions}>
@@ -130,10 +134,16 @@ export default function ItemDetailScreen() {
                   {m.order_id ? (
                     <TextLink label={`Ver ${config.orderNoun}`} onPress={() => router.push({ pathname: '/pedidos/[id]', params: { id: m.order_id! } })} />
                   ) : null}
+                  {m.purchase_id ? (
+                    <TextLink label="Ver compra" onPress={() => router.push({ pathname: '/compras/[id]', params: { id: m.purchase_id! } })} />
+                  ) : null}
+                  {m.production_run_id ? (
+                    <TextLink label="Ver produção" onPress={() => router.push({ pathname: '/producao/[id]', params: { id: m.production_run_id! } })} />
+                  ) : null}
                 </View>
                 <View style={styles.movRight}>
                   <Text style={[styles.qty, Number(m.quantity) < 0 ? styles.qtyOut : styles.qtyIn]}>{formatSigned(m.quantity)}</Text>
-                  {m.movement_type !== 'reversal' && !reversed.has(m.id) ? (
+                  {m.movement_type !== 'reversal' && !reversed.has(m.id) && !m.purchase_id && !m.production_run_id ? (
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Estornar ${MOVEMENT_LABEL[m.movement_type]}`}
@@ -184,6 +194,45 @@ export default function ItemDetailScreen() {
   );
 }
 
+function RecipeCard({ productId, hasStock }: { productId: string; hasStock: boolean }) {
+  const { orgId } = useOrg();
+  const cost = useRecipeCost(orgId, productId);
+  const edit = () => router.push({ pathname: '/itens/receita', params: { id: productId } });
+
+  if (cost.isPending) return <Skeleton rows={1} />;
+  if (cost.error) return <ErrorCard message={friendlyError(cost.error)} onRetry={() => cost.refetch()} />;
+  const c = cost.data;
+  return (
+    <Card>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>Ficha técnica</Text>
+        <TextLink label={c ? 'Editar' : 'Cadastrar'} onPress={edit} />
+      </View>
+      {c ? (
+        <>
+          <Text style={styles.body}>
+            Rende {formatQuantity(c.yield_qty)} por lote · {formatMinutes(c.labor_minutes)}
+          </Text>
+          <Text style={styles.muted}>
+            Custo estimado {formatCents(c.unit_cost_cents)} por unidade (insumos {formatCents(c.materials_cost_cents)} + mão de obra{' '}
+            {formatCents(c.labor_cost_cents)} por lote)
+          </Text>
+          {c.missing_cost_inputs > 0 ? (
+            <Text style={[styles.muted, styles.low]}>
+              {c.missing_cost_inputs === 1 ? '1 insumo sem custo cadastrado' : `${c.missing_cost_inputs} insumos sem custo cadastrado`}: o custo está incompleto.
+            </Text>
+          ) : null}
+          {hasStock ? (
+            <TextLink label="Registrar produção" onPress={() => router.push({ pathname: '/producao/nova', params: { produto: productId } })} />
+          ) : null}
+        </>
+      ) : (
+        <Text style={styles.body}>Cadastre os insumos de um lote para calcular o custo e dar baixa no estoque quando produzir.</Text>
+      )}
+    </Card>
+  );
+}
+
 function Action({ label, icon, onPress, primary }: { label: string; icon: ReactNode; onPress: () => void; primary?: boolean }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.action}>
@@ -210,6 +259,7 @@ const styles = StyleSheet.create({
   actionLabel: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink, textAlign: 'center' },
   history: { gap: 0 },
   cardTitle: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.ink, marginBottom: 6 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   movRow: { flexDirection: 'row', gap: 12, paddingVertical: 10 },
   divider: { borderTopWidth: 1, borderTopColor: colors.divider },
   movType: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },

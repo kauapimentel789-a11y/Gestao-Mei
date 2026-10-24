@@ -1,14 +1,18 @@
 import { router } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Pencil } from 'lucide-react-native';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { NavRow } from '@/components/NavRow';
 import { Screen } from '@/components/Screen';
+import { useToast } from '@/components/Toast';
 import { getBusinessConfig } from '@/config/business';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
+import { useUpdateHourlyRate } from '@/features/organizations/api';
+import { HourlyRateDialog } from '@/features/organizations/HourlyRateDialog';
 import { formatCents } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, minTouch } from '@/theme/tokens';
@@ -19,6 +23,10 @@ export default function SettingsScreen() {
   const { session } = useAuth();
   const { active, memberships, select } = useActiveOrganization();
   const org = active!.organization;
+  const canEdit = active!.role === 'owner' || active!.role === 'admin';
+  const updateRate = useUpdateHourlyRate(session?.user.id);
+  const toast = useToast();
+  const [rateOpen, setRateOpen] = useState(false);
 
   return (
     <Screen>
@@ -37,7 +45,13 @@ export default function SettingsScreen() {
         <Row label="Nome" value={org.name} />
         <Row label="Modelo de negócio" value={getBusinessConfig(org.business_type).label} />
         <Row label="Link de encomenda" value={`gestaofacil.app/e/${org.slug}`} />
-        {org.business_type !== 'resale' ? <Row label="Valor da hora" value={formatCents(org.hourly_rate_cents)} /> : null}
+        {org.business_type !== 'resale' ? (
+          <Row
+            label="Valor da hora"
+            value={formatCents(org.hourly_rate_cents)}
+            onPress={canEdit ? () => setRateOpen(true) : undefined}
+          />
+        ) : null}
         <Row label="Seu papel" value={ROLE_LABEL[active!.role]} />
       </Card>
 
@@ -71,6 +85,19 @@ export default function SettingsScreen() {
         </Card>
       ) : null}
 
+      <HourlyRateDialog
+        key={rateOpen ? 'open' : 'closed'}
+        visible={rateOpen}
+        currentCents={org.hourly_rate_cents}
+        loading={updateRate.isPending}
+        onClose={() => setRateOpen(false)}
+        onSave={async (cents) => {
+          await updateRate.mutateAsync({ organizationId: org.id, cents });
+          setRateOpen(false);
+          toast('Valor da hora atualizado');
+        }}
+      />
+
       <Card>
         <Text style={styles.cardTitle}>Conta</Text>
         <Row label="E-mail" value={session?.user.email ?? ''} />
@@ -80,14 +107,23 @@ export default function SettingsScreen() {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
+function Row({ label, value, onPress }: { label: string; value: string; onPress?: () => void }) {
+  const content = (
+    <>
       <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
+      <View style={styles.rowRight}>
+        <Text style={styles.rowValue} numberOfLines={1}>
+          {value}
+        </Text>
+        {onPress ? <Pencil size={14} color={colors.gray500} /> : null}
+      </View>
+    </>
+  );
+  if (!onPress) return <View style={styles.row}>{content}</View>;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`Editar ${label.toLowerCase()}`} onPress={onPress} style={styles.row}>
+      {content}
+    </Pressable>
   );
 }
 
@@ -114,6 +150,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.divider,
   },
   rowLabel: { fontFamily: fonts.semibold, fontSize: 13, color: colors.gray500 },
+  rowRight: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowValue: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink, textAlign: 'right' },
   selected: { color: colors.primary },
   navCard: { gap: 4 },

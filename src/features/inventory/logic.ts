@@ -8,6 +8,7 @@ export type MovementType =
   | 'manual_in'
   | 'sale'
   | 'production_consumption'
+  | 'production_output'
   | 'service_consumption'
   | 'loss'
   | 'manual_out'
@@ -22,6 +23,7 @@ export const MOVEMENT_LABEL: Record<MovementType, string> = {
   manual_in: 'Outra entrada',
   sale: 'Venda',
   production_consumption: 'Consumo na produção',
+  production_output: 'Produção',
   service_consumption: 'Consumo em serviço',
   loss: 'Perda',
   manual_out: 'Outra saída',
