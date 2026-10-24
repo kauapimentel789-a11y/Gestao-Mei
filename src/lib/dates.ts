@@ -35,3 +35,28 @@ export function greeting(now: Date = new Date()): string {
   const h = now.getHours();
   return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 }
+
+/**
+ * Lê data e hora digitadas ("25/10/2026" e "15:30") no fuso do aparelho.
+ * Hora vazia vira 12:00. Retorna null se a data não existir.
+ */
+export function parseDateTimeBR(dateText: string, timeText = ''): Date | null {
+  const d = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateText.trim());
+  if (!d) return null;
+  const t = timeText.trim() ? /^(\d{1,2}):(\d{2})$/.exec(timeText.trim()) : ['', '12', '00'];
+  if (!t) return null;
+  const [day, month, year] = [Number(d[1]), Number(d[2]), Number(d[3])];
+  const [hour, minute] = [Number(t[1]), Number(t[2])];
+  if (hour > 23 || minute > 59) return null;
+  const date = new Date(year, month - 1, day, hour, minute);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date;
+}
+
+export function formatDateBR(date: Date): string {
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+export function formatTimeBR(date: Date): string {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}

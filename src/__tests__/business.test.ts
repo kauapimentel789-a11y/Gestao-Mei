@@ -18,4 +18,12 @@ describe('configuração por tipo de negócio', () => {
     expect(BUSINESS_CONFIG.services.tabs).toContain('agenda');
     expect(BUSINESS_CONFIG.services.tabs).not.toContain('estoque');
   });
+
+  it('tipo de registro e status adaptados', () => {
+    expect(BUSINESS_CONFIG.production.orderKind).toBe('order');
+    expect(BUSINESS_CONFIG.resale.orderKind).toBe('sale');
+    expect(BUSINESS_CONFIG.services.orderKind).toBe('service_order');
+    expect(BUSINESS_CONFIG.services.statusLabels.confirmed).toBe('Agendado');
+    expect(BUSINESS_CONFIG.resale.statusLabels.in_progress).toBe('Separando');
+  });
 });

@@ -139,6 +139,6 @@ Status derivados (não gravados): título `pending` / `partial` / `paid` / `over
 2. ✅ Base do app (Expo SDK 58, TS estrito, Expo Router, ESLint, Jest, tokens de tema) e cliente Supabase com sessão no SecureStore.
 3. ✅ Migração 0001: perfis, empresas, membros, `create_organization`, RLS + testes de isolamento.
 4. ✅ Auth (entrar, cadastro, recuperar e redefinir senha) e onboarding com tipo de negócio. Abas por tipo; módulos ainda não construídos aparecem como "Em construção".
-5. Clientes, itens e pedidos/vendas.
+5. ✅ Clientes, itens e pedidos/vendas/OS (migrações 0002 e 0003). Criar, listar com filtros e busca, detalhe com status em etapas, cancelar com motivo e histórico. RPC `update_order` pronta no banco; a tela de edição de pedido ainda não existe.
 6. Estoque e movimentações.
 7. Financeiro essencial (contas, categorias, títulos, baixas, transferências, caixa do período).
