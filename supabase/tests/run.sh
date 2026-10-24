@@ -6,7 +6,8 @@
 #   bash supabase/tests/run.sh                               # sobe um cluster temporário (precisa de initdb no PATH)
 #
 # O banco precisa estar vazio: o script cria o shim do Supabase, aplica as
-# migrações em ordem e executa os arquivos *_test.sql.
+# migrações em ordem e executa os arquivos *_test.sql e *_test.sh
+# (estes últimos para testes com várias conexões, como concorrência).
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -44,6 +45,13 @@ status=0
 for f in "$here"/*_test.sql; do
   echo "teste: $(basename "$f")"
   if ! psql_run -f "$f" 2>&1 | sed -e 's/^psql:[^ ]* NOTICE:  /  /'; then
+    status=1
+  fi
+done
+for f in "$here"/*_test.sh; do
+  [[ -e "$f" ]] || continue
+  echo "teste: $(basename "$f")"
+  if ! DATABASE_URL="$DATABASE_URL" bash "$f"; then
     status=1
   fi
 done

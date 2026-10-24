@@ -27,6 +27,15 @@ const BY_MESSAGE: Record<string, string> = {
   cancel_reason_required: 'Informe o motivo do cancelamento.',
   order_locked: 'Pedidos concluídos, entregues ou cancelados não podem ser editados.',
   module_not_enabled: 'Esse recurso não está disponível para o seu tipo de negócio.',
+  idempotency_key_required: 'Algo deu errado. Tente de novo.',
+  insufficient_stock: 'Estoque insuficiente para essa saída.',
+  stock_not_tracked: 'Este item não controla estoque.',
+  invalid_movement_type: 'Tipo de movimentação inválido.',
+  reason_required: 'Informe o motivo.',
+  no_change: 'A contagem é igual ao saldo atual. Nada a ajustar.',
+  cannot_reverse_reversal: 'Um estorno não pode ser estornado.',
+  order_cancelled: 'Pedido cancelado não movimenta estoque.',
+  order_stock_consumed: 'Os itens já foram baixados do estoque e não podem mudar.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.

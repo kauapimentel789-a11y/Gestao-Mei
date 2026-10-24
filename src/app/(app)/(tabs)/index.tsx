@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Package, ReceiptText, Settings, Users } from 'lucide-react-native';
+import { ChevronRight, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,7 +7,9 @@ import { Card } from '@/components/Card';
 import { QueryStates } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useLowStock } from '@/features/inventory/api';
 import { useOrderCounts, useOrders } from '@/features/orders/api';
+import { formatQuantity } from '@/features/orders/logic';
 import { OrderRow } from '@/features/orders/OrderRow';
 import { useOrg } from '@/features/organizations/useOrg';
 import { formatLongToday, greeting } from '@/lib/dates';
@@ -21,6 +23,8 @@ export default function HomeScreen() {
   const counts = useOrderCounts(orgId);
   const late = useOrders(orgId, 'late');
   const today = useOrders(orgId, 'today');
+  const low = useLowStock(orgId);
+  const lowItems = low.data ?? [];
   const firstName = String(session?.user.user_metadata?.display_name ?? '').split(' ')[0];
   const c = counts.data;
   const plural = config.tabLabels.pedidos.toLowerCase();
@@ -86,7 +90,34 @@ export default function HomeScreen() {
         ))}
       </Card>
 
-      <Text style={styles.note}>Tarefas, estoque baixo e financeiro entram neste resumo nas próximas etapas.</Text>
+      {lowItems.length > 0 ? (
+        <Card style={styles.list}>
+          <Text style={styles.cardTitle}>Estoque baixo</Text>
+          {lowItems.slice(0, 5).map((p, i) => (
+            <Pressable
+              key={p.id}
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: '/itens/[id]', params: { id: p.id } })}
+              style={({ pressed }) => [styles.lowRow, i > 0 && styles.divider, pressed && styles.pressed]}
+            >
+              <Text style={styles.lowName} numberOfLines={1}>
+                {p.name}
+              </Text>
+              <Text style={styles.lowQty}>
+                {formatQuantity(p.stock_qty)} / mín. {formatQuantity(p.min_stock)} {p.unit}
+              </Text>
+              <ChevronRight size={16} color={colors.gray400} />
+            </Pressable>
+          ))}
+          {lowItems.length > 5 ? (
+            <Text style={styles.more}>
+              + {lowItems.length - 5} {lowItems.length - 5 === 1 ? 'item' : 'itens'} para repor
+            </Text>
+          ) : null}
+        </Card>
+      ) : null}
+
+      <Text style={styles.note}>Tarefas e financeiro entram neste resumo nas próximas etapas.</Text>
     </Screen>
   );
 }
@@ -127,5 +158,10 @@ const styles = StyleSheet.create({
   list: { gap: 0 },
   cardTitle: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.ink, marginBottom: 6 },
   divider: { borderTopWidth: 1, borderTopColor: colors.divider },
+  pressed: { backgroundColor: colors.rowPressed },
+  lowRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingVertical: 8 },
+  lowName: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
+  lowQty: { fontFamily: fonts.extrabold, fontSize: 13, color: colors.primaryText },
+  more: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500, paddingTop: 8 },
   note: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500, textAlign: 'center' },
 });

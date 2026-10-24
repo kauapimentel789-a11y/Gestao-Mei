@@ -33,4 +33,4 @@ npm run test:db     # migrações + testes de RLS num Postgres local
 
 ## Status
 
-Onda 1 em andamento: autenticação, onboarding com tipo de negócio, clientes, itens e pedidos prontos. Próximo: movimentações de estoque e financeiro essencial. Detalhes na seção 10 do plano técnico.
+Onda 1 em andamento: autenticação, onboarding com tipo de negócio, clientes, itens, pedidos e movimentações de estoque prontos. Próximo: financeiro essencial. Detalhes na seção 10 do plano técnico.
