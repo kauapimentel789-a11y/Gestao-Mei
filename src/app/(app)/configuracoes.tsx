@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { NavRow } from '@/components/NavRow';
 import { Screen } from '@/components/Screen';
 import { getBusinessConfig } from '@/config/business';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -38,6 +39,15 @@ export default function SettingsScreen() {
         <Row label="Link de encomenda" value={`gestaofacil.app/e/${org.slug}`} />
         {org.business_type !== 'resale' ? <Row label="Valor da hora" value={formatCents(org.hourly_rate_cents)} /> : null}
         <Row label="Seu papel" value={ROLE_LABEL[active!.role]} />
+      </Card>
+
+      <Card style={styles.navCard}>
+        <Text style={styles.cardTitle}>Cadastros</Text>
+        <NavRow first label="Clientes" onPress={() => router.push('/clientes')} />
+        <NavRow
+          label={org.business_type === 'services' ? 'Serviços e materiais' : 'Itens'}
+          onPress={() => router.push('/itens')}
+        />
       </Card>
 
       {memberships.length > 1 ? (
@@ -102,4 +112,5 @@ const styles = StyleSheet.create({
   rowLabel: { fontFamily: fonts.semibold, fontSize: 13, color: colors.gray500 },
   rowValue: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink, textAlign: 'right' },
   selected: { color: colors.primary },
+  navCard: { gap: 4 },
 });

@@ -15,6 +15,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorCard } from '@/components/ErrorCard';
+import { ToastProvider } from '@/components/Toast';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { handleRecoveryUrl } from '@/features/auth/recovery';
 import {
@@ -46,8 +47,10 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ActiveOrganizationProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
+            <ToastProvider>
+              <StatusBar style="dark" />
+              <RootNavigator />
+            </ToastProvider>
           </ActiveOrganizationProvider>
         </AuthProvider>
       </QueryClientProvider>

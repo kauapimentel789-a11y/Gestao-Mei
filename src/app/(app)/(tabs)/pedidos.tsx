@@ -1,11 +1,81 @@
+import { router } from 'expo-router';
 import { ReceiptText } from 'lucide-react-native';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { ModulePending } from '@/components/ModulePending';
-import { getBusinessConfig } from '@/config/business';
-import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
+import { Card } from '@/components/Card';
+import { Fab } from '@/components/Fab';
+import { QueryStates } from '@/components/ListStates';
+import { Screen } from '@/components/Screen';
+import { SearchField } from '@/components/SearchField';
+import { SegmentedControl } from '@/components/SegmentedControl';
+import { type OrderFilter, useOrderCounts, useOrders } from '@/features/orders/api';
+import { OrderRow } from '@/features/orders/OrderRow';
+import { useOrg } from '@/features/organizations/useOrg';
+import { useDebounced } from '@/lib/useDebounced';
+import { colors, fonts } from '@/theme/tokens';
 
-export default function Screen() {
-  const { active } = useActiveOrganization();
-  const config = getBusinessConfig(active!.organization.business_type);
-  return <ModulePending title={config.tabLabels.pedidos} icon={ReceiptText} description="Cadastro e acompanhamento de pedidos, vendas e ordens de serviço chegam na próxima etapa." />;
+export default function OrdersScreen() {
+  const { orgId, config } = useOrg();
+  const [filter, setFilter] = useState<OrderFilter>('open');
+  const [search, setSearch] = useState('');
+  const term = useDebounced(search, 300);
+  const orders = useOrders(orgId, filter, term);
+  const counts = useOrderCounts(orgId);
+  const c = counts.data;
+  const plural = config.tabLabels.pedidos.toLowerCase();
+
+  return (
+    <View style={styles.flex}>
+      <Screen>
+        <Text style={styles.title} accessibilityRole="header">
+          {config.tabLabels.pedidos}
+        </Text>
+        <SearchField value={search} onChangeText={setSearch} placeholder="Buscar por nº ou cliente" />
+        <SegmentedControl
+          scrollable
+          accessibilityLabel="Filtro"
+          value={filter}
+          onChange={setFilter}
+          segments={[
+            { value: 'open', label: c ? `Abertos ${c.open}` : 'Abertos' },
+            { value: 'late', label: c ? `Atrasados ${c.late}` : 'Atrasados' },
+            { value: 'today', label: c ? `Hoje ${c.today}` : 'Hoje' },
+            { value: 'done', label: 'Finalizados' },
+          ]}
+        />
+        <Card style={styles.list}>
+          <QueryStates
+            query={orders}
+            isEmpty={orders.data?.length === 0}
+            empty={
+              term || filter !== 'open'
+                ? { icon: ReceiptText, title: 'Nada por aqui.' }
+                : {
+                    icon: ReceiptText,
+                    title: `Nenhum ${config.orderNoun} ainda`,
+                    description: `Registre seus ${plural} para acompanhar prazos e status.`,
+                    action: { label: `Criar primeiro ${config.orderNoun}`, onPress: () => router.push('/pedidos/novo') },
+                  }
+            }
+          />
+          {orders.data?.map((o, i) => (
+            <View key={o.id} style={i > 0 && styles.divider}>
+              <OrderRow order={o} config={config} />
+            </View>
+          ))}
+        </Card>
+        <View style={styles.fabSpace} />
+      </Screen>
+      <Fab label={`Novo ${config.orderNoun}`} onPress={() => router.push('/pedidos/novo')} />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
+  list: { paddingVertical: 4, gap: 0 },
+  divider: { borderTopWidth: 1, borderTopColor: colors.divider },
+  fabSpace: { height: 70 },
+});
