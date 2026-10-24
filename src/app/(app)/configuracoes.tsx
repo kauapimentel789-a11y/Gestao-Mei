@@ -48,6 +48,8 @@ export default function SettingsScreen() {
           label={org.business_type === 'services' ? 'Serviços e materiais' : 'Itens'}
           onPress={() => router.push('/itens')}
         />
+        <NavRow label="Contas financeiras" onPress={() => router.push('/financeiro/contas')} />
+        <NavRow label="Categorias financeiras" onPress={() => router.push('/financeiro/categorias')} />
       </Card>
 
       {memberships.length > 1 ? (
