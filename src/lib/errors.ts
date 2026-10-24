@@ -15,7 +15,7 @@ const BY_MESSAGE: Record<string, string> = {
   organization_limit_reached: 'Você atingiu o limite de empresas por conta.',
   not_found: 'Registro não encontrado.',
   items_required: 'Adicione pelo menos um item.',
-  too_many_items: 'Máximo de 100 itens por pedido.',
+  too_many_items: 'Itens demais para um registro só.',
   product_not_found: 'Um dos itens não existe mais. Atualize a lista e tente de novo.',
   customer_not_found: 'Cliente não encontrado.',
   invalid_quantity: 'Quantidade inválida.',
@@ -54,6 +54,13 @@ const BY_MESSAGE: Record<string, string> = {
   entry_from_purchase: 'Esse lançamento vem de uma compra. Cancele pela compra.',
   purchase_has_payments: 'Essa compra já tem pagamento. Estorne o pagamento antes de cancelar.',
   movement_from_purchase: 'Essa entrada veio de uma compra. Para desfazer, cancele a compra.',
+  movement_from_production: 'Essa movimentação veio de uma produção. Para desfazer, cancele a produção.',
+  recipe_required: 'Esse produto ainda não tem ficha técnica. Cadastre a receita antes de produzir.',
+  recipe_not_allowed: 'Só produtos acabados e componentes têm ficha técnica.',
+  recipe_self_reference: 'O produto não pode ser insumo dele mesmo.',
+  duplicate_input: 'Esse insumo já está na receita.',
+  invalid_minutes: 'Tempo de mão de obra inválido.',
+  order_not_found: 'Pedido não encontrado ou cancelado.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.
