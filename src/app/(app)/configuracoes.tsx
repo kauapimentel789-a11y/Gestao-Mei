@@ -64,6 +64,7 @@ export default function SettingsScreen() {
         />
         <NavRow label="Fornecedores" onPress={() => router.push('/fornecedores')} />
         <NavRow label="Compras" onPress={() => router.push('/compras')} />
+        <NavRow label="Orçamentos" onPress={() => router.push('/orcamentos')} />
         <NavRow label="Contas financeiras" onPress={() => router.push('/financeiro/contas')} />
         <NavRow label="Categorias financeiras" onPress={() => router.push('/financeiro/categorias')} />
       </Card>

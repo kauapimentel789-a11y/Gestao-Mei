@@ -68,6 +68,7 @@ const BY_MESSAGE: Record<string, string> = {
   forbidden: 'Só o dono ou um administrador pode fazer isso.',
   limit_newer_exists: 'Já existe um limite com início depois dessa data. Use uma data mais recente.',
   limit_same_date: 'Já existe um limite começando nessa data.',
+  quote_locked: 'Esse orçamento já foi aprovado, recusado ou cancelado e não pode mais mudar.',
   invalid_duration: 'Duração inválida: use de 5 minutos a 24 horas.',
 };
 
