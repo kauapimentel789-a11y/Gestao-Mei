@@ -22,6 +22,7 @@ import { CHANNEL_LABEL, type OrderDetail, useOrder, useSetOrderStatus } from '@/
 import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
 import { StatusChip } from '@/features/orders/StatusChip';
 import { useOrg } from '@/features/organizations/useOrg';
+import { OrderTasks } from '@/features/tasks/OrderTasks';
 import { formatWhen } from '@/lib/dates';
 import { newId } from '@/lib/ids';
 import { friendlyError } from '@/lib/errors';
@@ -203,6 +204,8 @@ export default function OrderDetailScreen() {
       </Card>
 
       <OrderPayment order={o} />
+
+      <OrderTasks orderId={o.id} closed={o.status === 'delivered' || o.status === 'cancelled'} />
 
       {o.tracks_stock && (o.stock_consumed_at || o.status !== 'cancelled') ? (
         <Card>

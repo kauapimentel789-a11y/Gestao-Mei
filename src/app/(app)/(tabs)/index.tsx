@@ -7,11 +7,15 @@ import { Card } from '@/components/Card';
 import { QueryStates } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { toISODate } from '@/features/finance/logic';
 import { useLowStock } from '@/features/inventory/api';
 import { useOrderCounts, useOrders } from '@/features/orders/api';
 import { formatQuantity } from '@/features/orders/logic';
 import { OrderRow } from '@/features/orders/OrderRow';
 import { useOrg } from '@/features/organizations/useOrg';
+import { useTasks } from '@/features/tasks/api';
+import { filterTasks } from '@/features/tasks/logic';
+import { TaskRow } from '@/features/tasks/TaskRow';
 import { formatLongToday, greeting } from '@/lib/dates';
 import { colors, fonts, minTouch, radius } from '@/theme/tokens';
 
@@ -25,6 +29,8 @@ export default function HomeScreen() {
   const today = useOrders(orgId, 'today');
   const low = useLowStock(orgId);
   const lowItems = low.data ?? [];
+  const tasks = useTasks(orgId);
+  const todayTasks = filterTasks(tasks.data ?? [], 'today', toISODate(new Date()));
   const firstName = String(session?.user.user_metadata?.display_name ?? '').split(' ')[0];
   const c = counts.data;
   const plural = config.tabLabels.pedidos.toLowerCase();
@@ -117,7 +123,21 @@ export default function HomeScreen() {
         </Card>
       ) : null}
 
-      <Text style={styles.note}>Tarefas entram neste resumo numa próxima etapa.</Text>
+      {todayTasks.length > 0 ? (
+        <Card style={styles.list}>
+          <Text style={styles.cardTitle}>Tarefas de hoje</Text>
+          {todayTasks.slice(0, 5).map((t, i) => (
+            <TaskRow key={t.id} task={t} first={i === 0} orderNoun={config.orderNoun} />
+          ))}
+          {todayTasks.length > 5 ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/tarefas')}>
+              <Text style={styles.more}>
+                + {todayTasks.length - 5} {todayTasks.length - 5 === 1 ? 'tarefa' : 'tarefas'} para hoje
+              </Text>
+            </Pressable>
+          ) : null}
+        </Card>
+      ) : null}
     </Screen>
   );
 }
@@ -163,5 +183,4 @@ const styles = StyleSheet.create({
   lowName: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
   lowQty: { fontFamily: fonts.extrabold, fontSize: 13, color: colors.primaryText },
   more: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500, paddingTop: 8 },
-  note: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500, textAlign: 'center' },
 });
