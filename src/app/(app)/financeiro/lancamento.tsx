@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Chips } from '@/components/Chips';
 import { DetailBar } from '@/components/DetailBar';
+import { PickerModal } from '@/components/PickerModal';
 import { FormError } from '@/components/FormError';
 import { Screen } from '@/components/Screen';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -17,6 +18,7 @@ import { CustomerPicker } from '@/features/customers/CustomerPicker';
 import { useAccounts, useCategories, useCreateEntry } from '@/features/finance/api';
 import { type Direction, METHOD_LABEL, parseDateInput, type PaymentMethod, toISODate } from '@/features/finance/logic';
 import { useOrg } from '@/features/organizations/useOrg';
+import { useSuppliers } from '@/features/suppliers/api';
 import { formatDateBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
@@ -40,6 +42,10 @@ export default function NewEntryScreen() {
   const [competence, setCompetence] = useState('');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const suppliers = useSuppliers(orgId);
+  const [supplierId, setSupplierId] = useState<string | null>(null);
+  const [supplierOpen, setSupplierOpen] = useState(false);
+  const supplier = suppliers.data?.find((x) => x.id === supplierId) ?? null;
   const [notes, setNotes] = useState('');
   const [settled, setSettled] = useState(true);
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -80,6 +86,7 @@ export default function NewEntryScreen() {
         dueDate: dueIso,
         competenceDate: compIso,
         customerId: receiving ? (customer?.id ?? null) : null,
+        supplierId: receiving ? null : supplierId,
         notes: notes.trim(),
         idempotencyKey: key,
         // Já pago: a baixa usa a data informada, que também vira o vencimento.
@@ -168,12 +175,33 @@ export default function NewEntryScreen() {
             <Text style={styles.label}>Cliente (opcional)</Text>
             <Text style={styles.value}>{customer?.name ?? 'Escolher'}</Text>
           </Pressable>
-        ) : null}
+        ) : (
+          <Pressable accessibilityRole="button" onPress={() => setSupplierOpen(true)} style={styles.switchRow}>
+            <Text style={styles.label}>Fornecedor (opcional)</Text>
+            <Text style={styles.value}>{supplier?.name ?? 'Escolher'}</Text>
+          </Pressable>
+        )}
         <TextField label="Observações (opcional)" value={notes} onChangeText={setNotes} multiline />
       </Card>
 
       <FormError message={error} />
       <Button label={receiving ? 'Lançar receita' : 'Lançar despesa'} onPress={onSubmit} loading={create.isPending} />
+
+      <PickerModal
+        visible={supplierOpen}
+        title="Fornecedor"
+        searchPlaceholder="Buscar fornecedor"
+        options={(suppliers.data ?? []).filter((x) => x.active).map((x) => ({ id: x.id, title: x.name }))}
+        loading={suppliers.isPending}
+        selectedId={supplierId}
+        noneLabel="Sem fornecedor"
+        emptyText="Nenhum fornecedor. Cadastre em Configurações → Fornecedores."
+        onClose={() => setSupplierOpen(false)}
+        onSelect={(id) => {
+          setSupplierId(id);
+          setSupplierOpen(false);
+        }}
+      />
 
       <CustomerPicker
         orgId={orgId}

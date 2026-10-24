@@ -49,6 +49,11 @@ const BY_MESSAGE: Record<string, string> = {
   amount_below_paid: 'O novo total ficaria abaixo do que já foi recebido.',
   same_account: 'Escolha contas diferentes.',
   invalid_period: 'Período inválido.',
+  supplier_not_found: 'Fornecedor não encontrado.',
+  invalid_document: 'CPF ou CNPJ inválido. Use 11 ou 14 dígitos.',
+  entry_from_purchase: 'Esse lançamento vem de uma compra. Cancele pela compra.',
+  purchase_has_payments: 'Essa compra já tem pagamento. Estorne o pagamento antes de cancelar.',
+  movement_from_purchase: 'Essa entrada veio de uma compra. Para desfazer, cancele a compra.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.
