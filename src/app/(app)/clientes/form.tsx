@@ -19,7 +19,9 @@ import { colors, fonts } from '@/theme/tokens';
 
 export default function CustomerFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { orgId } = useOrg();
+  const { orgId, config } = useOrg();
+  const noun = config.clientNoun;
+  const Noun = noun[0]!.toUpperCase() + noun.slice(1);
   const existing = useCustomer(orgId, id ?? '');
   const save = useSaveCustomer(orgId);
   const toast = useToast();
@@ -44,7 +46,7 @@ export default function CustomerFormScreen() {
           if (same) return setDuplicate(same);
         }
         const c = await save.mutateAsync({ id, input });
-        toast(id ? 'Cliente atualizado' : 'Cliente cadastrado');
+        toast(id ? `${Noun} atualizado` : `${Noun} cadastrado`);
         router.replace({ pathname: '/clientes/[id]', params: { id: c.id } });
       } catch (e) {
         setError(friendlyError(e));
@@ -53,7 +55,7 @@ export default function CustomerFormScreen() {
 
   return (
     <Screen>
-      <DetailBar title={id ? 'Editar cliente' : 'Novo cliente'} />
+      <DetailBar title={id ? `Editar ${noun}` : `Novo ${noun}`} />
       <Card>
         <Controller
           control={control}
@@ -104,7 +106,7 @@ export default function CustomerFormScreen() {
         </View>
       ) : null}
       <FormError message={error} />
-      {!duplicate ? <Button label="Salvar cliente" onPress={() => submit(false)} loading={formState.isSubmitting} /> : null}
+      {!duplicate ? <Button label={`Salvar ${noun}`} onPress={() => submit(false)} loading={formState.isSubmitting} /> : null}
     </Screen>
   );
 }

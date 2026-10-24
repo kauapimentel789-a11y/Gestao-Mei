@@ -14,7 +14,9 @@ import { TextField } from '@/components/TextField';
 import { TextLink } from '@/components/TextLink';
 import { useToast } from '@/components/Toast';
 import type { OrderStatus } from '@/config/business';
+import { AppointmentActions } from '@/features/agenda/AppointmentActions';
 import { ServiceMaterials } from '@/features/agenda/ServiceMaterials';
+import { ServiceNotes } from '@/features/agenda/ServiceNotes';
 import { ServiceSchedule } from '@/features/agenda/ServiceSchedule';
 import { useAccounts, useOrderEntry, useReceiveOrderPayment } from '@/features/finance/api';
 import { formatISODate, METHOD_LABEL, statusLabel } from '@/features/finance/logic';
@@ -49,6 +51,9 @@ export default function OrderDetailScreen() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [negativeOpen, setNegativeOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Em atendimentos, marcar como atendido já abre o recebimento.
+  const [payPrompt, setPayPrompt] = useState(0);
+  const appointments = config.profile === 'appointments';
 
   const o = order.data;
   const noun = config.orderNoun;
@@ -103,11 +108,13 @@ export default function OrderDetailScreen() {
   }
 
   const late = isLate(o);
+  const flow = config.statusFlow;
   const currentIdx = STATUS_FLOW.indexOf(o.status);
   const wa = o.customer?.phone_digits
     ? whatsappUrl(o.customer.phone_digits, `Olá, ${o.customer.name.split(' ')[0]}! Sobre seu ${noun} #${o.number} da ${org.name}:`)
     : null;
-  const finalStatus = STATUS_FLOW[STATUS_FLOW.length - 1]!;
+  const finalStatus = flow[flow.length - 1]!;
+  const closed = o.status === 'delivered' || o.status === 'cancelled';
 
   return (
     <Screen>
@@ -144,13 +151,13 @@ export default function OrderDetailScreen() {
 
         {o.status === 'cancelled' ? (
           <View style={styles.cancelled}>
-            <StatusChip status="cancelled" label="Cancelado" />
+            <StatusChip status="cancelled" label={o.no_show_at ? 'Faltou' : 'Cancelado'} />
             {o.cancel_reason ? <Text style={styles.muted}>Motivo: {o.cancel_reason}</Text> : null}
           </View>
         ) : (
           <View style={styles.stepper} accessibilityRole="adjustable" accessibilityLabel={`Status: ${config.statusLabels[o.status]}`}>
-            {STATUS_FLOW.map((s, i) => {
-              const reached = i <= currentIdx;
+            {flow.map((s) => {
+              const reached = STATUS_FLOW.indexOf(s) <= currentIdx;
               const allowed = canTransition(o.status, s);
               return (
                 <Pressable
@@ -185,12 +192,26 @@ export default function OrderDetailScreen() {
           orderId={o.id}
           scheduledFor={o.scheduled_for}
           minutes={o.scheduled_minutes}
-          closed={o.status === 'delivered' || o.status === 'cancelled'}
+          closed={closed}
+        />
+      ) : null}
+
+      {appointments && !closed ? (
+        <AppointmentActions
+          order={{
+            id: o.id,
+            number: o.number,
+            status: o.status,
+            scheduled_for: o.scheduled_for,
+            reminder_sent_at: o.reminder_sent_at,
+            customer_name: o.customer?.name ?? null,
+            customer_phone_digits: o.customer?.phone_digits ?? null,
+          }}
         />
       ) : null}
 
       <Card>
-        <Text style={styles.cardTitle}>Itens</Text>
+        <Text style={styles.cardTitle}>{appointments ? 'Serviço' : 'Itens'}</Text>
         {o.items.map((it) => (
           <View key={it.id} style={styles.itemRow}>
             <View style={styles.flex}>
@@ -214,11 +235,13 @@ export default function OrderDetailScreen() {
         </View>
       </Card>
 
-      <OrderPayment order={o} />
+      <OrderPayment order={o} prompt={payPrompt} />
 
-      <OrderTasks orderId={o.id} closed={o.status === 'delivered' || o.status === 'cancelled'} />
+      {appointments ? <ServiceNotes orderId={o.id} /> : null}
 
-      {o.kind === 'service_order' ? <ServiceMaterials orderId={o.id} closed={o.status === 'cancelled'} /> : null}
+      <OrderTasks orderId={o.id} closed={closed} />
+
+      {o.kind === 'service_order' && !appointments ? <ServiceMaterials orderId={o.id} closed={o.status === 'cancelled'} /> : null}
 
       {o.tracks_stock && (o.stock_consumed_at || o.status !== 'cancelled') ? (
         <Card>
@@ -261,7 +284,9 @@ export default function OrderDetailScreen() {
           label={`Marcar como ${config.statusLabels[finalStatus].toLowerCase()}`}
           trailing={<Check size={18} color={colors.primary} />}
           loading={setStatus.isPending}
-          onPress={() => change(finalStatus)}
+          onPress={async () => {
+            if ((await change(finalStatus)) && appointments) setPayPrompt((n) => n + 1);
+          }}
         />
       ) : null}
 
@@ -310,7 +335,7 @@ export default function OrderDetailScreen() {
 }
 
 /** Recebimentos do pedido: o primeiro cria o título a receber; os seguintes abatem o mesmo título. */
-function OrderPayment({ order: o }: { order: OrderDetail }) {
+function OrderPayment({ order: o, prompt = 0 }: { order: OrderDetail; prompt?: number }) {
   const { orgId } = useOrg();
   const orderEntry = useOrderEntry(orgId, o.id);
   const accounts = useAccounts(orgId);
@@ -321,6 +346,16 @@ function OrderPayment({ order: o }: { order: OrderDetail }) {
   const fin = orderEntry.data;
   const received = fin?.entry.paid_cents ?? 0;
   const open = fin ? fin.entry.open_cents : o.status === 'cancelled' ? 0 : o.total_cents;
+
+  // Novo pedido de recebimento vindo do "Marcar como atendido" (ajuste de estado durante a renderização).
+  const [seenPrompt, setSeenPrompt] = useState(prompt);
+  if (prompt !== seenPrompt) {
+    setSeenPrompt(prompt);
+    if (open > 0) {
+      setPayError(null);
+      setPayKey(newId());
+    }
+  }
 
   return (
     <Card>

@@ -6,6 +6,7 @@ import {
   type LucideIcon,
   Package,
   ReceiptText,
+  Users,
   Wallet,
 } from 'lucide-react-native';
 
@@ -18,6 +19,7 @@ const ICONS: Record<TabKey, LucideIcon> = {
   pedidos: ReceiptText,
   estoque: Package,
   agenda: CalendarDays,
+  clientes: Users,
   tarefas: ClipboardList,
   financeiro: Wallet,
 };
@@ -27,6 +29,7 @@ const ROUTES: Record<TabKey, string> = {
   pedidos: 'pedidos',
   estoque: 'estoque',
   agenda: 'agenda',
+  clientes: 'clientes',
   tarefas: 'tarefas',
   financeiro: 'financeiro',
 };
@@ -36,7 +39,7 @@ const ALL_TABS = Object.keys(ROUTES) as TabKey[];
 export default function TabsLayout() {
   const { active } = useActiveOrganization();
   // O layout só é montado com empresa ativa (guarda no layout raiz).
-  const config = getBusinessConfig(active!.organization.business_type);
+  const config = getBusinessConfig(active!.organization.business_type, active!.organization.practice_area);
 
   return (
     <Tabs

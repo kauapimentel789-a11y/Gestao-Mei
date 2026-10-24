@@ -70,6 +70,12 @@ const BY_MESSAGE: Record<string, string> = {
   limit_same_date: 'Já existe um limite começando nessa data.',
   quote_locked: 'Esse orçamento já foi aprovado, recusado ou cancelado e não pode mais mudar.',
   invalid_duration: 'Duração inválida: use de 5 minutos a 24 horas.',
+  invalid_practice_area: 'Área de atendimento só vale para negócios de serviços.',
+  customer_required: 'Escolha quem será atendido.',
+  schedule_required: 'Informe a data e a hora.',
+  not_scheduled: 'Esse atendimento não tem horário marcado.',
+  appointment_not_started: 'A falta só pode ser marcada depois do horário.',
+  invalid_note: 'Escreva a anotação (até 4.000 caracteres).',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.

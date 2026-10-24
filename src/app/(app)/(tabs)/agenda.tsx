@@ -1,29 +1,35 @@
 import { router } from 'expo-router';
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorCard } from '@/components/ErrorCard';
 import { Fab } from '@/components/Fab';
 import { QueryStates, Skeleton } from '@/components/ListStates';
-import { ErrorCard } from '@/components/ErrorCard';
 import { Screen } from '@/components/Screen';
-import { type AgendaItem, useAgenda, useUnscheduled } from '@/features/agenda/api';
-import { durationLabel, itemsOnDay, overlapping, sameDay, weekDays, weekdayShort } from '@/features/agenda/logic';
-import { StatusChip } from '@/features/orders/StatusChip';
+import { SegmentedControl } from '@/components/SegmentedControl';
+import { AgendaRow } from '@/features/agenda/AgendaRow';
+import { useAgenda, useUnscheduled } from '@/features/agenda/api';
+import { groupByDay, itemsOnDay, overlapping, sameDay, weekDays, weekdayShort } from '@/features/agenda/logic';
 import { useOrg } from '@/features/organizations/useOrg';
-import { formatTimeBR } from '@/lib/dates';
+import { formatDateBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { colors, fonts, minTouch, radius } from '@/theme/tokens';
 
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const WEEKDAY_LONG = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+type AgendaView = 'day' | 'week';
 
 export default function AgendaScreen() {
   const { orgId, config } = useOrg();
+  const appointments = config.profile === 'appointments';
   const today = new Date();
   const [anchor, setAnchor] = useState(today);
   const [selected, setSelected] = useState(today);
+  const [mode, setMode] = useState<AgendaView>('day');
   const days = weekDays(anchor);
   const from = days[0];
   const to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 7);
@@ -32,12 +38,17 @@ export default function AgendaScreen() {
 
   const items = week.data ?? [];
   const dayItems = itemsOnDay(items, selected);
-  const conflicts = overlapping(dayItems);
+  const conflicts = overlapping(items);
+  const groups = groupByDay(items, days);
   const shiftWeek = (n: number) => {
     const a = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + 7 * n);
     setAnchor(a);
     setSelected(weekDays(a)[0]);
   };
+  const plural = config.tabLabels.pedidos.toLowerCase();
+  const newLabel = `Novo ${config.orderNoun}`;
+  const onNew = () =>
+    appointments ? router.push({ pathname: '/horarios/novo', params: { data: formatDateBR(selected) } }) : router.push('/pedidos/novo');
 
   return (
     <View style={styles.flex}>
@@ -45,6 +56,16 @@ export default function AgendaScreen() {
         <Text style={styles.title} accessibilityRole="header">
           {config.tabLabels.agenda}
         </Text>
+
+        <SegmentedControl
+          accessibilityLabel="Visualização"
+          value={mode}
+          onChange={setMode}
+          segments={[
+            { value: 'day', label: 'Dia' },
+            { value: 'week', label: 'Semana' },
+          ]}
+        />
 
         <View style={styles.weekRow}>
           <Pressable accessibilityRole="button" accessibilityLabel="Semana anterior" onPress={() => shiftWeek(-1)} style={styles.arrow}>
@@ -60,88 +81,90 @@ export default function AgendaScreen() {
 
         <View style={styles.days}>
           {days.map((d) => {
-            const isSel = sameDay(d, selected);
+            const isSel = mode === 'day' && sameDay(d, selected);
             const count = itemsOnDay(items, d).length;
             return (
               <Pressable
                 key={d.toISOString()}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSel }}
-                accessibilityLabel={`${weekdayShort(d)} ${d.getDate()}, ${count} ${count === 1 ? 'serviço' : 'serviços'}`}
-                onPress={() => setSelected(d)}
+                accessibilityLabel={`${weekdayShort(d)} ${d.getDate()}, ${count} ${count === 1 ? config.orderNoun : plural}`}
+                onPress={() => {
+                  setSelected(d);
+                  setMode('day');
+                }}
                 style={[styles.day, isSel && styles.daySel]}
               >
                 <Text style={[styles.dayName, isSel && styles.dayTextSel]}>{weekdayShort(d)}</Text>
                 <Text style={[styles.dayNum, isSel && styles.dayTextSel, sameDay(d, today) && !isSel && styles.today]}>{d.getDate()}</Text>
-                <View style={[styles.dot, count === 0 && styles.dotHidden, isSel && styles.dotSel]} />
+                {mode === 'week' && count > 0 ? (
+                  <Text style={[styles.count]}>{count}</Text>
+                ) : (
+                  <View style={[styles.dot, count === 0 && styles.dotHidden, isSel && styles.dotSel]} />
+                )}
               </Pressable>
             );
           })}
         </View>
 
-        <Card style={styles.list}>
-          {week.isPending ? (
+        {week.isPending ? (
+          <Card>
             <Skeleton rows={2} />
-          ) : week.error ? (
-            <ErrorCard message={friendlyError(week.error)} onRetry={() => week.refetch()} />
-          ) : dayItems.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Nada agendado neste dia" description="Os serviços com data marcada aparecem aqui." />
-          ) : (
-            dayItems.map((o, i) => <AgendaRow key={o.id} item={o} first={i === 0} conflict={conflicts.has(o.id)} />)
-          )}
-        </Card>
+          </Card>
+        ) : week.error ? (
+          <ErrorCard message={friendlyError(week.error)} onRetry={() => week.refetch()} />
+        ) : mode === 'day' ? (
+          <Card style={styles.list}>
+            <Text style={styles.cardTitle}>
+              {sameDay(selected, today) ? 'Hoje' : WEEKDAY_LONG[selected.getDay()]}, {selected.getDate()} {MONTHS[selected.getMonth()]}
+            </Text>
+            {dayItems.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="Nada agendado neste dia"
+                description={appointments ? `Toque em "${newLabel}" para marcar um horário.` : 'Os serviços com data marcada aparecem aqui.'}
+              />
+            ) : (
+              dayItems.map((o, i) => <AgendaRow key={o.id} item={o} first={i === 0} conflict={conflicts.has(o.id)} />)
+            )}
+          </Card>
+        ) : groups.length === 0 ? (
+          <Card>
+            <EmptyState icon={CalendarDays} title="Nada agendado nesta semana" />
+          </Card>
+        ) : (
+          groups.map((g) => (
+            <Card key={g.day.toISOString()} style={styles.list}>
+              <Text style={styles.cardTitle}>
+                {sameDay(g.day, today) ? 'Hoje' : WEEKDAY_LONG[g.day.getDay()]}, {g.day.getDate()} {MONTHS[g.day.getMonth()]}
+              </Text>
+              {g.items.map((o, i) => (
+                <AgendaRow key={o.id} item={o} first={i === 0} conflict={conflicts.has(o.id)} />
+              ))}
+            </Card>
+          ))
+        )}
 
-        <Card style={styles.list}>
-          <Text style={styles.cardTitle}>Sem data marcada</Text>
-          <QueryStates
-            query={unscheduled}
-            isEmpty={unscheduled.data?.length === 0}
-            empty={{ icon: CalendarDays, title: 'Tudo agendado', description: 'Serviços em aberto sem data aparecem aqui.' }}
-          />
-          {unscheduled.data?.map((o, i) => <AgendaRow key={o.id} item={o} first={i === 0} />)}
-        </Card>
+        {!appointments ? (
+          <Card style={styles.list}>
+            <Text style={styles.cardTitle}>Sem data marcada</Text>
+            <QueryStates
+              query={unscheduled}
+              isEmpty={unscheduled.data?.length === 0}
+              empty={{ icon: CalendarDays, title: 'Tudo agendado', description: 'Serviços em aberto sem data aparecem aqui.' }}
+            />
+            {unscheduled.data?.map((o, i) => <AgendaRow key={o.id} item={o} first={i === 0} />)}
+          </Card>
+        ) : null}
         <View style={styles.fabSpace} />
       </Screen>
-      <Fab label={`Novo ${config.orderNoun}`} onPress={() => router.push('/pedidos/novo')} />
+      <Fab label={newLabel} onPress={onNew} />
     </View>
   );
 }
 
-function AgendaRow({ item: o, first, conflict }: { item: AgendaItem; first: boolean; conflict?: boolean }) {
-  const { config } = useOrg();
-  const start = o.scheduled_for ? new Date(o.scheduled_for) : null;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => router.push({ pathname: '/pedidos/[id]', params: { id: o.id } })}
-      style={({ pressed }) => [styles.row, !first && styles.divider, pressed && styles.pressed]}
-    >
-      <View style={styles.time}>
-        <Text style={styles.timeText}>{start ? formatTimeBR(start) : `#${o.number}`}</Text>
-        {start ? <Text style={styles.muted}>{durationLabel(o.scheduled_minutes)}</Text> : null}
-      </View>
-      <View style={styles.flex}>
-        <Text style={styles.rowTitle} numberOfLines={1}>
-          {o.customer_name ?? 'Sem cliente'}
-          {start ? ` · #${o.number}` : ''}
-        </Text>
-        <Text style={styles.muted} numberOfLines={1}>
-          {o.problem_description || o.items_summary || ''}
-        </Text>
-        {conflict ? (
-          <View style={styles.conflict}>
-            <AlertTriangle size={12} color={colors.primaryText} />
-            <Text style={styles.conflictText}>Horário em conflito com outro serviço</Text>
-          </View>
-        ) : null}
-      </View>
-      <StatusChip status={o.status} label={config.statusLabels[o.status]} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1, gap: 2 },
+  flex: { flex: 1 },
   title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
   weekRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   arrow: { width: minTouch, height: minTouch, borderRadius: minTouch / 2, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
@@ -156,16 +179,8 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
   dotHidden: { opacity: 0 },
   dotSel: { backgroundColor: colors.primarySoft },
+  count: { fontFamily: fonts.extrabold, fontSize: 10, color: colors.primaryText },
   cardTitle: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.ink, marginBottom: 4 },
   list: { paddingVertical: 10, gap: 0 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 10 },
-  divider: { borderTopWidth: 1, borderTopColor: colors.divider },
-  pressed: { backgroundColor: colors.rowPressed },
-  time: { width: 52 },
-  timeText: { fontFamily: fonts.extrabold, fontSize: 14, color: colors.ink },
-  rowTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
-  muted: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500 },
-  conflict: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  conflictText: { fontFamily: fonts.bold, fontSize: 11, color: colors.primaryText },
   fabSpace: { height: 70 },
 });

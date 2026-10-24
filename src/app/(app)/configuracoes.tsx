@@ -8,13 +8,14 @@ import { Card } from '@/components/Card';
 import { NavRow } from '@/components/NavRow';
 import { Screen } from '@/components/Screen';
 import { useToast } from '@/components/Toast';
-import { getBusinessConfig } from '@/config/business';
+import { getBusinessConfig, PRACTICE_AREA_INFO } from '@/config/business';
 import { AlertsCard } from '@/features/alerts/AlertsCard';
 import { clearLateAlerts } from '@/features/alerts/LateOrderAlerts';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
-import { useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
+import { useSetPracticeArea, useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
 import { HourlyRateDialog } from '@/features/organizations/HourlyRateDialog';
+import { PracticeAreaDialog } from '@/features/organizations/PracticeAreaDialog';
 import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
 import { publicOrderUrl } from '@/lib/publicLink';
@@ -31,6 +32,8 @@ export default function SettingsScreen() {
   const updateRate = useUpdateHourlyRate(session?.user.id);
   const toast = useToast();
   const [rateOpen, setRateOpen] = useState(false);
+  const [areaOpen, setAreaOpen] = useState(false);
+  const setArea = useSetPracticeArea(session?.user.id);
   const setPublic = useSetPublicOrders(session?.user.id);
   const link = publicOrderUrl(org.slug);
 
@@ -49,7 +52,14 @@ export default function SettingsScreen() {
       <Card>
         <Text style={styles.cardTitle}>Empresa</Text>
         <Row label="Nome" value={org.name} />
-        <Row label="Modelo de negócio" value={getBusinessConfig(org.business_type).label} />
+        <Row label="Modelo de negócio" value={getBusinessConfig(org.business_type, org.practice_area).label} />
+        {org.business_type === 'services' ? (
+          <Row
+            label="Forma de trabalho"
+            value={org.practice_area ? `Hora marcada · ${PRACTICE_AREA_INFO[org.practice_area].label}` : 'Ordens de serviço'}
+            onPress={canEdit ? () => setAreaOpen(true) : undefined}
+          />
+        ) : null}
         {org.business_type !== 'resale' ? (
           <Row
             label="Valor da hora"
@@ -124,6 +134,19 @@ export default function SettingsScreen() {
           ))}
         </Card>
       ) : null}
+
+      <PracticeAreaDialog
+        key={areaOpen ? 'area-open' : 'area-closed'}
+        visible={areaOpen}
+        current={org.practice_area}
+        loading={setArea.isPending}
+        onClose={() => setAreaOpen(false)}
+        onSave={async (area) => {
+          await setArea.mutateAsync({ organizationId: org.id, area });
+          setAreaOpen(false);
+          toast('Forma de trabalho atualizada');
+        }}
+      />
 
       <HourlyRateDialog
         key={rateOpen ? 'open' : 'closed'}

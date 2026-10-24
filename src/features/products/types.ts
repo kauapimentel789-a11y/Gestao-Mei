@@ -38,6 +38,8 @@ export interface Product {
   cost_cents: number | null;
   price_cents: number | null;
   active: boolean;
+  /** Duração padrão do serviço na agenda, em minutos. */
+  duration_minutes: number | null;
 }
 
 export function isLowStock(p: Pick<Product, 'track_stock' | 'stock_qty' | 'min_stock'>): boolean {

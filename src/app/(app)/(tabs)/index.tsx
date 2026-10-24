@@ -1,11 +1,14 @@
 import { router } from 'expo-router';
-import { ChevronRight, Link2, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import { CalendarPlus, ChevronRight, Link2, Package, ReceiptText, Settings, Users } from 'lucide-react-native';
+import { type ReactNode, useState } from 'react';
 import { Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { QueryStates } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
+import { AgendaRow } from '@/features/agenda/AgendaRow';
+import { useAgenda } from '@/features/agenda/api';
+import { canRemind, overlapping } from '@/features/agenda/logic';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { toISODate } from '@/features/finance/logic';
 import { useLowStock } from '@/features/inventory/api';
@@ -16,7 +19,7 @@ import { useOrg } from '@/features/organizations/useOrg';
 import { useTasks } from '@/features/tasks/api';
 import { filterTasks } from '@/features/tasks/logic';
 import { TaskRow } from '@/features/tasks/TaskRow';
-import { formatLongToday, greeting } from '@/lib/dates';
+import { formatLongToday, formatTimeBR, greeting } from '@/lib/dates';
 import { publicOrderUrl } from '@/lib/publicLink';
 import { colors, fonts, minTouch, radius } from '@/theme/tokens';
 
@@ -36,6 +39,16 @@ export default function HomeScreen() {
   const c = counts.data;
   const plural = config.tabLabels.pedidos.toLowerCase();
   const link = org.public_orders_enabled ? publicOrderUrl(org.slug) : null;
+  const appointments = config.profile === 'appointments';
+  const [dayStart] = useState(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  });
+  const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+  const agenda = useAgenda(orgId, dayStart.toISOString(), dayEnd.toISOString(), appointments);
+  const todayAgenda = agenda.data ?? [];
+  const next = todayAgenda.find((a) => canRemind(a));
+  const conflicts = overlapping(todayAgenda);
   const attention = [...(late.data ?? []), ...(today.data ?? []).filter((t) => !late.data?.some((l) => l.id === t.id))];
 
   return (
@@ -57,17 +70,35 @@ export default function HomeScreen() {
       <View style={styles.hero}>
         <View style={styles.glow} pointerEvents="none" />
         <Text style={styles.kicker}>{org.name.toUpperCase()}</Text>
-        <Text style={styles.heroLabel}>{config.tabLabels.pedidos} em aberto</Text>
-        <Text style={styles.heroValue}>{c ? c.open : '–'}</Text>
-        <View style={styles.heroRow}>
-          <Text style={styles.heroSub}>{c ? `${c.today} para hoje` : ' '}</Text>
-          <Text style={styles.heroSub}>{c ? `${c.late} atrasados` : ' '}</Text>
-        </View>
+        {appointments ? (
+          <>
+            <Text style={styles.heroLabel}>{config.tabLabels.pedidos} hoje</Text>
+            <Text style={styles.heroValue}>{agenda.data ? todayAgenda.length : '–'}</Text>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroSub}>
+                {next ? `Próximo às ${formatTimeBR(new Date(next.scheduled_for!))}${next.customer_name ? ` · ${next.customer_name.split(' ')[0]}` : ''}` : ' '}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.heroLabel}>{config.tabLabels.pedidos} em aberto</Text>
+            <Text style={styles.heroValue}>{c ? c.open : '–'}</Text>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroSub}>{c ? `${c.today} para hoje` : ' '}</Text>
+              <Text style={styles.heroSub}>{c ? `${c.late} atrasados` : ' '}</Text>
+            </View>
+          </>
+        )}
       </View>
 
       <View style={styles.actions}>
-        <QuickAction label={`Novo ${config.orderNoun}`} primary onPress={() => router.push('/pedidos/novo')} icon={<ReceiptText size={22} color={colors.white} />} />
-        <QuickAction label="Clientes" onPress={() => router.push('/clientes')} icon={<Users size={22} color={colors.primaryText} />} />
+        {appointments ? (
+          <QuickAction label={`Novo ${config.orderNoun}`} primary onPress={() => router.push('/horarios/novo')} icon={<CalendarPlus size={22} color={colors.white} />} />
+        ) : (
+          <QuickAction label={`Novo ${config.orderNoun}`} primary onPress={() => router.push('/pedidos/novo')} icon={<ReceiptText size={22} color={colors.white} />} />
+        )}
+        <QuickAction label={config.clientsLabel} onPress={() => router.push('/clientes')} icon={<Users size={22} color={colors.primaryText} />} />
         <QuickAction
           label={org.business_type === 'services' ? 'Serviços' : 'Itens'}
           onPress={() => router.push(org.business_type === 'services' ? '/itens' : '/estoque')}
@@ -82,7 +113,7 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
-      {c && c.late > 0 ? (
+      {!appointments && c && c.late > 0 ? (
         <Pressable accessibilityRole="button" onPress={() => router.push('/pedidos')} style={styles.lateBanner}>
           <Text style={styles.lateTitle}>
             {c.late === 1 ? `1 ${config.orderNoun} atrasado` : `${c.late} ${plural} atrasados`}
@@ -91,6 +122,19 @@ export default function HomeScreen() {
         </Pressable>
       ) : null}
 
+      {appointments ? (
+        <Card style={styles.list}>
+          <Text style={styles.cardTitle}>Agenda de hoje</Text>
+          <QueryStates
+            query={agenda}
+            isEmpty={todayAgenda.length === 0}
+            empty={{ icon: CalendarPlus, title: 'Nenhum horário hoje.', description: 'Os horários marcados para hoje aparecem aqui.' }}
+          />
+          {todayAgenda.map((a, i) => (
+            <AgendaRow key={a.id} item={a} first={i === 0} conflict={conflicts.has(a.id)} />
+          ))}
+        </Card>
+      ) : (
       <Card style={styles.list}>
         <Text style={styles.cardTitle}>Para hoje</Text>
         <QueryStates
@@ -104,6 +148,7 @@ export default function HomeScreen() {
           </View>
         ))}
       </Card>
+      )}
 
       {lowItems.length > 0 ? (
         <Card style={styles.list}>

@@ -1,6 +1,6 @@
 // Criar empresa: nome → modelo de negócio → link e valor da hora.
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Check, Hammer, ShoppingBag, Wrench } from 'lucide-react-native';
+import { CalendarClock, Check, Hammer, ShoppingBag, Wrench } from 'lucide-react-native';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -9,8 +9,9 @@ import { Button } from '@/components/Button';
 import { FormError } from '@/components/FormError';
 import { ProgressSteps } from '@/components/ProgressSteps';
 import { TextField } from '@/components/TextField';
+import { Chips } from '@/components/Chips';
 import { TextLink } from '@/components/TextLink';
-import { BUSINESS_CONFIG, BUSINESS_TYPES, type BusinessType } from '@/config/business';
+import { BUSINESS_CONFIG, BUSINESS_PROFILES, type BusinessProfile, PRACTICE_AREA_INFO, PRACTICE_AREAS } from '@/config/business';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AuthShell } from '@/features/auth/AuthShell';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
@@ -21,7 +22,7 @@ import { slugify } from '@/lib/slug';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius } from '@/theme/tokens';
 
-const ICONS: Record<BusinessType, typeof Hammer> = { production: Hammer, resale: ShoppingBag, services: Wrench };
+const ICONS: Record<BusinessProfile, typeof Hammer> = { production: Hammer, resale: ShoppingBag, services: Wrench, appointments: CalendarClock };
 const STEP_FIELDS: (keyof CreateOrganizationInput)[][] = [['name'], ['businessType'], ['slug', 'hourlyRate']];
 
 export default function CreateOrganizationScreen() {
@@ -31,14 +32,18 @@ export default function CreateOrganizationScreen() {
   const [step, setStep] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { control, handleSubmit, trigger, getValues, setValue, formState } = useForm<CreateOrganizationInput>({
+  const { control, handleSubmit, trigger, getValues, setValue, setError, formState } = useForm<CreateOrganizationInput>({
     resolver: zodResolver(createOrganizationSchema),
-    defaultValues: { name: '', businessType: undefined, slug: '', hourlyRate: '' },
+    defaultValues: { name: '', businessType: undefined, practiceArea: undefined, slug: '', hourlyRate: '' },
   });
-  const businessType = useWatch({ control, name: 'businessType' });
+  const [businessType, practiceArea] = useWatch({ control, name: ['businessType', 'practiceArea'] });
 
   const next = async () => {
     if (!(await trigger(STEP_FIELDS[step]))) return;
+    if (step === 1 && businessType === 'appointments' && !practiceArea) {
+      setError('practiceArea', { message: 'Escolha a sua área.' });
+      return;
+    }
     if (step === 0 && !getValues('slug')) setValue('slug', slugify(getValues('name')));
     setStep((s) => s + 1);
   };
@@ -79,7 +84,7 @@ export default function CreateOrganizationScreen() {
       {step === 1 && (
         <View style={styles.options} accessibilityRole="radiogroup">
           <Text style={styles.question}>Qual é o modelo de negócio da sua empresa?</Text>
-          {BUSINESS_TYPES.map((type) => {
+          {BUSINESS_PROFILES.map((type) => {
             const cfg = BUSINESS_CONFIG[type];
             const Icon = ICONS[type];
             const selected = businessType === type;
@@ -105,6 +110,21 @@ export default function CreateOrganizationScreen() {
             );
           })}
           <FormError message={formState.errors.businessType?.message} />
+          {businessType === 'appointments' ? (
+            <View style={styles.options}>
+              <Text style={styles.question}>Qual é a sua área?</Text>
+              <Chips
+                accessibilityLabel="Área de atendimento"
+                value={practiceArea ?? null}
+                onChange={(a) => setValue('practiceArea', a, { shouldValidate: false })}
+                options={PRACTICE_AREAS.map((a) => ({ value: a, label: PRACTICE_AREA_INFO[a].label }))}
+              />
+              <Text style={styles.optionExamples}>
+                {practiceArea ? PRACTICE_AREA_INFO[practiceArea].examples : 'Na área de saúde, o app chama seus clientes de pacientes.'}
+              </Text>
+              <FormError message={formState.errors.practiceArea?.message} />
+            </View>
+          ) : null}
         </View>
       )}
 
@@ -115,7 +135,7 @@ export default function CreateOrganizationScreen() {
             name="slug"
             render={({ field, fieldState }) => (
               <TextField
-                label="Link de encomenda"
+                label={businessType === 'appointments' ? 'Endereço do seu negócio no app' : 'Link de encomenda'}
                 value={field.value}
                 onChangeText={(t) => field.onChange(t.toLowerCase())}
                 onBlur={field.onBlur}

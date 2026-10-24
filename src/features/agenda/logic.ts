@@ -60,3 +60,48 @@ export function durationLabel(minutes: number | null): string {
   if (h === 0) return `${r} min`;
   return r === 0 ? `${h} h` : `${h} h ${r}`;
 }
+
+/** Agendamentos do dia que se chocam com um horário novo (ignora o próprio, ao reagendar). */
+export function conflictsWith<T extends Scheduled>(items: T[], start: Date, minutes: number, excludeId?: string): T[] {
+  const from = start.getTime();
+  const to = from + minutes * 60_000;
+  return items.filter((i) => {
+    if (!i.scheduled_for || i.id === excludeId) return false;
+    const s = new Date(i.scheduled_for).getTime();
+    return s < to && endOf(i) > from;
+  });
+}
+
+const WEEKDAY_LONG = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** Mensagem de lembrete para o WhatsApp: "amanhã (terça, 10/11) às 14:00". */
+export function reminderText(input: { name: string | null; at: Date; business: string; now?: Date }): string {
+  const { at, business } = input;
+  const now = input.now ?? new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const day = new Date(at.getFullYear(), at.getMonth(), at.getDate()).getTime();
+  const diff = Math.round((day - today) / 86_400_000);
+  const date = `${WEEKDAY_LONG[at.getDay()]}, ${pad(at.getDate())}/${pad(at.getMonth() + 1)}`;
+  const time = `${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  const when = diff === 0 ? `hoje às ${time}` : diff === 1 ? `amanhã (${date}) às ${time}` : `de ${date}, às ${time}`;
+  const first = input.name?.trim().split(/\s+/)[0];
+  return `Olá${first ? `, ${first}` : ''}! Passando para lembrar do seu horário ${when} na ${business}. Podemos confirmar?`;
+}
+
+/** Lembrete faz sentido para horário futuro de atendimento em aberto. */
+export function canRemind(item: { status: string; scheduled_for: string | null }, now: Date = new Date()): boolean {
+  if (!item.scheduled_for || item.status === 'delivered' || item.status === 'cancelled') return false;
+  return new Date(item.scheduled_for).getTime() > now.getTime();
+}
+
+/** "Faltou" só depois do horário marcado, com o atendimento em aberto. */
+export function canMarkNoShow(item: { status: string; scheduled_for: string | null }, now: Date = new Date()): boolean {
+  if (!item.scheduled_for || item.status === 'delivered' || item.status === 'cancelled') return false;
+  return new Date(item.scheduled_for).getTime() <= now.getTime();
+}
+
+/** Agrupa os agendamentos da semana por dia, só os dias com algo marcado. */
+export function groupByDay<T extends Scheduled>(items: T[], days: Date[]): { day: Date; items: T[] }[] {
+  return days.map((day) => ({ day, items: itemsOnDay(items, day) })).filter((g) => g.items.length > 0);
+}

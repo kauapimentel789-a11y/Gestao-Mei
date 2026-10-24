@@ -19,6 +19,13 @@ describe('schemas', () => {
     expect(createOrganizationSchema.safeParse({ ...ok, slug: 'Ana Ateliê' }).success).toBe(false);
     expect(createOrganizationSchema.safeParse({ ...ok, hourlyRate: 'abc' }).success).toBe(false);
   });
+
+  it('atendimentos exige a área', () => {
+    const ok = { name: 'Clínica Dani', businessType: 'appointments', practiceArea: 'health', slug: 'clinica-dani', hourlyRate: '' };
+    expect(createOrganizationSchema.safeParse(ok).success).toBe(true);
+    expect(createOrganizationSchema.safeParse({ ...ok, practiceArea: undefined }).success).toBe(false);
+    expect(createOrganizationSchema.safeParse({ ...ok, practiceArea: 'x' }).success).toBe(false);
+  });
 });
 
 describe('parseAuthFragment', () => {
