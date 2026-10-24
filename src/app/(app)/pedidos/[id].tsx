@@ -14,6 +14,8 @@ import { TextField } from '@/components/TextField';
 import { TextLink } from '@/components/TextLink';
 import { useToast } from '@/components/Toast';
 import type { OrderStatus } from '@/config/business';
+import { ServiceMaterials } from '@/features/agenda/ServiceMaterials';
+import { ServiceSchedule } from '@/features/agenda/ServiceSchedule';
 import { useAccounts, useOrderEntry, useReceiveOrderPayment } from '@/features/finance/api';
 import { formatISODate, METHOD_LABEL, statusLabel } from '@/features/finance/logic';
 import { PaymentDialog } from '@/features/finance/PaymentDialog';
@@ -178,6 +180,15 @@ export default function OrderDetailScreen() {
         </Card>
       ) : null}
 
+      {o.kind === 'service_order' ? (
+        <ServiceSchedule
+          orderId={o.id}
+          scheduledFor={o.scheduled_for}
+          minutes={o.scheduled_minutes}
+          closed={o.status === 'delivered' || o.status === 'cancelled'}
+        />
+      ) : null}
+
       <Card>
         <Text style={styles.cardTitle}>Itens</Text>
         {o.items.map((it) => (
@@ -206,6 +217,8 @@ export default function OrderDetailScreen() {
       <OrderPayment order={o} />
 
       <OrderTasks orderId={o.id} closed={o.status === 'delivered' || o.status === 'cancelled'} />
+
+      {o.kind === 'service_order' ? <ServiceMaterials orderId={o.id} closed={o.status === 'cancelled'} /> : null}
 
       {o.tracks_stock && (o.stock_consumed_at || o.status !== 'cancelled') ? (
         <Card>
