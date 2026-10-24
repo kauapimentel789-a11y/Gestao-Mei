@@ -36,6 +36,19 @@ const BY_MESSAGE: Record<string, string> = {
   cannot_reverse_reversal: 'Um estorno não pode ser estornado.',
   order_cancelled: 'Pedido cancelado não movimenta estoque.',
   order_stock_consumed: 'Os itens já foram baixados do estoque e não podem mudar.',
+  invalid_amount: 'Informe um valor maior que zero.',
+  amount_exceeds_open: 'O valor é maior que o que falta pagar ou receber.',
+  invalid_date: 'Data inválida. Datas futuras não valem para pagamentos.',
+  invalid_description: 'Informe uma descrição entre 2 e 120 caracteres.',
+  account_not_found: 'Conta não encontrada ou inativa.',
+  category_not_found: 'Categoria não encontrada ou inativa.',
+  entry_cancelled: 'Esse lançamento foi cancelado.',
+  entry_has_payments: 'Estorne os pagamentos antes de cancelar.',
+  entry_from_order: 'Esse lançamento vem de um pedido. Cancele pelo pedido.',
+  order_has_payments: 'Esse pedido já tem recebimento. Estorne o recebimento antes de cancelar.',
+  amount_below_paid: 'O novo total ficaria abaixo do que já foi recebido.',
+  same_account: 'Escolha contas diferentes.',
+  invalid_period: 'Período inválido.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.

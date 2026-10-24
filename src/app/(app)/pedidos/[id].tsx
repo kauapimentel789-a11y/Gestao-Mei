@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Check, MessageCircle, PackageMinus } from 'lucide-react-native';
 import { useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -14,12 +14,16 @@ import { TextField } from '@/components/TextField';
 import { TextLink } from '@/components/TextLink';
 import { useToast } from '@/components/Toast';
 import type { OrderStatus } from '@/config/business';
+import { useAccounts, useOrderEntry, useReceiveOrderPayment } from '@/features/finance/api';
+import { formatISODate, METHOD_LABEL, statusLabel } from '@/features/finance/logic';
+import { PaymentDialog } from '@/features/finance/PaymentDialog';
 import { useConsumeOrder } from '@/features/inventory/api';
-import { CHANNEL_LABEL, useOrder, useSetOrderStatus } from '@/features/orders/api';
+import { CHANNEL_LABEL, type OrderDetail, useOrder, useSetOrderStatus } from '@/features/orders/api';
 import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
 import { StatusChip } from '@/features/orders/StatusChip';
 import { useOrg } from '@/features/organizations/useOrg';
 import { formatWhen } from '@/lib/dates';
+import { newId } from '@/lib/ids';
 import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
 import { whatsappUrl } from '@/lib/whatsapp';
@@ -196,8 +200,9 @@ export default function OrderDetailScreen() {
           <Text style={styles.totalLabel}>Total</Text>
           <Text style={styles.totalValue}>{formatCents(o.total_cents)}</Text>
         </View>
-        <Text style={styles.hint}>Pagamentos e saldo a receber chegam com o módulo financeiro.</Text>
       </Card>
+
+      <OrderPayment order={o} />
 
       {o.tracks_stock && (o.stock_consumed_at || o.status !== 'cancelled') ? (
         <Card>
@@ -288,6 +293,74 @@ export default function OrderDetailScreen() {
   );
 }
 
+/** Recebimentos do pedido: o primeiro cria o título a receber; os seguintes abatem o mesmo título. */
+function OrderPayment({ order: o }: { order: OrderDetail }) {
+  const { orgId } = useOrg();
+  const orderEntry = useOrderEntry(orgId, o.id);
+  const accounts = useAccounts(orgId);
+  const receive = useReceiveOrderPayment(orgId);
+  const toast = useToast();
+  const [payKey, setPayKey] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const fin = orderEntry.data;
+  const received = fin?.entry.paid_cents ?? 0;
+  const open = fin ? fin.entry.open_cents : o.status === 'cancelled' ? 0 : o.total_cents;
+
+  return (
+    <Card>
+      <Text style={styles.cardTitle}>Pagamento</Text>
+      <View style={styles.totalRow}>
+        <Text style={styles.muted}>{fin ? statusLabel(fin.entry.status, 'receivable') : 'Nada recebido ainda'}</Text>
+        <Text style={styles.muted}>
+          Recebido {formatCents(received)} · falta {formatCents(open)}
+        </Text>
+      </View>
+      {fin?.payments.map((p) => (
+        <View key={p.id} style={styles.payRow}>
+          <Text style={styles.body}>
+            {p.reverses_payment_id ? 'Estorno' : METHOD_LABEL[p.method]} · {formatISODate(p.paid_on)}
+          </Text>
+          <Text style={styles.itemTotal}>{formatCents(p.amount_cents)}</Text>
+        </View>
+      ))}
+      {open > 0 && o.status !== 'cancelled' ? (
+        <Button
+          variant="tint"
+          size="medium"
+          label="Registrar recebimento"
+          onPress={() => {
+            setPayError(null);
+            setPayKey(newId());
+          }}
+        />
+      ) : null}
+      {fin ? (
+        <TextLink label="Ver no financeiro" onPress={() => router.push({ pathname: '/financeiro/[id]', params: { id: fin.entry.id } })} />
+      ) : null}
+      <PaymentDialog
+        key={payKey ?? 'closed'}
+        visible={payKey !== null}
+        receiving
+        openCents={open}
+        accounts={accounts.data ?? []}
+        loading={receive.isPending}
+        error={payError}
+        onClose={() => setPayKey(null)}
+        onConfirm={async (v) => {
+          if (!payKey) return;
+          try {
+            await receive.mutateAsync({ orderId: o.id, ...v, idempotencyKey: payKey });
+            setPayKey(null);
+            toast(`Recebimento do #${o.number} registrado`);
+          } catch (err) {
+            setPayError(friendlyError(err));
+          }
+        }}
+      />
+    </Card>
+  );
+}
+
 function CancelDialog({
   visible,
   noun,
@@ -370,7 +443,7 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
   totalValue: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.ink },
-  hint: { fontFamily: fonts.medium, fontSize: 11, color: colors.gray400 },
+  payRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   historyRow: { gap: 2 },
   backdrop: { flex: 1, backgroundColor: 'rgba(11,11,15,0.45)', justifyContent: 'center', padding: 20 },
   dialog: { backgroundColor: colors.surface, borderRadius: radius.card, padding: 20, gap: 12, ...shadows.card },

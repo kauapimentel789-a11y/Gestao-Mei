@@ -117,7 +117,7 @@ export default function HomeScreen() {
         </Card>
       ) : null}
 
-      <Text style={styles.note}>Tarefas e financeiro entram neste resumo nas próximas etapas.</Text>
+      <Text style={styles.note}>Tarefas entram neste resumo numa próxima etapa.</Text>
     </Screen>
   );
 }
