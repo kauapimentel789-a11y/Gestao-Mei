@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronLeft, ChevronRight, Landmark, Wallet } from 'lucide-react-native';
+import { ChartColumn, ChevronLeft, ChevronRight, Landmark, Wallet } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -46,6 +46,7 @@ export default function FinanceScreen() {
           <Text style={styles.title} accessibilityRole="header">
             {config.tabLabels.financeiro}
           </Text>
+          <CircleButton label="Relatórios" icon={<ChartColumn size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/relatorios')} />
           <CircleButton label="Contas e transferências" icon={<Landmark size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/contas')} />
         </View>
 
@@ -214,8 +215,8 @@ function MeiCard({ orgId }: { orgId: string }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { flex: 1, fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
   periodRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   arrow: { width: minTouch, height: minTouch, alignItems: 'center', justifyContent: 'center' },
   periodLabel: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.ink },

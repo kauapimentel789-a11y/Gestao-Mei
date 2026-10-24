@@ -7,7 +7,7 @@
 --   do pedido (fuso de Brasília), agrupados por produto ou descrição avulsa;
 -- * evolução mês a mês: faturamento e despesas por competência, entradas e
 --   saídas de caixa pela data da baixa.
--- Os critérios vão junto no retorno para a tela mostrar.
+-- A tela de relatórios explica esses critérios ao usuário.
 
 create function public.finance_report(p_organization_id uuid, p_from date, p_to date)
 returns jsonb
