@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -16,6 +15,7 @@ import { type DayForm, formFromHours, hoursFromForm, WEEKDAY_LABEL } from '@/fea
 import { useOrg } from '@/features/organizations/useOrg';
 import { friendlyError } from '@/lib/errors';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 function copyDay(d: DayForm): DayForm {
   return { open: d.open, first: { ...d.first }, second: d.second ? { ...d.second } : null };
@@ -67,7 +67,7 @@ function HoursForm({ initial }: { initial: DayForm[] }) {
     try {
       await save.mutateAsync(result.hours);
       toast('Horário salvo');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

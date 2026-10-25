@@ -22,6 +22,7 @@ import { formatDateBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { colors, fonts, radius } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const PRIORITIES: TaskPriority[] = ['low', 'normal', 'high'];
 
@@ -82,7 +83,7 @@ function TaskForm({ task }: { task?: TaskOverview }) {
         input: { title: title.trim(), description: description.trim(), priority, dueDate, assigneeId },
       });
       toast(task ? 'Tarefa atualizada' : 'Tarefa criada');
-      if (task) router.back();
+      if (task) goBack();
       else router.replace({ pathname: '/tarefas/[id]', params: { id: saved.id } });
     } catch (e) {
       setError(friendlyError(e));

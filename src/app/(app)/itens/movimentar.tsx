@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -21,6 +21,7 @@ import { useProduct } from '@/features/products/api';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const SUBMIT_LABEL: Record<MoveMode, string> = { in: 'Registrar entrada', out: 'Registrar saída', adjust: 'Salvar contagem' };
 
@@ -96,7 +97,7 @@ export default function MoveStockScreen() {
           : { kind: 'move', productId: p.id, type, quantity: qty, reason: reason.trim(), allowNegative, idempotencyKey: key },
       );
       toast(mode === 'in' ? 'Entrada registrada' : mode === 'out' ? 'Saída registrada' : 'Contagem salva');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

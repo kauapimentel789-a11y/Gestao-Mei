@@ -13,6 +13,7 @@ import { type SignUpInput, signUpSchema } from '@/features/auth/schemas';
 import { friendlyError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 export default function SignUpScreen() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export default function SignUpScreen() {
       />
       <FormError message={serverError} />
       <Button label="Criar conta" onPress={onSubmit} loading={formState.isSubmitting} />
-      <TextLink label="Já tenho conta" onPress={() => router.back()} />
+      <TextLink label="Já tenho conta" onPress={() => goBack()} />
     </AuthShell>
   );
 }

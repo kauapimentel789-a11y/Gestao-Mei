@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { StyleSheet, Switch, Text, View } from 'react-native';
@@ -21,6 +21,7 @@ import { ITEM_TYPE_LABEL, ITEM_TYPES_BY_BUSINESS, marginRatio, SELLABLE_TYPES, U
 import { friendlyError } from '@/lib/errors';
 import { formatCents, parseBRLToCents } from '@/lib/money';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const centsToText = (c: number | null) => (c == null ? '' : (c / 100).toFixed(2).replace('.', ','));
 
@@ -78,7 +79,7 @@ export default function ItemFormScreen() {
     try {
       await save.mutateAsync({ id, input });
       toast(id ? 'Item atualizado' : 'Item cadastrado');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

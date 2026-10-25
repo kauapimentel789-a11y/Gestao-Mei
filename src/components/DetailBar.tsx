@@ -1,15 +1,15 @@
 // Barra das telas de detalhe: voltar, título centralizado e ação opcional.
-import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts, minTouch } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 export function DetailBar({ title, right }: { title: string; right?: ReactNode }) {
   return (
     <View style={styles.bar}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => router.back()} style={styles.circle}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => goBack()} style={styles.circle}>
         <ChevronLeft size={20} color={colors.ink} />
       </Pressable>
       <Text style={styles.title} accessibilityRole="header" numberOfLines={1}>
