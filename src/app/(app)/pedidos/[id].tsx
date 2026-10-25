@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check, MessageCircle, PackageMinus } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -22,6 +22,8 @@ import { useAccounts, useOrderEntry, useReceiveOrderPayment } from '@/features/f
 import { formatISODate, METHOD_LABEL, statusLabel } from '@/features/finance/logic';
 import { PaymentDialog } from '@/features/finance/PaymentDialog';
 import { useConsumeOrder } from '@/features/inventory/api';
+import { useCustomerNotice } from '@/features/messages/CustomerNotice';
+import { statusEvent } from '@/features/messages/templates';
 import { CHANNEL_LABEL, type OrderDetail, useOrder, useSetOrderStatus } from '@/features/orders/api';
 import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
 import { StatusChip } from '@/features/orders/StatusChip';
@@ -42,9 +44,13 @@ function lateText(dueAt: string, now = new Date()) {
 }
 
 export default function OrderDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // aviso=novo: acabou de ser criado, então já oferece a mensagem de confirmação.
+  const { id, aviso } = useLocalSearchParams<{ id: string; aviso?: string }>();
   const { orgId, org, config } = useOrg();
   const order = useOrder(orgId, id);
+  const orderEntry = useOrderEntry(orgId, id);
+  const notice = useCustomerNotice(order.data);
+  const offeredCreated = useRef(false);
   const setStatus = useSetOrderStatus(orgId);
   const consume = useConsumeOrder(orgId);
   const toast = useToast();
@@ -59,12 +65,21 @@ export default function OrderDetailScreen() {
   const noun = config.orderNoun;
   const title = o ? `${noun[0]!.toUpperCase()}${noun.slice(1)} #${o.number}` : '';
 
-  const change = async (status: OrderStatus, reason?: string) => {
+  useEffect(() => {
+    if (aviso !== 'novo' || !o || offeredCreated.current) return;
+    offeredCreated.current = true;
+    notice.offer('created');
+    router.setParams({ aviso: undefined });
+  }, [aviso, o, notice]);
+
+  const change = async (status: OrderStatus, reason?: string, options: { notify?: boolean } = {}) => {
     if (!o) return;
     setError(null);
     try {
       await setStatus.mutateAsync({ id: o.id, status, reason });
       toast(status === 'cancelled' ? `#${o.number} cancelado` : `#${o.number}: ${config.statusLabels[status]}`);
+      const event = statusEvent(status);
+      if (event && options.notify !== false) notice.offer(event);
       return true;
     } catch (e) {
       setError(friendlyError(e));
@@ -193,6 +208,7 @@ export default function OrderDetailScreen() {
           scheduledFor={o.scheduled_for}
           minutes={o.scheduled_minutes}
           closed={closed}
+          onScheduled={(at) => notice.offer(at ? 'rescheduled' : 'unscheduled', { scheduledFor: at })}
         />
       ) : null}
 
@@ -207,6 +223,7 @@ export default function OrderDetailScreen() {
             customer_name: o.customer?.name ?? null,
             customer_phone_digits: o.customer?.phone_digits ?? null,
           }}
+          onNoShow={() => notice.offer('no_show')}
         />
       ) : null}
 
@@ -235,7 +252,7 @@ export default function OrderDetailScreen() {
         </View>
       </Card>
 
-      <OrderPayment order={o} prompt={payPrompt} />
+      <OrderPayment order={o} prompt={payPrompt} onReceived={(paidCents) => notice.offer('payment', { paidCents })} />
 
       {appointments ? <ServiceNotes orderId={o.id} /> : null}
 
@@ -285,7 +302,10 @@ export default function OrderDetailScreen() {
           trailing={<Check size={18} color={colors.primary} />}
           loading={setStatus.isPending}
           onPress={async () => {
-            if ((await change(finalStatus)) && appointments) setPayPrompt((n) => n + 1);
+            // Em atendimentos com valor em aberto, o recebimento abre primeiro e a mensagem vem depois dele.
+            const openNow = orderEntry.data ? orderEntry.data.entry.open_cents : o.total_cents;
+            const askPayment = appointments && openNow > 0;
+            if ((await change(finalStatus, undefined, { notify: !askPayment })) && askPayment) setPayPrompt((n) => n + 1);
           }}
         />
       ) : null}
@@ -320,6 +340,8 @@ export default function OrderDetailScreen() {
         </View>
       </Modal>
 
+      {notice.element}
+
       <CancelDialog
         visible={cancelOpen}
         noun={noun}
@@ -335,7 +357,7 @@ export default function OrderDetailScreen() {
 }
 
 /** Recebimentos do pedido: o primeiro cria o título a receber; os seguintes abatem o mesmo título. */
-function OrderPayment({ order: o, prompt = 0 }: { order: OrderDetail; prompt?: number }) {
+function OrderPayment({ order: o, prompt = 0, onReceived }: { order: OrderDetail; prompt?: number; onReceived?: (paidCents: number) => void }) {
   const { orgId } = useOrg();
   const orderEntry = useOrderEntry(orgId, o.id);
   const accounts = useAccounts(orgId);
@@ -403,6 +425,7 @@ function OrderPayment({ order: o, prompt = 0 }: { order: OrderDetail; prompt?: n
             await receive.mutateAsync({ orderId: o.id, ...v, idempotencyKey: payKey });
             setPayKey(null);
             toast(`Recebimento do #${o.number} registrado`);
+            onReceived?.(v.amountCents);
           } catch (err) {
             setPayError(friendlyError(err));
           }

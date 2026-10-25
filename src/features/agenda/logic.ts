@@ -75,18 +75,22 @@ export function conflictsWith<T extends Scheduled>(items: T[], start: Date, minu
 const WEEKDAY_LONG = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** Mensagem de lembrete para o WhatsApp: "amanhã (terça, 10/11) às 14:00". */
-export function reminderText(input: { name: string | null; at: Date; business: string; now?: Date }): string {
-  const { at, business } = input;
-  const now = input.now ?? new Date();
+/** "hoje às 14:00", "amanhã (terça, 10/11) às 14:00" ou "quarta, 12/11, às 14:00". */
+export function whenPhrase(at: Date, now: Date = new Date()): string {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const day = new Date(at.getFullYear(), at.getMonth(), at.getDate()).getTime();
   const diff = Math.round((day - today) / 86_400_000);
   const date = `${WEEKDAY_LONG[at.getDay()]}, ${pad(at.getDate())}/${pad(at.getMonth() + 1)}`;
   const time = `${pad(at.getHours())}:${pad(at.getMinutes())}`;
-  const when = diff === 0 ? `hoje às ${time}` : diff === 1 ? `amanhã (${date}) às ${time}` : `de ${date}, às ${time}`;
+  return diff === 0 ? `hoje às ${time}` : diff === 1 ? `amanhã (${date}) às ${time}` : `${date}, às ${time}`;
+}
+
+/** Mensagem de lembrete para o WhatsApp: "amanhã (terça, 10/11) às 14:00". */
+export function reminderText(input: { name: string | null; at: Date; business: string; now?: Date }): string {
   const first = input.name?.trim().split(/\s+/)[0];
-  return `Olá${first ? `, ${first}` : ''}! Passando para lembrar do seu horário ${when} na ${business}. Podemos confirmar?`;
+  const when = whenPhrase(input.at, input.now);
+  const prefix = when.startsWith('hoje') || when.startsWith('amanhã') ? '' : 'de ';
+  return `Olá${first ? `, ${first}` : ''}! Passando para lembrar do seu horário ${prefix}${when} na ${input.business}. Podemos confirmar?`;
 }
 
 /** Lembrete faz sentido para horário futuro de atendimento em aberto. */

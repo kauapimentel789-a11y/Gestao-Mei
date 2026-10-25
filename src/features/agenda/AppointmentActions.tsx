@@ -17,9 +17,11 @@ import { type ReminderTarget, useReminder } from './useReminder';
 
 interface Props {
   order: ReminderTarget & { number: number; status: string; reminder_sent_at: string | null };
+  /** Depois de registrar a falta (para oferecer a mensagem de remarcar). */
+  onNoShow?: () => void;
 }
 
-export function AppointmentActions({ order: o }: Props) {
+export function AppointmentActions({ order: o, onNoShow }: Props) {
   const { orgId, config } = useOrg();
   const reminder = useReminder();
   const noShow = useMarkNoShow(orgId);
@@ -81,6 +83,7 @@ export function AppointmentActions({ order: o }: Props) {
                   await noShow.mutateAsync(o.id);
                   setConfirm(false);
                   toast('Falta registrada');
+                  onNoShow?.();
                 } catch (e) {
                   setConfirm(false);
                   toast(friendlyError(e));

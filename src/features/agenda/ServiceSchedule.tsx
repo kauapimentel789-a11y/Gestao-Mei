@@ -18,11 +18,14 @@ export function ServiceSchedule({
   scheduledFor,
   minutes,
   closed,
+  onScheduled,
 }: {
   orderId: string;
   scheduledFor: string | null;
   minutes: number | null;
   closed: boolean;
+  /** Depois de salvar: a data nova, ou null quando saiu da agenda. */
+  onScheduled?: (at: Date | null) => void;
 }) {
   const { orgId } = useOrg();
   const schedule = useScheduleOrder(orgId);
@@ -46,6 +49,7 @@ export function ServiceSchedule({
             await schedule.mutateAsync({ orderId, at, minutes: m, reason });
             setOpen(false);
             toast(at ? 'Agendado' : 'Tirado da agenda');
+            onScheduled?.(at);
           }}
         />
       ) : null}

@@ -95,7 +95,7 @@ export default function NewAppointmentScreen() {
         notes: notes.trim(),
       });
       toast(`Marcado: ${formatDateBR(at)} às ${formatTimeBR(at)}`);
-      router.replace({ pathname: '/pedidos/[id]', params: { id: o.id } });
+      router.replace({ pathname: '/pedidos/[id]', params: { id: o.id, aviso: 'novo' } });
     } catch (e) {
       setError(friendlyError(e));
     }

@@ -194,6 +194,7 @@ export function useOrderEntry(orgId: string, orderId: string) {
       if (payments.error) throw payments.error;
       return { entry: data as EntryOverview, payments: payments.data as Payment[] };
     },
+    enabled: Boolean(orderId),
   });
 }
 
