@@ -1,9 +1,10 @@
-// Edge Function do link público de encomenda (/e/<slug>).
+// Edge Function das páginas públicas: link de encomenda (/e/<slug>) e
+// agendamento pelo site (/agendar/<slug>, plano Pro Max).
 //
-// A página pública chama esta função com a chave pública do projeto. Aqui a
-// entrada é validada com Zod e os RPCs `public_storefront` e
-// `public_create_order` são chamados com a service role, que só existe no
-// ambiente da função (SUPABASE_SERVICE_ROLE_KEY, injetada pelo Supabase).
+// As páginas chamam esta função com a chave pública do projeto. Aqui a
+// entrada é validada com Zod e os RPCs `public_*` são chamados com a service
+// role, que só existe no ambiente da função (SUPABASE_SERVICE_ROLE_KEY,
+// injetada pelo Supabase). Nenhum outro dado da empresa passa por aqui.
 //
 // O visitante é identificado só por um hash do IP com um segredo
 // (PUBLIC_ORDER_SALT), usado no limite de envios. O IP não é gravado.
@@ -63,6 +64,37 @@ Deno.serve(async (req) => {
 
   if (input.action === 'storefront') {
     const { data, error } = await supabase.rpc('public_storefront', { p_slug: input.slug });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'booking_page') {
+    const { data, error } = await supabase.rpc('public_booking_page', { p_slug: input.slug });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'booking_slots') {
+    const { data, error } = await supabase.rpc('public_booking_slots', {
+      p_slug: input.slug,
+      p_product_id: input.product_id,
+      p_day: input.day,
+    });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'book') {
+    const { data, error } = await supabase.rpc('public_book_appointment', {
+      p_slug: input.slug,
+      p_product_id: input.product_id,
+      p_starts_at: input.starts_at,
+      p_customer_name: input.name,
+      p_phone: input.phone,
+      p_idempotency_key: input.idempotency_key,
+      p_client_hash: await clientHash(req),
+      p_notes: input.notes || null,
+    });
     if (error) return rpcError(error);
     return json(data);
   }

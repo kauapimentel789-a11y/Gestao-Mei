@@ -76,6 +76,9 @@ const BY_MESSAGE: Record<string, string> = {
   not_scheduled: 'Esse atendimento não tem horário marcado.',
   appointment_not_started: 'A falta só pode ser marcada depois do horário.',
   invalid_note: 'Escreva a anotação (até 4.000 caracteres).',
+  plan_required: 'O agendamento pelo site faz parte do plano Pro Max.',
+  invalid_hours: 'Confira os horários: use horas como 08:00 e o fim depois do início.',
+  hours_overlap: 'Dois turnos do mesmo dia se cruzam. Ajuste os horários.',
 };
 
 // Erros de restrição do Postgres (constraint) que o usuário pode causar.

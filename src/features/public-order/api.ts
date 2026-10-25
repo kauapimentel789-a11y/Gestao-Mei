@@ -4,6 +4,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 import {
+  type BookingPage,
+  type BookingResult,
+  type BookingSlots,
+  type BookRequest,
   GENERIC_ERROR,
   type OrderRequest,
   type OrderResult,
@@ -43,5 +47,32 @@ export function useStorefront(slug: string) {
 export function useSendPublicOrder() {
   return useMutation({
     mutationFn: (input: Omit<OrderRequest, 'action'>) => call<OrderResult>({ action: 'order', ...input }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Agendamento pelo site (/agendar/<slug>)
+// ---------------------------------------------------------------------------
+
+export function useBookingPage(slug: string) {
+  return useQuery({
+    queryKey: ['public-booking', slug],
+    queryFn: () => call<BookingPage>({ action: 'booking_page', slug }),
+    retry: (count, err) => !(err instanceof PublicOrderError && err.code === 'not_found') && count < 1,
+  });
+}
+
+export function useBookingSlots(slug: string, productId: string | null, day: string | null) {
+  return useQuery({
+    queryKey: ['public-booking', slug, 'slots', productId, day],
+    enabled: Boolean(productId && day),
+    queryFn: () => call<BookingSlots>({ action: 'booking_slots', slug, product_id: productId, day }),
+    staleTime: 0,
+  });
+}
+
+export function useBook() {
+  return useMutation({
+    mutationFn: (input: Omit<BookRequest, 'action'>) => call<BookingResult>({ action: 'book', ...input }),
   });
 }
