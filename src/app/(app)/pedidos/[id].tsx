@@ -26,6 +26,7 @@ import { useCustomerNotice } from '@/features/messages/CustomerNotice';
 import { statusEvent } from '@/features/messages/templates';
 import { CHANNEL_LABEL, type OrderDetail, useOrder, useSetOrderStatus } from '@/features/orders/api';
 import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
+import { ServiceInvoice } from '@/features/invoices/ServiceInvoice';
 import { ServiceProfessional } from '@/features/professionals/ServiceProfessional';
 import { StatusChip } from '@/features/orders/StatusChip';
 import { useOrg } from '@/features/organizations/useOrg';
@@ -255,6 +256,8 @@ export default function OrderDetailScreen() {
       </Card>
 
       <OrderPayment order={o} prompt={payPrompt} onReceived={(paidCents) => notice.offer('payment', { paidCents })} />
+
+      {o.kind === 'service_order' ? <ServiceInvoice order={o} /> : null}
 
       {appointments ? <ServiceNotes orderId={o.id} /> : null}
 

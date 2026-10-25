@@ -35,3 +35,46 @@ jobs:
         run: bash supabase/tests/run.sh
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
+  # Depois do merge na main (com app e banco verdes), aplica as migrações novas
+  # no Supabase e publica a Edge Function. Precisa dos segredos do repositório
+  # SUPABASE_DB_URL (string de conexão do pooler, modo session) e
+  # SUPABASE_ACCESS_TOKEN; sem eles o passo é pulado.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [app, database]
+    runs-on: ubuntu-latest
+    concurrency: supabase-deploy
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: bsomqupznkskbfufidna
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Histórico inicial das migrações
+        if: env.SUPABASE_DB_URL != ''
+        # Até a 0020 as migrações foram aplicadas à mão (SQL Editor e MCP), com
+        # outros números no histórico. Isto alinha o histórico uma vez; repetir
+        # não muda nada. Não acrescente versões novas aqui.
+        run: |
+          supabase migration repair --db-url "$SUPABASE_DB_URL" --status reverted \
+            20261024050145 20261024050207 20261025121444 20261025155141 20261025161228
+          supabase migration repair --db-url "$SUPABASE_DB_URL" --status applied \
+            20261023000001 20261023000002 20261023000003 20261024000004 20261024000005 \
+            20261024000006 20261024000007 20261024000008 20261024000009 20261024000010 \
+            20261024000011 20261024000012 20261024000013 20261024000014 20261024000015 \
+            20261025000016 20261025000017 20261025000018 20261025000019 20261025000020
+      - name: Aplicar migrações novas
+        if: env.SUPABASE_DB_URL != ''
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+      - name: Publicar a Edge Function
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        run: >-
+          supabase functions deploy encomenda --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+          --import-map supabase/functions/encomenda/deno.json
+      - name: Aviso
+        if: env.SUPABASE_DB_URL == '' || env.SUPABASE_ACCESS_TOKEN == ''
+        run: echo "::notice::Segredos do Supabase não configurados; migrações e função não foram publicadas."

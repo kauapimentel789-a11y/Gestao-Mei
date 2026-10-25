@@ -14,6 +14,7 @@ import { useToast } from '@/components/Toast';
 import { type Customer, findCustomersByPhone, useCustomer, useSaveCustomer } from '@/features/customers/api';
 import { type CustomerFormInput, customerSchema } from '@/features/customers/schemas';
 import { useOrg } from '@/features/organizations/useOrg';
+import { formatDocument, isValidDocument } from '@/lib/document';
 import { friendlyError } from '@/lib/errors';
 import { colors, fonts } from '@/theme/tokens';
 
@@ -30,11 +31,16 @@ export default function CustomerFormScreen() {
 
   const { control, handleSubmit, reset, formState } = useForm<CustomerFormInput>({
     resolver: zodResolver(customerSchema),
-    defaultValues: { name: '', phone: '', notes: '' },
+    defaultValues: { name: '', phone: '', document: '', notes: '' },
   });
 
   useEffect(() => {
-    if (existing.data) reset({ name: existing.data.name, phone: existing.data.phone ?? '', notes: existing.data.notes ?? '' });
+    if (existing.data) reset({
+        name: existing.data.name,
+        phone: existing.data.phone ?? '',
+        document: existing.data.document ? formatDocument(existing.data.document) : '',
+        notes: existing.data.notes ?? '',
+      });
   }, [existing.data, reset]);
 
   const submit = (force: boolean) =>
@@ -79,6 +85,25 @@ export default function CustomerFormScreen() {
               error={fieldState.error?.message}
               keyboardType="phone-pad"
               placeholder="(11) 98765-4321"
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="document"
+          render={({ field, fieldState }) => (
+            <TextField
+              label="CPF ou CNPJ (opcional, para nota fiscal)"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={() => {
+                if (isValidDocument(field.value)) field.onChange(formatDocument(field.value));
+                field.onBlur();
+              }}
+              error={fieldState.error?.message}
+              keyboardType="number-pad"
+              maxLength={18}
+              placeholder="000.000.000-00"
             />
           )}
         />
