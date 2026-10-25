@@ -466,6 +466,40 @@ export function SlotGrid({
   );
 }
 
+/** "Com quem?": sem preferência ou um dos profissionais. */
+export function ProfessionalPicker({
+  professionals,
+  value,
+  onChange,
+}: {
+  professionals: { id: string; name: string }[];
+  value: string | null;
+  onChange: (id: string | null) => void;
+}) {
+  const options = [{ id: null as string | null, name: 'Sem preferência' }, ...professionals];
+  return (
+    <View style={styles.slots}>
+      {options.map((p, i) => (
+        <FadeIn key={p.id ?? 'any'} delay={i * 40} distance={6} duration={260}>
+          <Pressable
+            accessibilityRole="radio"
+            accessibilityState={{ checked: p.id === value }}
+            onPress={() => onChange(p.id)}
+            style={({ hovered }: { pressed: boolean; hovered?: boolean }) => [
+              styles.slot,
+              styles.pro,
+              hovered && styles.slotHover,
+              p.id === value && styles.slotOn,
+            ]}
+          >
+            <Text style={[styles.slotText, p.id === value && styles.slotTextOn]}>{p.name}</Text>
+          </Pressable>
+        </FadeIn>
+      ))}
+    </View>
+  );
+}
+
 export function DarkField({ label, error, ...rest }: TextInputProps & { label: string; error?: string }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -791,6 +825,7 @@ const styles = StyleSheet.create({
   todayDot: { position: 'absolute', bottom: 5, width: 4, height: 4, borderRadius: 2, backgroundColor: site.accent },
 
   slots: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pro: { paddingHorizontal: 16 },
   slot: {
     minWidth: 78,
     minHeight: 44,

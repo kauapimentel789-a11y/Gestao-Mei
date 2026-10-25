@@ -26,6 +26,7 @@ import { useCustomerNotice } from '@/features/messages/CustomerNotice';
 import { statusEvent } from '@/features/messages/templates';
 import { CHANNEL_LABEL, type OrderDetail, useOrder, useSetOrderStatus } from '@/features/orders/api';
 import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
+import { ServiceProfessional } from '@/features/professionals/ServiceProfessional';
 import { StatusChip } from '@/features/orders/StatusChip';
 import { useOrg } from '@/features/organizations/useOrg';
 import { OrderTasks } from '@/features/tasks/OrderTasks';
@@ -211,6 +212,7 @@ export default function OrderDetailScreen() {
           onScheduled={(at) => notice.offer(at ? 'rescheduled' : 'unscheduled', { scheduledFor: at })}
         />
       ) : null}
+      {o.kind === 'service_order' ? <ServiceProfessional orderId={o.id} professionalId={o.professional_id} closed={closed} /> : null}
 
       {appointments && !closed ? (
         <AppointmentActions

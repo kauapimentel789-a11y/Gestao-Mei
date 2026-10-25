@@ -20,6 +20,14 @@ describe('semana', () => {
 });
 
 describe('overlapping', () => {
+  it('com profissionais, só conflita na agenda do mesmo', () => {
+    const a = { ...at(9, 0, 60, 'a'), professional_id: 'ana' };
+    const b = { ...at(9, 0, 60, 'b'), professional_id: 'beto' };
+    expect(overlapping([a, b]).size).toBe(0);
+    expect(overlapping([a, { ...b, professional_id: 'ana' }]).size).toBe(2);
+    expect(overlapping([a, { ...b, professional_id: null }]).size).toBe(2);
+  });
+
   it('marca horários que se sobrepõem', () => {
     const ids = overlapping([at(9, 0, 90, 'a'), at(10, 0, 60, 'b'), at(11, 0, 60, 'c')]);
     expect([...ids].sort()).toEqual(['a', 'b']);

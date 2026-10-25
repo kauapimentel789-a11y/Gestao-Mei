@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       p_slug: input.slug,
       p_product_id: input.product_id,
       p_day: input.day,
+      p_professional_id: input.professional_id ?? null,
     });
     if (error) return rpcError(error);
     return json(data);
@@ -95,6 +96,7 @@ Deno.serve(async (req) => {
       p_idempotency_key: input.idempotency_key,
       p_client_hash: await clientHash(req),
       p_notes: input.notes || null,
+      p_professional_id: input.professional_id ?? null,
     });
     if (error) return rpcError(error);
     return json(data);

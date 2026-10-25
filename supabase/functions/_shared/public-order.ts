@@ -74,6 +74,8 @@ export const bookingSlotsRequest = z.object({
   slug,
   product_id: z.uuid(),
   day: z.iso.date(),
+  /** Vazio = sem preferência (migração 0019). */
+  professional_id: z.uuid().nullable().optional(),
 });
 
 export const bookRequest = z.object({
@@ -92,6 +94,7 @@ export const bookRequest = z.object({
       return digits >= 10 && digits <= 13;
     }, 'Informe o WhatsApp com DDD.'),
   notes: z.string().trim().max(1000, 'Observações muito longas.').nullable(),
+  professional_id: z.uuid().nullable().optional(),
 });
 
 export type BookRequest = z.infer<typeof bookRequest>;
@@ -147,6 +150,8 @@ export interface BookingPage {
   /** Dias da semana com atendimento (0 = domingo). */
   weekdays: number[];
   services: BookingService[];
+  /** Quem atende (migração 0019); vazio = a página não pergunta. */
+  professionals?: { id: string; name: string }[];
 }
 
 export interface BookingSlots {
@@ -161,6 +166,7 @@ export interface BookingResult {
   /** Ex.: "10/11 às 14:00". */
   label: string;
   service: string;
+  professional?: string | null;
   /** Código do link do cliente (migração 0018). */
   manage_token?: string;
 }
@@ -175,6 +181,7 @@ export interface BookingManage {
   };
   number: number;
   service: string;
+  professional?: string | null;
   total_cents: number;
   starts_at: string | null;
   minutes: number;
@@ -213,6 +220,7 @@ export const PUBLIC_ERRORS: Record<string, { status: number; message: string }> 
   slot_unavailable: { status: 409, message: 'Esse horário acabou de ser ocupado. Escolha outro.' },
   booking_locked: { status: 409, message: 'Este horário não pode mais ser mudado por aqui. Fale com a empresa.' },
   order_has_payments: { status: 409, message: 'Este horário já tem pagamento registrado. Para cancelar, fale com a empresa.' },
+  professional_not_found: { status: 409, message: 'Esse profissional não está mais disponível. Atualize a página.' },
   invalid_request: { status: 400, message: 'Confira os dados e tente de novo.' },
 };
 

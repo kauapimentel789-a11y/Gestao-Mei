@@ -37,7 +37,9 @@ export function AgendaRow({ item: o, first, conflict }: { item: AgendaItem; firs
           {start && !appointments ? ` · #${o.number}` : ''}
         </Text>
         <Text style={styles.muted} numberOfLines={1}>
-          {o.problem_description || o.items_summary?.replace(/^1× /, '') || ''}
+          {[o.problem_description || o.items_summary?.replace(/^1× /, ''), o.professional_name ? `com ${o.professional_name}` : null]
+            .filter(Boolean)
+            .join(' · ')}
         </Text>
         {conflict ? (
           <View style={styles.inline}>

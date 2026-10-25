@@ -71,6 +71,8 @@ export interface OrderDetail {
   stock_consumed_at: string | null;
   no_show_at: string | null;
   reminder_sent_at: string | null;
+  /** Quem atende (migração 0019). */
+  professional_id: string | null;
   created_at: string;
   /** Algum item do pedido controla estoque (dá para baixar do estoque). */
   tracks_stock: boolean;
@@ -172,7 +174,7 @@ export function useOrder(orgId: string, id: string) {
         .from('orders')
         .select(
           `id, organization_id, number, kind, status, channel, due_at, notes, problem_description, scheduled_for, scheduled_minutes,
-           subtotal_cents, discount_cents, total_cents, cancel_reason, stock_consumed_at, no_show_at, reminder_sent_at, created_at,
+           subtotal_cents, discount_cents, total_cents, cancel_reason, stock_consumed_at, no_show_at, reminder_sent_at, professional_id, created_at,
            customer:customers (id, name, phone, phone_digits),
            items:order_items (id, position, product_id, description, unit, quantity, unit_price_cents, discount_cents, line_total_cents),
            history:order_status_history (id, from_status, to_status, reason, changed_at)`,

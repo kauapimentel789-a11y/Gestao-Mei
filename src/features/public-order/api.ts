@@ -63,11 +63,12 @@ export function useBookingPage(slug: string) {
   });
 }
 
-export function useBookingSlots(slug: string, productId: string | null, day: string | null) {
+export function useBookingSlots(slug: string, productId: string | null, day: string | null, professionalId: string | null = null) {
   return useQuery({
-    queryKey: ['public-booking', slug, 'slots', productId, day],
+    queryKey: ['public-booking', slug, 'slots', productId, day, professionalId],
     enabled: Boolean(productId && day),
-    queryFn: () => call<BookingSlots>({ action: 'booking_slots', slug, product_id: productId, day }),
+    queryFn: () =>
+      call<BookingSlots>({ action: 'booking_slots', slug, product_id: productId, day, ...(professionalId ? { professional_id: professionalId } : {}) }),
     staleTime: 0,
   });
 }
