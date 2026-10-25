@@ -107,6 +107,15 @@ export interface BookingService {
 export interface BookingPage {
   name: string;
   slug: string;
+  practice_area?: 'health' | 'professional' | 'beauty' | 'other' | null;
+  /** Dados que o dono divulga na página (migração 0017); vazio não aparece. */
+  tagline?: string | null;
+  about?: string | null;
+  whatsapp?: string | null;
+  address?: string | null;
+  instagram?: string | null;
+  /** Turnos de cada dia (HH:MM). */
+  hours?: { weekday: number; opens_at: string; closes_at: string }[];
   /** Hoje e o último dia aceito, no fuso de Brasília (aaaa-mm-dd). */
   today: string;
   last_day: string;

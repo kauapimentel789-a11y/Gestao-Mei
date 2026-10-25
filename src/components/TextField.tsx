@@ -40,7 +40,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: 14,
     fontFamily: fonts.medium,
-    fontSize: 15,
+    // 16 ou mais: o Safari do iPhone não amplia a tela ao tocar no campo.
+    fontSize: 16,
     color: colors.ink,
   },
   inputError: { borderColor: colors.primaryText },

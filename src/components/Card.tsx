@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
+import { FadeIn } from './motion';
+
+/** Cartão branco das telas; entra com uma animação curta ao aparecer. */
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <FadeIn distance={8} duration={320} style={[styles.card, style]}>
+      {children}
+    </FadeIn>
+  );
 }
 
 const styles = StyleSheet.create({

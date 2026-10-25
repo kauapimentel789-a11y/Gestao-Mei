@@ -134,3 +134,78 @@ export function formatDuration(minutes: number): string {
   const m = minutes % 60;
   return m ? `${h} h ${m} min` : `${h} h`;
 }
+
+export const MONTH_LABEL = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+] as const;
+
+export interface CalendarDay {
+  date: string; // aaaa-mm-dd
+  day: number;
+  /** Dia com atendimento, entre hoje e o último dia aceito. */
+  available: boolean;
+}
+
+/** Semanas do mês (começando no domingo), com null nas casas vazias. `month` de 1 a 12. */
+export function monthGrid(year: number, month: number, today: string, lastDay: string, weekdays: number[]): (CalendarDay | null)[][] {
+  const first = new Date(Date.UTC(year, month - 1, 1, 12));
+  const days = new Date(Date.UTC(year, month, 0, 12)).getUTCDate();
+  const cells: (CalendarDay | null)[] = Array.from({ length: first.getUTCDay() }, () => null);
+  for (let d = 1; d <= days; d++) {
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const wd = (first.getUTCDay() + d - 1) % 7;
+    cells.push({ date, day: d, available: date >= today && date <= lastDay && weekdays.includes(wd) });
+  }
+  while (cells.length % 7) cells.push(null);
+  const weeks: (CalendarDay | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+/** Mês seguinte ou anterior: { year, month } com month de 1 a 12. */
+export function addMonth(year: number, month: number, delta: number): { year: number; month: number } {
+  const index = year * 12 + (month - 1) + delta;
+  return { year: Math.floor(index / 12), month: (index % 12) + 1 };
+}
+
+/** "22 de maio de 2026" a partir de aaaa-mm-dd. */
+export function formatLongDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+  return `${d} de ${MONTH_LABEL[m - 1].toLowerCase()} de ${y}`;
+}
+
+/** Turnos de cada dia da semana em texto, começando na segunda, para o rodapé. */
+export function weekSchedule(hours: { weekday: number; opens_at: string; closes_at: string }[]): { day: string; text: string }[] {
+  return [1, 2, 3, 4, 5, 6, 0].map((d) => {
+    const turns = hours
+      .filter((h) => h.weekday === d)
+      .sort((a, b) => a.opens_at.localeCompare(b.opens_at))
+      .map((h) => `${h.opens_at.slice(0, 5)} às ${h.closes_at.slice(0, 5)}`);
+    return { day: WEEKDAY_LABEL[d], text: turns.length ? turns.join(' e ') : 'Fechado' };
+  });
+}
+
+/** Link do WhatsApp com mensagem pronta; aceita o número com ou sem 55. */
+export function whatsappLink(digits: string, message?: string): string {
+  const full = digits.length <= 11 ? `55${digits}` : digits;
+  return `https://wa.me/${full}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
+}
+
+/** (11) 99999-9999 a partir dos dígitos, com ou sem 55. */
+export function formatPhone(digits: string): string {
+  const local = digits.length > 11 ? digits.slice(digits.length - 11) : digits;
+  const ddd = local.slice(0, 2);
+  const rest = local.slice(2);
+  return rest.length === 9 ? `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}` : `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;
+}

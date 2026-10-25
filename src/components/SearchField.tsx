@@ -33,5 +33,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.gray200,
   },
-  input: { flex: 1, fontFamily: fonts.medium, fontSize: 15, color: colors.ink, paddingVertical: 10 },
+  input: { flex: 1, minWidth: 0, fontFamily: fonts.medium, fontSize: 16, color: colors.ink, paddingVertical: 10 },
 });

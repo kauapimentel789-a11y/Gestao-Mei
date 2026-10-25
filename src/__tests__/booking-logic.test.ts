@@ -1,5 +1,6 @@
-import { bookingDays, effectivePlan, formatDuration, formFromHours, hoursFromForm, hoursSummary, normalizeTime } from '@/features/booking/logic';
+import { addMonth, bookingDays, effectivePlan, formatDuration, formatLongDate, formatPhone, formFromHours, hoursFromForm, hoursSummary, monthGrid, normalizeTime, weekSchedule, whatsappLink } from '@/features/booking/logic';
 
+import { cleanProfile } from '@/features/booking/profile';
 import { bookRequest } from '../../supabase/functions/_shared/public-order';
 
 describe('effectivePlan', () => {
@@ -99,5 +100,68 @@ describe('contrato do agendamento', () => {
   it('exige horário e WhatsApp', () => {
     expect(bookRequest.safeParse({ ...base, starts_at: '' }).success).toBe(false);
     expect(bookRequest.safeParse({ ...base, phone: '1234' }).success).toBe(false);
+  });
+});
+
+describe('calendário da página', () => {
+  it('monta o mês começando no domingo e marca os dias com atendimento', () => {
+    // Novembro de 2026 começa num domingo.
+    const weeks = monthGrid(2026, 11, '2026-11-03', '2026-11-20', [1, 2, 3, 4, 5]);
+    expect(weeks[0][0]?.date).toBe('2026-11-01');
+    expect(weeks).toHaveLength(5);
+    const flat = weeks.flat().filter(Boolean) as { date: string; available: boolean }[];
+    expect(flat.find((d) => d.date === '2026-11-02')?.available).toBe(false); // antes de hoje
+    expect(flat.find((d) => d.date === '2026-11-03')?.available).toBe(true);
+    expect(flat.find((d) => d.date === '2026-11-07')?.available).toBe(false); // sábado
+    expect(flat.find((d) => d.date === '2026-11-23')?.available).toBe(false); // depois do último dia
+  });
+
+  it('deixa casas vazias antes do dia 1', () => {
+    // Outubro de 2026 começa numa quinta.
+    expect(monthGrid(2026, 10, '2026-10-01', '2026-10-31', [4])[0].slice(0, 4)).toEqual([null, null, null, null]);
+  });
+
+  it('troca de mês e de ano', () => {
+    expect(addMonth(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
+    expect(addMonth(2026, 1, -1)).toEqual({ year: 2025, month: 12 });
+  });
+
+  it('escreve a data por extenso', () => {
+    expect(formatLongDate('2026-05-22')).toBe('22 de maio de 2026');
+  });
+
+  it('lista a semana para o rodapé', () => {
+    const week = weekSchedule([
+      { weekday: 1, opens_at: '08:00', closes_at: '12:00' },
+      { weekday: 1, opens_at: '13:00', closes_at: '18:00' },
+    ]);
+    expect(week[0]).toEqual({ day: 'Segunda', text: '08:00 às 12:00 e 13:00 às 18:00' });
+    expect(week[6]).toEqual({ day: 'Domingo', text: 'Fechado' });
+  });
+
+  it('monta o WhatsApp e o telefone', () => {
+    expect(whatsappLink('11999998888', 'Oi')).toBe('https://wa.me/5511999998888?text=Oi');
+    expect(whatsappLink('5511999998888')).toBe('https://wa.me/5511999998888');
+    expect(formatPhone('5511999998888')).toBe('(11) 99999-8888');
+    expect(formatPhone('1133334444')).toBe('(11) 3333-4444');
+  });
+});
+
+describe('cleanProfile', () => {
+  const empty = { tagline: '', about: '', whatsapp: '', address: '', instagram: '' };
+
+  it('vazio vira nulo', () => {
+    expect(cleanProfile(empty)).toEqual({ profile: { tagline: null, about: null, whatsapp: null, address: null, instagram: null } });
+  });
+
+  it('limpa WhatsApp e Instagram', () => {
+    const r = cleanProfile({ ...empty, whatsapp: '(11) 99999-8888', instagram: 'https://instagram.com/meu.salao/' });
+    expect(r).toEqual({ profile: { tagline: null, about: null, whatsapp: '11999998888', address: null, instagram: 'meu.salao' } });
+    expect(cleanProfile({ ...empty, instagram: '@meu_salao' })).toMatchObject({ profile: { instagram: 'meu_salao' } });
+  });
+
+  it('aponta o campo com erro', () => {
+    expect(cleanProfile({ ...empty, whatsapp: '1234' })).toEqual({ field: 'whatsapp', error: 'Informe o WhatsApp com DDD.' });
+    expect(cleanProfile({ ...empty, instagram: 'meu salão' })).toMatchObject({ field: 'instagram' });
   });
 });
