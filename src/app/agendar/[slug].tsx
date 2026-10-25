@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
-import { CalendarCheck, CalendarDays, CalendarX, Clock, Lock, MessageCircle, RotateCcw, User } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import { CalendarCheck, CalendarClock, CalendarDays, CalendarX, Check, Clock, Copy, Lock, MessageCircle, RotateCcw, User } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Linking, ScrollView, type ScrollViewInstance, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +28,7 @@ import { MAX_WIDTH, site, siteFonts as f } from '@/features/booking/site/theme';
 import { PublicOrderError, useBook, useBookingPage, useBookingSlots } from '@/features/public-order/api';
 import { newId } from '@/lib/ids';
 import { formatCents } from '@/lib/money';
+import { bookingManageUrl } from '@/lib/publicLink';
 
 import { type BookingPage, type BookingResult, bookRequest } from '../../../supabase/functions/_shared/public-order';
 
@@ -339,6 +341,8 @@ function SectionTitle({ page }: { page: BookingPage }) {
 
 function Done({ page, result, onAgain }: { page: BookingPage; result: BookingResult; onAgain: () => void }) {
   const [scale] = useState(() => new Animated.Value(0));
+  const [copied, setCopied] = useState(false);
+  const link = result.manage_token ? bookingManageUrl(result.manage_token) : null;
   useEffect(() => {
     Animated.spring(scale, { toValue: 1, useNativeDriver: false, speed: 10, bounciness: 14 }).start();
   }, [scale]);
@@ -354,8 +358,30 @@ function Done({ page, result, onAgain }: { page: BookingPage; result: BookingRes
         <Text style={styles.emptyText}>
           {result.service} em {page.name}, {result.label}. Valor: {formatCents(result.total_cents)}.
         </Text>
-        <Text style={styles.emptyText}>Se precisar mudar, é só avisar {page.name}.</Text>
       </FadeIn>
+      {link ? (
+        <FadeIn delay={220} style={styles.linkBox}>
+          <Text style={styles.linkTitle}>Guarde seu link</Text>
+          <Text style={styles.linkText}>Por ele você remarca ou cancela até 2 horas antes, sem precisar ligar.</Text>
+          <Text style={styles.linkUrl} selectable numberOfLines={2}>
+            {link}
+          </Text>
+          <View style={styles.doneActions}>
+            <GhostButton
+              label={copied ? 'Link copiado' : 'Copiar link'}
+              icon={copied ? Check : Copy}
+              onPress={() => {
+                Clipboard.setStringAsync(link)
+                  .then(() => setCopied(true))
+                  .catch(() => undefined);
+              }}
+            />
+            <GhostButton label="Abrir meu horário" icon={CalendarClock} onPress={() => Linking.openURL(link)} />
+          </View>
+        </FadeIn>
+      ) : (
+        <Text style={styles.emptyText}>Se precisar mudar, é só avisar {page.name}.</Text>
+      )}
       <FadeIn delay={300} style={styles.doneActions}>
         {page.whatsapp ? (
           <PrimaryButton
@@ -417,5 +443,21 @@ const styles = StyleSheet.create({
   },
   doneText: { alignItems: 'center', gap: 8, maxWidth: 520 },
   doneTitle: { fontFamily: f.display, fontSize: 34, color: site.text, textAlign: 'center' },
+  linkBox: {
+    alignSelf: 'stretch',
+    maxWidth: 560,
+    width: '100%',
+    marginHorizontal: 'auto',
+    gap: 8,
+    padding: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: site.accentLine,
+    backgroundColor: site.accentSoft,
+    alignItems: 'center',
+  },
+  linkTitle: { fontFamily: f.bold, fontSize: 16, color: site.text },
+  linkText: { fontFamily: f.medium, fontSize: 14, lineHeight: 20, color: site.muted, textAlign: 'center' },
+  linkUrl: { fontFamily: f.semibold, fontSize: 13, color: site.accentText, textAlign: 'center' },
   doneActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
 });

@@ -96,6 +96,31 @@ export const bookRequest = z.object({
 
 export type BookRequest = z.infer<typeof bookRequest>;
 
+// Link do cliente para ver, remarcar ou cancelar (/horario/<código>).
+const manageToken = z.string().regex(/^[0-9a-f]{64}$/, 'Link inválido.');
+
+export const bookingManageRequest = z.object({
+  action: z.literal('booking_manage'),
+  token: manageToken,
+});
+
+export const bookingManageSlotsRequest = z.object({
+  action: z.literal('booking_manage_slots'),
+  token: manageToken,
+  day: z.iso.date(),
+});
+
+export const bookingRescheduleRequest = z.object({
+  action: z.literal('booking_reschedule'),
+  token: manageToken,
+  starts_at: z.iso.datetime({ offset: true, message: 'Escolha o horário.' }),
+});
+
+export const bookingCancelRequest = z.object({
+  action: z.literal('booking_cancel'),
+  token: manageToken,
+});
+
 export interface BookingService {
   id: string;
   name: string;
@@ -136,6 +161,31 @@ export interface BookingResult {
   /** Ex.: "10/11 às 14:00". */
   label: string;
   service: string;
+  /** Código do link do cliente (migração 0018). */
+  manage_token?: string;
+}
+
+export interface BookingManage {
+  business: {
+    name: string;
+    slug: string;
+    practice_area: 'health' | 'professional' | 'beauty' | 'other' | null;
+    whatsapp: string | null;
+    address: string | null;
+  };
+  number: number;
+  service: string;
+  total_cents: number;
+  starts_at: string | null;
+  minutes: number;
+  label: string | null;
+  /** past = já passou, foi concluído ou ficou sem horário. */
+  status: 'active' | 'cancelled' | 'past';
+  /** Dá para remarcar ou cancelar (até 2 horas antes). */
+  can_change: boolean;
+  today: string;
+  last_day: string;
+  weekdays: number[];
 }
 
 export const publicRequest = z.discriminatedUnion('action', [
@@ -144,6 +194,10 @@ export const publicRequest = z.discriminatedUnion('action', [
   bookingPageRequest,
   bookingSlotsRequest,
   bookRequest,
+  bookingManageRequest,
+  bookingManageSlotsRequest,
+  bookingRescheduleRequest,
+  bookingCancelRequest,
 ]);
 
 /** Erros que a função devolve, com o código HTTP e a mensagem para o cliente. */
@@ -157,6 +211,8 @@ export const PUBLIC_ERRORS: Record<string, { status: number; message: string }> 
   invalid_quantity: { status: 400, message: 'Quantidade inválida.' },
   duplicate_input: { status: 400, message: 'O mesmo item aparece duas vezes.' },
   slot_unavailable: { status: 409, message: 'Esse horário acabou de ser ocupado. Escolha outro.' },
+  booking_locked: { status: 409, message: 'Este horário não pode mais ser mudado por aqui. Fale com a empresa.' },
+  order_has_payments: { status: 409, message: 'Este horário já tem pagamento registrado. Para cancelar, fale com a empresa.' },
   invalid_request: { status: 400, message: 'Confira os dados e tente de novo.' },
 };
 

@@ -15,7 +15,7 @@ describe('contrato do link de encomenda', () => {
   it('aceita um pedido válido e normaliza o slug', () => {
     const r = publicRequest.safeParse({ ...valid, slug: ' Ana-Atelie ' });
     expect(r.success).toBe(true);
-    expect(r.success && r.data.slug).toBe('ana-atelie');
+    expect(r.success && r.data.action === 'order' && r.data.slug).toBe('ana-atelie');
   });
 
   it('recusa campos fora do contrato', () => {
@@ -36,5 +36,15 @@ describe('contrato do link de encomenda', () => {
   it('erros conhecidos têm mensagem e status', () => {
     expect(PUBLIC_ERRORS.rate_limited!.status).toBe(429);
     expect(PUBLIC_ERRORS.not_found!.status).toBe(404);
+  });
+
+  it('link do cliente só aceita o código de 64 caracteres', () => {
+    const token = 'a'.repeat(64);
+    expect(publicRequest.safeParse({ action: 'booking_manage', token }).success).toBe(true);
+    expect(publicRequest.safeParse({ action: 'booking_cancel', token: 'A'.repeat(64) }).success).toBe(false);
+    expect(publicRequest.safeParse({ action: 'booking_cancel', token: 'a'.repeat(63) }).success).toBe(false);
+    expect(publicRequest.safeParse({ action: 'booking_manage_slots', token, day: '2026-11-02' }).success).toBe(true);
+    expect(publicRequest.safeParse({ action: 'booking_reschedule', token, starts_at: '2026-11-02T11:00:00Z' }).success).toBe(true);
+    expect(publicRequest.safeParse({ action: 'booking_reschedule', token, starts_at: 'amanhã' }).success).toBe(false);
   });
 });

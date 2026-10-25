@@ -92,6 +92,7 @@ function RootNavigator() {
       {/* Páginas públicas (encomenda e agendamento): abrem com ou sem login e só falam com a Edge Function. */}
       <Stack.Screen name="e/[slug]" />
       <Stack.Screen name="agendar/[slug]" />
+      <Stack.Screen name="horario/[token]" />
     </Stack>
   );
 }

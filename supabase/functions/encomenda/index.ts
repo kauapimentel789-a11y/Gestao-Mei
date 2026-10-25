@@ -1,5 +1,6 @@
 // Edge Function das páginas públicas: link de encomenda (/e/<slug>) e
-// agendamento pelo site (/agendar/<slug>, plano Pro Max).
+// agendamento pelo site (/agendar/<slug>, plano Pro Max) e o link do cliente
+// para remarcar ou cancelar (/horario/<código>).
 //
 // As páginas chamam esta função com a chave pública do projeto. Aqui a
 // entrada é validada com Zod e os RPCs `public_*` são chamados com a service
@@ -95,6 +96,30 @@ Deno.serve(async (req) => {
       p_client_hash: await clientHash(req),
       p_notes: input.notes || null,
     });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'booking_manage') {
+    const { data, error } = await supabase.rpc('public_booking_manage', { p_token: input.token });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'booking_manage_slots') {
+    const { data, error } = await supabase.rpc('public_booking_manage_slots', { p_token: input.token, p_day: input.day });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'booking_reschedule') {
+    const { data, error } = await supabase.rpc('public_booking_reschedule', { p_token: input.token, p_starts_at: input.starts_at });
+    if (error) return rpcError(error);
+    return json(data);
+  }
+
+  if (input.action === 'booking_cancel') {
+    const { data, error } = await supabase.rpc('public_booking_cancel', { p_token: input.token });
     if (error) return rpcError(error);
     return json(data);
   }
