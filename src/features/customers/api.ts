@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { documentDigits } from '@/lib/document';
 import { supabase } from '@/lib/supabase';
 
 export interface Customer {
@@ -8,6 +9,8 @@ export interface Customer {
   name: string;
   phone: string | null;
   phone_digits: string | null;
+  /** CPF ou CNPJ, só dígitos (migração 0020). */
+  document: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -15,10 +18,11 @@ export interface Customer {
 export interface CustomerInput {
   name: string;
   phone?: string | null;
+  document?: string | null;
   notes?: string | null;
 }
 
-const COLUMNS = 'id, organization_id, name, phone, phone_digits, notes, created_at';
+const COLUMNS = 'id, organization_id, name, phone, phone_digits, document, notes, created_at';
 
 export const customerKeys = {
   all: (orgId: string) => ['customers', orgId] as const,
@@ -84,6 +88,7 @@ export function useSaveCustomer(orgId: string) {
       const values = {
         name: input.name.trim(),
         phone: input.phone?.trim() || null,
+        document: documentDigits(input.document ?? '') || null,
         notes: input.notes?.trim() || null,
       };
       const { data, error } = id
