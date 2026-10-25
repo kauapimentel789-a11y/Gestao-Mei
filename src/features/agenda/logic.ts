@@ -119,3 +119,14 @@ export function canMarkNoShow(item: { status: string; scheduled_for: string | nu
 export function groupByDay<T extends Scheduled>(items: T[], days: Date[]): { day: Date; items: T[] }[] {
   return days.map((day) => ({ day, items: itemsOnDay(items, day) })).filter((g) => g.items.length > 0);
 }
+
+/** Quem ainda precisa de lembrete, em ordem de horário (só com WhatsApp no cadastro). */
+export function pendingReminders<T extends { status: string; scheduled_for: string | null; reminder_sent_at: string | null }>(
+  items: T[],
+  hasPhone: (item: T) => boolean,
+  now: Date = new Date(),
+): T[] {
+  return items
+    .filter((i) => canRemind(i, now) && !i.reminder_sent_at && hasPhone(i))
+    .sort((a, b) => a.scheduled_for!.localeCompare(b.scheduled_for!));
+}
