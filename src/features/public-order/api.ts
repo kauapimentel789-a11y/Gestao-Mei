@@ -1,10 +1,11 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 
 import {
   type BookingPage,
+  type BookingManage,
   type BookingResult,
   type BookingSlots,
   type BookRequest,
@@ -74,5 +75,42 @@ export function useBookingSlots(slug: string, productId: string | null, day: str
 export function useBook() {
   return useMutation({
     mutationFn: (input: Omit<BookRequest, 'action'>) => call<BookingResult>({ action: 'book', ...input }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Link do cliente (/horario/<código>)
+// ---------------------------------------------------------------------------
+
+export function useBookingManage(token: string) {
+  return useQuery({
+    queryKey: ['public-booking-manage', token],
+    queryFn: () => call<BookingManage>({ action: 'booking_manage', token }),
+    retry: (count, err) => !(err instanceof PublicOrderError && err.code === 'not_found') && count < 1,
+  });
+}
+
+export function useManageSlots(token: string, day: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['public-booking-manage', token, 'slots', day],
+    enabled: Boolean(day) && enabled,
+    queryFn: () => call<BookingSlots>({ action: 'booking_manage_slots', token, day }),
+    staleTime: 0,
+  });
+}
+
+export function useReschedule(token: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (startsAt: string) => call<BookingManage>({ action: 'booking_reschedule', token, starts_at: startsAt }),
+    onSuccess: (data) => qc.setQueryData(['public-booking-manage', token], data),
+  });
+}
+
+export function useCancelBooking(token: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => call<BookingManage>({ action: 'booking_cancel', token }),
+    onSuccess: (data) => qc.setQueryData(['public-booking-manage', token], data),
   });
 }

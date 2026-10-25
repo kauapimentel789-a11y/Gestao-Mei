@@ -367,7 +367,7 @@ export function Calendar({
   value,
   onChange,
 }: {
-  page: BookingPage;
+  page: Pick<BookingPage, 'today' | 'last_day' | 'weekdays'>;
   value: string | null;
   onChange: (date: string) => void;
 }) {
