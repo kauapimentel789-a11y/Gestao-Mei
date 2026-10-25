@@ -90,6 +90,7 @@ export function BookingCard() {
             ) : null}
           </View>
           <NavRow label={`Horário de funcionamento${hours.data ? ` · ${hoursSummary(hours.data)}` : ''}`} onPress={() => router.push('/funcionamento')} />
+          <NavRow label="Página do cliente · frase, WhatsApp, endereço e Instagram" onPress={() => router.push('/pagina-cliente')} />
         </>
       )}
     </Card>

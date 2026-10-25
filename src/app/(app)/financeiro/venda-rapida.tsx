@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -106,7 +106,8 @@ export default function QuickSaleScreen() {
             placeholder="0,00"
             placeholderTextColor={colors.gray300}
             style={styles.amount}
-            autoFocus
+            // No site, abrir com o teclado faz o Safari ampliar a tela.
+            autoFocus={Platform.OS !== 'web'}
           />
         </View>
         {errs.amount ? <Text style={styles.error}>{errs.amount}</Text> : null}
@@ -197,6 +198,6 @@ const styles = StyleSheet.create({
     minHeight: 72,
   },
   amountError: { borderColor: colors.primaryText },
-  currency: { fontFamily: fonts.extrabold, fontSize: 24, color: colors.gray500 },
-  amount: { flex: 1, fontFamily: fonts.extrabold, fontSize: 34, color: colors.ink, paddingVertical: 8 },
+  currency: { flexShrink: 0, fontFamily: fonts.extrabold, fontSize: 24, color: colors.gray500 },
+  amount: { flex: 1, minWidth: 0, width: '100%', fontFamily: fonts.extrabold, fontSize: 34, color: colors.ink, paddingVertical: 8 },
 });
