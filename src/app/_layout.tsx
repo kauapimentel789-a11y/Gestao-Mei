@@ -89,8 +89,9 @@ function RootNavigator() {
       <Stack.Protected guard={signedIn && !recovering && hasOrg}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
-      {/* Página pública de encomenda: abre com ou sem login. */}
+      {/* Páginas públicas (encomenda e agendamento): abrem com ou sem login e só falam com a Edge Function. */}
       <Stack.Screen name="e/[slug]" />
+      <Stack.Screen name="agendar/[slug]" />
     </Stack>
   );
 }
