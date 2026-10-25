@@ -85,6 +85,7 @@ function Manage({ token, data }: { token: string; data: BookingManage }) {
         <FadeIn delay={140}>
           <Panel icon={CalendarClock} title={`Atendimento nº ${data.number}`}>
             <SummaryRow label="Serviço" value={data.service} />
+            {data.professional ? <SummaryRow label="Profissional" value={data.professional} /> : null}
             <SummaryRow label="Data e horário" value={data.label} />
             <SummaryRow label="Duração" value={formatDuration(data.minutes)} />
             <SummaryRow label="Valor" value={formatCents(data.total_cents)} strong />

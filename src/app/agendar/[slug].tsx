@@ -18,6 +18,7 @@ import {
   Hero,
   Panel,
   PrimaryButton,
+  ProfessionalPicker,
   QuickTiles,
   ServiceOption,
   SlotGrid,
@@ -143,11 +144,14 @@ function BookingFlow({
   const [serviceId, setServiceId] = useState<string | null>(page.services.length === 1 ? page.services[0].id : null);
   const [day, setDay] = useState<string | null>(null);
   const [slot, setSlot] = useState<{ at: string; label: string } | null>(null);
+  const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const slots = useBookingSlots(page.slug, serviceId, day);
+  const slots = useBookingSlots(page.slug, serviceId, day, professionalId);
+  const professionals = page.professionals ?? [];
+  const professional = professionals.find((p) => p.id === professionalId) ?? null;
   const service = page.services.find((s) => s.id === serviceId) ?? null;
   const digits = phone.replace(/\D/g, '').length;
   const dataOk = name.trim().length >= 2 && digits >= 10 && digits <= 13;
@@ -178,6 +182,7 @@ function BookingFlow({
       name,
       phone,
       notes: notes.trim() || null,
+      professional_id: professionalId,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Confira os dados.');
@@ -214,6 +219,19 @@ function BookingFlow({
           </FadeIn>
         ))}
       </View>
+      {professionals.length > 0 ? (
+        <>
+          <Text style={styles.subhead}>Com quem?</Text>
+          <ProfessionalPicker
+            professionals={professionals}
+            value={professionalId}
+            onChange={(id) => {
+              setProfessionalId(id);
+              setSlot(null);
+            }}
+          />
+        </>
+      ) : null}
     </Panel>
   );
 
@@ -263,6 +281,7 @@ function BookingFlow({
   const summaryPanel = (
     <Panel icon={CalendarCheck} title="Resumo do agendamento" style={wide ? styles.col : undefined}>
       <SummaryRow label="Serviço" value={service?.name ?? null} />
+      {professionals.length > 0 ? <SummaryRow label="Profissional" value={professional?.name ?? 'Sem preferência'} /> : null}
       <SummaryRow label="Data" value={day ? formatLongDate(day) : null} />
       <SummaryRow label="Horário" value={slot?.label ?? null} />
       <SummaryRow label="Duração" value={service ? formatDuration(service.duration_minutes) : null} />
@@ -356,7 +375,8 @@ function Done({ page, result, onAgain }: { page: BookingPage; result: BookingRes
           Horário marcado!
         </Text>
         <Text style={styles.emptyText}>
-          {result.service} em {page.name}, {result.label}. Valor: {formatCents(result.total_cents)}.
+          {result.service}
+          {result.professional ? ` com ${result.professional}` : ''} em {page.name}, {result.label}. Valor: {formatCents(result.total_cents)}.
         </Text>
       </FadeIn>
       {link ? (

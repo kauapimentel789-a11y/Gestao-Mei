@@ -1,4 +1,16 @@
-import { canMarkNoShow, canRemind, conflictsWith, durationLabel, groupByDay, itemsOnDay, overlapping, reminderText, startOfWeek, weekDays } from '@/features/agenda/logic';
+import {
+  canMarkNoShow,
+  canRemind,
+  conflictsWith,
+  durationLabel,
+  groupByDay,
+  itemsOnDay,
+  overlapping,
+  pendingReminders,
+  reminderText,
+  startOfWeek,
+  weekDays,
+} from '@/features/agenda/logic';
 
 const at = (h: number, m = 0, minutes: number | null = 60, id = `${h}:${m}`) => ({
   id,
@@ -20,6 +32,14 @@ describe('semana', () => {
 });
 
 describe('overlapping', () => {
+  it('com profissionais, só conflita na agenda do mesmo', () => {
+    const a = { ...at(9, 0, 60, 'a'), professional_id: 'ana' };
+    const b = { ...at(9, 0, 60, 'b'), professional_id: 'beto' };
+    expect(overlapping([a, b]).size).toBe(0);
+    expect(overlapping([a, { ...b, professional_id: 'ana' }]).size).toBe(2);
+    expect(overlapping([a, { ...b, professional_id: null }]).size).toBe(2);
+  });
+
   it('marca horários que se sobrepõem', () => {
     const ids = overlapping([at(9, 0, 90, 'a'), at(10, 0, 60, 'b'), at(11, 0, 60, 'c')]);
     expect([...ids].sort()).toEqual(['a', 'b']);
@@ -83,5 +103,26 @@ describe('atendimentos', () => {
     const groups = groupByDay(day, days);
     expect(groups).toHaveLength(1);
     expect(groups[0]!.items.map((i) => i.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('pendingReminders', () => {
+  const now = new Date(2026, 9, 25, 12, 0);
+  const item = (id: string, h: number, extra: Partial<{ status: string; reminder_sent_at: string | null; phone: boolean }> = {}) => ({
+    id,
+    status: extra.status ?? 'received',
+    scheduled_for: new Date(2026, 9, 26, h, 0).toISOString(),
+    reminder_sent_at: extra.reminder_sent_at ?? null,
+    phone: extra.phone ?? true,
+  });
+  it('fica só quem falta lembrar, com WhatsApp, em ordem de horário', () => {
+    const list = [
+      item('c', 15),
+      item('a', 9),
+      item('enviado', 10, { reminder_sent_at: '2026-10-25T10:00:00Z' }),
+      item('sem-zap', 11, { phone: false }),
+      item('cancelado', 12, { status: 'cancelled' }),
+    ];
+    expect(pendingReminders(list, (i) => i.phone, now).map((i) => i.id)).toEqual(['a', 'c']);
   });
 });

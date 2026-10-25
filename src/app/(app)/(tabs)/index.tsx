@@ -9,6 +9,7 @@ import { Screen } from '@/components/Screen';
 import { AgendaRow } from '@/features/agenda/AgendaRow';
 import { useAgenda } from '@/features/agenda/api';
 import { canRemind, overlapping } from '@/features/agenda/logic';
+import { RemindersCard } from '@/features/agenda/RemindersCard';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { DasCard } from '@/features/das/DasCard';
 import { MoneyCard } from '@/features/finance/MoneyCard';
@@ -133,6 +134,8 @@ export default function HomeScreen() {
       </View>
 
       {setup.status && setupHidden === false ? <SetupCard config={config} status={setup.status} onHide={() => setSetupHidden(true)} /> : null}
+
+      <RemindersCard />
 
       <DasCard />
 

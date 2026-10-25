@@ -12,6 +12,8 @@ export interface AgendaItem extends OrderSummary {
   no_show_at: string | null;
   reminder_sent_at: string | null;
   customer_phone_digits: string | null;
+  professional_id: string | null;
+  professional_name: string | null;
 }
 
 export interface ServiceNote {
@@ -23,7 +25,7 @@ export interface ServiceNote {
 }
 
 const COLUMNS =
-  'id, number, kind, status, channel, customer_id, customer_name, customer_phone, due_at, scheduled_for, scheduled_minutes, problem_description, total_cents, created_at, items_summary, no_show_at, reminder_sent_at, customer_phone_digits';
+  'id, number, kind, status, channel, customer_id, customer_name, customer_phone, due_at, scheduled_for, scheduled_minutes, problem_description, total_cents, created_at, items_summary, no_show_at, reminder_sent_at, customer_phone_digits, professional_id, professional_name';
 const OPEN = ['received', 'confirmed', 'in_progress', 'completed'];
 
 export const agendaKeys = {

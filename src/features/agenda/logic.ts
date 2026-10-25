@@ -23,19 +23,29 @@ export interface Scheduled {
   id: string;
   scheduled_for: string | null;
   scheduled_minutes: number | null;
+  /** Com profissionais, só conflita na agenda do mesmo (sem profissional ocupa todos). */
+  professional_id?: string | null;
+}
+
+function sameAgenda(a: Scheduled, b: Scheduled): boolean {
+  return !a.professional_id || !b.professional_id || a.professional_id === b.professional_id;
 }
 
 export function endOf(item: Scheduled): number {
   return new Date(item.scheduled_for!).getTime() + (item.scheduled_minutes ?? DEFAULT_MINUTES) * 60_000;
 }
 
-/** Ids dos agendamentos que se sobrepõem a outro (duração padrão de 1 h quando não informada). */
+/**
+ * Ids dos agendamentos que se sobrepõem a outro do mesmo profissional
+ * (duração padrão de 1 h quando não informada).
+ */
 export function overlapping(items: Scheduled[]): Set<string> {
   const timed = items.filter((i) => i.scheduled_for).sort((a, b) => a.scheduled_for!.localeCompare(b.scheduled_for!));
   const out = new Set<string>();
   for (let i = 0; i < timed.length; i++) {
     for (let j = i + 1; j < timed.length; j++) {
       if (new Date(timed[j].scheduled_for!).getTime() >= endOf(timed[i])) break;
+      if (!sameAgenda(timed[i], timed[j])) continue;
       out.add(timed[i].id);
       out.add(timed[j].id);
     }
@@ -108,4 +118,15 @@ export function canMarkNoShow(item: { status: string; scheduled_for: string | nu
 /** Agrupa os agendamentos da semana por dia, só os dias com algo marcado. */
 export function groupByDay<T extends Scheduled>(items: T[], days: Date[]): { day: Date; items: T[] }[] {
   return days.map((day) => ({ day, items: itemsOnDay(items, day) })).filter((g) => g.items.length > 0);
+}
+
+/** Quem ainda precisa de lembrete, em ordem de horário (só com WhatsApp no cadastro). */
+export function pendingReminders<T extends { status: string; scheduled_for: string | null; reminder_sent_at: string | null }>(
+  items: T[],
+  hasPhone: (item: T) => boolean,
+  now: Date = new Date(),
+): T[] {
+  return items
+    .filter((i) => canRemind(i, now) && !i.reminder_sent_at && hasPhone(i))
+    .sort((a, b) => a.scheduled_for!.localeCompare(b.scheduled_for!));
 }
