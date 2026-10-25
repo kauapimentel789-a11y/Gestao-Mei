@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { useToast } from '@/components/Toast';
 import { getBusinessConfig, PRACTICE_AREA_INFO } from '@/config/business';
 import { AlertsCard } from '@/features/alerts/AlertsCard';
+import { NoticesCard } from '@/features/messages/CustomerNotice';
 import { clearLateAlerts } from '@/features/alerts/LateOrderAlerts';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { clearDasReminder } from '@/features/das/DasReminder';
@@ -110,6 +111,8 @@ export default function SettingsScreen() {
           ) : null}
         </View>
       </Card>
+
+      <NoticesCard />
 
       <AlertsCard />
 

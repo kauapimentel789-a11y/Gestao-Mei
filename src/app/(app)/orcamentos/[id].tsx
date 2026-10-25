@@ -137,7 +137,7 @@ export default function QuoteDetailScreen() {
             onPress={() =>
               run(async () => {
                 const order = await convert.mutateAsync({ id: q.id, dueAt: null });
-                router.push({ pathname: '/pedidos/[id]', params: { id: order.id } });
+                router.push({ pathname: '/pedidos/[id]', params: { id: order.id, aviso: 'novo' } });
               }, `${config.orderNoun.charAt(0).toUpperCase()}${config.orderNoun.slice(1)} criado`)
             }
           />

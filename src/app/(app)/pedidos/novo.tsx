@@ -226,7 +226,7 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
         items: draft.items.map(({ unitPriceCents: _p, ...i }) => i),
       });
       toast(`${config.orderNoun[0]!.toUpperCase()}${config.orderNoun.slice(1)} #${order.number} salvo`);
-      router.replace({ pathname: '/pedidos/[id]', params: { id: order.id } });
+      router.replace({ pathname: '/pedidos/[id]', params: { id: order.id, aviso: 'novo' } });
     } catch (e) {
       setError(friendlyError(e));
     }

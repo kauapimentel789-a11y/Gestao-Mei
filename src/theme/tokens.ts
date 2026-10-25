@@ -21,6 +21,11 @@ export const colors = {
   bg: '#F5F5F7',
   surface: '#FFFFFF',
   white: '#FFFFFF',
+  // Alta e queda nos gráficos e comparações do financeiro.
+  success: '#15803D',
+  successTint: '#DCFCE7',
+  danger: '#B91C1C',
+  dangerTint: '#FEE2E2',
 } as const;
 
 export const fonts = {
