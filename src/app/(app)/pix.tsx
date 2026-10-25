@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -17,6 +16,7 @@ import { useOrg } from '@/features/organizations/useOrg';
 import { friendlyError } from '@/lib/errors';
 import { normalizePixKey, PIX_KEY_LABEL, PIX_KEY_TYPES, type PixKeyType, type PixSettings } from '@/lib/pix';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const PLACEHOLDER: Record<PixKeyType, string> = {
   cpf: '000.000.000-00',
@@ -78,7 +78,7 @@ function PixForm({ orgId, orgName, canEdit, current }: { orgId: string; orgName:
     try {
       await save.mutateAsync({ keyType: type, key: normalized, name: name.trim(), city: city.trim() });
       toast('Chave Pix salva');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }
@@ -138,7 +138,7 @@ function PixForm({ orgId, orgName, canEdit, current }: { orgId: string; orgName:
                 try {
                   await save.mutateAsync(null);
                   toast('Chave removida');
-                  router.back();
+                  goBack();
                 } catch (e) {
                   setError(friendlyError(e));
                 }

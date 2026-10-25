@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -23,6 +23,7 @@ import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { formatCents } from '@/lib/money';
 import { colors, fonts, radius } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const MAX_INPUTS = 50;
 
@@ -106,7 +107,7 @@ function RecipeForm({ product: p, recipe }: { product: Product; recipe: Recipe |
         notes: notes.trim(),
       });
       toast('Ficha técnica salva');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

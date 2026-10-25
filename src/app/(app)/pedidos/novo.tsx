@@ -29,6 +29,7 @@ import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { formatCents, parseBRLToCents } from '@/lib/money';
 import { colors, fonts, radius } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 interface CustomLine {
   key: string;
@@ -189,7 +190,7 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
             items: draft.items.map(({ unitPriceCents: _p, ...i }) => i),
           });
           toast('Orçamento atualizado');
-          router.back();
+          goBack();
           return;
         }
         const quote = await createQuote.mutateAsync({

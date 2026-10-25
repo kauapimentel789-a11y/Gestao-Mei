@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -18,6 +17,7 @@ import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { formatCents, parseBRLToCents } from '@/lib/money';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 export default function TransferScreen() {
   const { orgId } = useOrg();
@@ -50,7 +50,7 @@ export default function TransferScreen() {
     try {
       await create.mutateAsync({ fromId, toId, amountCents: cents, date: iso, description: description.trim(), idempotencyKey: key });
       toast('Transferência registrada');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

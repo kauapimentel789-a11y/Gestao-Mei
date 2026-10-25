@@ -26,6 +26,7 @@ import { PIX_KEY_LABEL } from '@/lib/pix';
 import { publicOrderUrl } from '@/lib/publicLink';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, minTouch } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const ROLE_LABEL = { owner: 'Dono', admin: 'Administrador', member: 'Membro' } as const;
 
@@ -46,7 +47,7 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <View style={styles.bar}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => router.back()} style={styles.circle}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => goBack()} style={styles.circle}>
           <ChevronLeft size={20} color={colors.ink} />
         </Pressable>
         <Text style={styles.barTitle} accessibilityRole="header">

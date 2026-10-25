@@ -14,6 +14,7 @@ import { type ResetInput, resetSchema } from '@/features/auth/schemas';
 import { friendlyError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 export default function ResetPasswordScreen() {
   const [sent, setSent] = useState(false);
@@ -64,7 +65,7 @@ export default function ResetPasswordScreen() {
       />
       <FormError message={serverError} />
       <Button label="Enviar link" onPress={onSubmit} loading={formState.isSubmitting} />
-      <TextLink label="Voltar" onPress={() => router.back()} />
+      <TextLink label="Voltar" onPress={() => goBack()} />
     </AuthShell>
   );
 }

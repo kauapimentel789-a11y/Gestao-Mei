@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -15,6 +15,7 @@ import { type Supplier, type SupplierInput, useSaveSupplier, useSuppliers } from
 import { normalizeDocument } from '@/features/suppliers/logic';
 import { friendlyError } from '@/lib/errors';
 import { colors, fonts } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 export default function SupplierFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -61,7 +62,7 @@ function SupplierForm({ id, existing }: { id?: string; existing?: Supplier }) {
     try {
       await save.mutateAsync({ id, input: form });
       toast(id ? 'Fornecedor atualizado' : 'Fornecedor cadastrado');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

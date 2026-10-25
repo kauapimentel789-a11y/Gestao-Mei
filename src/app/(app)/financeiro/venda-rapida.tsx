@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -21,6 +20,7 @@ import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { parseBRLToCents } from '@/lib/money';
 import { colors, fonts, radius } from '@/theme/tokens';
+import { goBack } from '@/lib/navigation';
 
 const METHODS: PaymentMethod[] = ['pix', 'cash', 'debit_card', 'credit_card'];
 
@@ -84,7 +84,7 @@ export default function QuickSaleScreen() {
         paid: when === 'now' && chosenAccount ? { accountId: chosenAccount, method, paidOn: today } : null,
       });
       toast(when === 'now' ? 'Venda registrada' : 'Anotado em Quem me deve');
-      router.back();
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }
