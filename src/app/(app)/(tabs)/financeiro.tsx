@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChartColumn, ChevronLeft, ChevronRight, Landmark, Wallet } from 'lucide-react-native';
+import { BadgeDollarSign, ChartColumn, ChevronLeft, ChevronRight, HandCoins, Landmark, Wallet } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -48,6 +48,17 @@ export default function FinanceScreen() {
           </Text>
           <CircleButton label="Relatórios" icon={<ChartColumn size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/relatorios')} />
           <CircleButton label="Contas e transferências" icon={<Landmark size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/contas')} />
+        </View>
+
+        <View style={styles.shortcuts}>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/financeiro/venda-rapida')} style={styles.shortcut}>
+            <BadgeDollarSign size={20} color={colors.primaryText} />
+            <Text style={styles.shortcutText}>Venda rápida</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/financeiro/quem-me-deve')} style={styles.shortcut}>
+            <HandCoins size={20} color={colors.primaryText} />
+            <Text style={styles.shortcutText}>Quem me deve</Text>
+          </Pressable>
         </View>
 
         <SegmentedControl
@@ -228,6 +239,9 @@ const styles = StyleSheet.create({
   heroSub: { fontFamily: fonts.semibold, fontSize: 13, color: colors.primarySoft },
   heroHint: { fontFamily: fonts.medium, fontSize: 11, color: colors.gray400, marginTop: 4 },
   tiles: { flexDirection: 'row', gap: 12 },
+  shortcuts: { flexDirection: 'row', gap: 12 },
+  shortcut: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: minTouch, borderRadius: 16, backgroundColor: colors.primaryTint },
+  shortcutText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primaryText },
   tile: { flex: 1, backgroundColor: colors.surface, borderRadius: 20, padding: 16, gap: 2 },
   tileLabel: { fontFamily: fonts.bold, fontSize: 12, color: colors.gray500 },
   tileValue: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.ink },

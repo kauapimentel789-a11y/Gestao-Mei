@@ -12,12 +12,15 @@ import { getBusinessConfig, PRACTICE_AREA_INFO } from '@/config/business';
 import { AlertsCard } from '@/features/alerts/AlertsCard';
 import { clearLateAlerts } from '@/features/alerts/LateOrderAlerts';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { clearDasReminder } from '@/features/das/DasReminder';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
 import { useSetPracticeArea, useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
 import { HourlyRateDialog } from '@/features/organizations/HourlyRateDialog';
+import { usePixSettings } from '@/features/organizations/pix';
 import { PracticeAreaDialog } from '@/features/organizations/PracticeAreaDialog';
 import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
+import { PIX_KEY_LABEL } from '@/lib/pix';
 import { publicOrderUrl } from '@/lib/publicLink';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, minTouch } from '@/theme/tokens';
@@ -36,6 +39,7 @@ export default function SettingsScreen() {
   const setArea = useSetPracticeArea(session?.user.id);
   const setPublic = useSetPublicOrders(session?.user.id);
   const link = publicOrderUrl(org.slug);
+  const pix = usePixSettings(org.id);
 
   return (
     <Screen>
@@ -67,6 +71,11 @@ export default function SettingsScreen() {
             onPress={canEdit ? () => setRateOpen(true) : undefined}
           />
         ) : null}
+        <Row
+          label="Chave Pix"
+          value={pix.data ? `${PIX_KEY_LABEL[pix.data.keyType]} · ${pix.data.key}` : pix.isPending ? '…' : 'Não cadastrada'}
+          onPress={() => router.push('/pix')}
+        />
         <Row label="Seu papel" value={ROLE_LABEL[active!.role]} />
       </Card>
 
@@ -169,6 +178,7 @@ export default function SettingsScreen() {
           variant="ink"
           onPress={async () => {
             await clearLateAlerts().catch(() => undefined);
+            await clearDasReminder().catch(() => undefined);
             await supabase.auth.signOut();
           }}
         />

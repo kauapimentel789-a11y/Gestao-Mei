@@ -95,3 +95,17 @@ export function useSaveCustomer(orgId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: customerKeys.all(orgId) }),
   });
 }
+
+/** Telefones de vários clientes de uma vez (ex.: cobrança em "Quem me deve"). */
+export function useCustomersByIds(orgId: string, ids: string[]) {
+  const sorted = [...new Set(ids)].sort();
+  return useQuery({
+    queryKey: [...customerKeys.all(orgId), 'ids', sorted.join(',')],
+    enabled: sorted.length > 0,
+    queryFn: async (): Promise<Customer[]> => {
+      const { data, error } = await supabase.from('customers').select(COLUMNS).eq('organization_id', orgId).in('id', sorted);
+      if (error) throw error;
+      return data as Customer[];
+    },
+  });
+}
