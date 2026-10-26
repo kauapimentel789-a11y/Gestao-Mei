@@ -31,10 +31,26 @@ export const orderRequest = z.object({
     }, 'Informe o WhatsApp com DDD.'),
   due_date: z.iso.date().nullable(),
   notes: z.string().trim().max(1000, 'Observações muito longas.').nullable(),
+  // Inteira, ou peso em kg com até 3 casas nos itens vendidos por quilo (o banco confere qual é qual).
   items: z
-    .array(z.object({ product_id: z.uuid(), quantity: z.number().int().min(1).max(1000) }))
+    .array(
+      z.object({
+        product_id: z.uuid(),
+        quantity: z
+          .number()
+          .min(0.1)
+          .max(1000)
+          .refine((v) => Math.abs(v * 1000 - Math.round(v * 1000)) < 1e-6, 'Quantidade inválida.'),
+      }),
+    )
     .min(1, 'Escolha pelo menos um item.')
     .max(30, 'Itens demais numa encomenda.'),
+  /** Bairro de entrega (migração 0023); vazio = retirada. */
+  delivery_zone_id: z.uuid().nullable().optional(),
+  address: z.string().trim().max(200, 'Endereço muito longo.').nullable().optional(),
+}).refine((v) => !v.delivery_zone_id || (v.address ?? '').length >= 5, {
+  message: 'Informe o endereço de entrega.',
+  path: ['address'],
 });
 
 export type OrderRequest = z.infer<typeof orderRequest>;
@@ -48,16 +64,25 @@ export interface StorefrontProduct {
   price_cents: number;
 }
 
+export interface DeliveryZoneOption {
+  id: string;
+  name: string;
+  fee_cents: number;
+}
+
 export interface Storefront {
   name: string;
   slug: string;
   business_type: 'production' | 'resale' | 'services';
   products: StorefrontProduct[];
+  /** Bairros com entrega (migração 0023); vazio = só retirada. */
+  delivery_zones?: DeliveryZoneOption[];
 }
 
 export interface OrderResult {
   number: number;
   total_cents: number;
+  delivery_fee_cents?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +242,8 @@ export const PUBLIC_ERRORS: Record<string, { status: number; message: string }> 
   invalid_name: { status: 400, message: 'Informe seu nome.' },
   invalid_quantity: { status: 400, message: 'Quantidade inválida.' },
   duplicate_input: { status: 400, message: 'O mesmo item aparece duas vezes.' },
+  delivery_zone_not_found: { status: 409, message: 'Esse bairro não está mais disponível para entrega. Atualize a página.' },
+  address_required: { status: 400, message: 'Informe o endereço de entrega.' },
   slot_unavailable: { status: 409, message: 'Esse horário acabou de ser ocupado. Escolha outro.' },
   booking_locked: { status: 409, message: 'Este horário não pode mais ser mudado por aqui. Fale com a empresa.' },
   order_has_payments: { status: 409, message: 'Este horário já tem pagamento registrado. Para cancelar, fale com a empresa.' },

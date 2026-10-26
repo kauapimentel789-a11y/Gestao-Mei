@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Chips } from '@/components/Chips';
 import { EmptyState } from '@/components/EmptyState';
 import { FormError } from '@/components/FormError';
 import { Skeleton } from '@/components/ListStates';
@@ -12,6 +13,7 @@ import { QuantityStepper } from '@/components/QuantityStepper';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { parseDateInput } from '@/features/finance/logic';
+import { formatWeight, isWeightUnit, lineTotalCents } from '@/features/orders/logic';
 import { PublicOrderError, useSendPublicOrder, useStorefront } from '@/features/public-order/api';
 import { newId } from '@/lib/ids';
 import { formatCents } from '@/lib/money';
@@ -49,12 +51,19 @@ function OrderForm({ store }: { store: Storefront }) {
   const [phone, setPhone] = useState('');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [zoneId, setZoneId] = useState('pickup');
+  const [address, setAddress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const isService = store.business_type === 'services';
 
+  const zones = store.delivery_zones ?? [];
+  const zone = zones.find((z) => z.id === zoneId) ?? null;
   const items = store.products.filter((p) => (qty[p.id] ?? 0) > 0).map((p) => ({ product_id: p.id, quantity: qty[p.id]! }));
+  const hasWeight = store.products.some((p) => isWeightUnit(p.unit));
   // Só para mostrar no botão; o valor que vale é o calculado no servidor.
-  const estimate = store.products.reduce((sum, p) => sum + (qty[p.id] ?? 0) * p.price_cents, 0);
+  const estimate =
+    store.products.reduce((sum, p) => sum + lineTotalCents({ quantity: qty[p.id] ?? 0, unitPriceCents: p.price_cents }), 0) +
+    (items.length > 0 ? (zone?.fee_cents ?? 0) : 0);
 
   if (send.data) {
     return (
@@ -64,8 +73,9 @@ function OrderForm({ store }: { store: Storefront }) {
           {isService ? 'Pedido enviado' : 'Encomenda enviada'}
         </Text>
         <Text style={styles.doneText}>
-          {store.name} recebeu o pedido nº {send.data.number}, no total de {formatCents(send.data.total_cents)}. A confirmação chega pelo WhatsApp
-          informado.
+          {store.name} recebeu o pedido nº {send.data.number}, no total de {formatCents(send.data.total_cents)}
+          {send.data.delivery_fee_cents ? `, já com a entrega de ${formatCents(send.data.delivery_fee_cents)}` : ''}.
+          {hasWeight ? ' Nos itens por quilo, o valor final é confirmado na pesagem.' : ''} A confirmação chega pelo WhatsApp informado.
         </Text>
       </View>
     );
@@ -87,6 +97,8 @@ function OrderForm({ store }: { store: Storefront }) {
       due_date: dueDate,
       notes: notes.trim() || null,
       items,
+      delivery_zone_id: zone?.id ?? null,
+      address: zone ? address.trim() : null,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Confira os dados.');
@@ -119,14 +131,58 @@ function OrderForm({ store }: { store: Storefront }) {
                 {p.description ? <Text style={styles.muted}>{p.description}</Text> : null}
                 <Text style={styles.price}>
                   {formatCents(p.price_cents)}
-                  {p.item_type === 'service' ? '' : ` / ${p.unit}`}
+                  {p.item_type === 'service' ? '' : isWeightUnit(p.unit) ? ' o quilo' : ` / ${p.unit}`}
                 </Text>
+                {isWeightUnit(p.unit) && (qty[p.id] ?? 0) > 0 ? (
+                  <Text style={styles.muted}>
+                    {formatWeight(qty[p.id]!)} ≈ {formatCents(lineTotalCents({ quantity: qty[p.id]!, unitPriceCents: p.price_cents }))}
+                  </Text>
+                ) : null}
               </View>
-              <QuantityStepper label={p.name} value={qty[p.id] ?? 0} onChange={(v) => setQty({ ...qty, [p.id]: Math.min(1000, v) })} />
+              {isWeightUnit(p.unit) ? (
+                <QuantityStepper
+                  label={`${p.name} em quilos`}
+                  value={qty[p.id] ?? 0}
+                  step={0.5}
+                  onChange={(v) => setQty({ ...qty, [p.id]: Math.min(100, v) })}
+                />
+              ) : (
+                <QuantityStepper label={p.name} value={qty[p.id] ?? 0} onChange={(v) => setQty({ ...qty, [p.id]: Math.min(1000, v) })} />
+              )}
             </View>
           ))
         )}
+        {hasWeight ? (
+          <Text style={styles.muted}>Itens por quilo: escolha o peso aproximado. O valor final é confirmado na pesagem.</Text>
+        ) : null}
       </Card>
+
+      {zones.length > 0 && !isService ? (
+        <Card>
+          <Text style={styles.cardTitle}>Entrega</Text>
+          <Chips
+            accessibilityLabel="Entrega"
+            value={zoneId}
+            onChange={setZoneId}
+            options={[
+              { value: 'pickup', label: 'Vou retirar' },
+              ...zones.map((z) => ({ value: z.id, label: `${z.name} · ${z.fee_cents ? formatCents(z.fee_cents) : 'grátis'}` })),
+            ]}
+          />
+          {zone ? (
+            <TextField
+              label="Endereço de entrega"
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Rua, número, complemento"
+              autoComplete="street-address"
+              maxLength={200}
+            />
+          ) : (
+            <Text style={styles.muted}>Seu bairro não está na lista? Escolha retirar e combine a entrega pelo WhatsApp.</Text>
+          )}
+        </Card>
+      ) : null}
 
       <Card>
         <Text style={styles.cardTitle}>Seus dados</Text>

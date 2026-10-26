@@ -135,6 +135,8 @@ Deno.serve(async (req) => {
     p_client_hash: await clientHash(req),
     p_due_date: input.due_date,
     p_notes: input.notes || null,
+    p_delivery_zone_id: input.delivery_zone_id ?? null,
+    p_address: input.delivery_zone_id ? input.address || null : null,
   });
   if (error) return rpcError(error);
   return json(data);

@@ -20,12 +20,21 @@ describe('contrato do link de encomenda', () => {
 
   it('recusa campos fora do contrato', () => {
     expect(orderRequest.safeParse({ ...valid, items: [] }).success).toBe(false);
-    expect(orderRequest.safeParse({ ...valid, items: [{ ...valid.items[0], quantity: 1.5 }] }).success).toBe(false);
+    expect(orderRequest.safeParse({ ...valid, items: [{ ...valid.items[0], quantity: 1.2345 }] }).success).toBe(false);
+    expect(orderRequest.safeParse({ ...valid, items: [{ ...valid.items[0], quantity: 0.05 }] }).success).toBe(false);
     expect(orderRequest.safeParse({ ...valid, phone: '1234' }).success).toBe(false);
     expect(orderRequest.safeParse({ ...valid, name: 'C' }).success).toBe(false);
     expect(orderRequest.safeParse({ ...valid, due_date: '02/11/2026' }).success).toBe(false);
     expect(orderRequest.safeParse({ ...valid, idempotency_key: 'x' }).success).toBe(false);
     expect(publicRequest.safeParse({ action: 'storefront', slug: '../x' }).success).toBe(false);
+  });
+
+  it('aceita peso em kg e entrega com endereço', () => {
+    expect(orderRequest.safeParse({ ...valid, items: [{ ...valid.items[0], quantity: 1.25 }] }).success).toBe(true);
+    const zone = '5a1d2f3e-4b5c-4d6e-8f70-81a2b3c4d5e6';
+    expect(orderRequest.safeParse({ ...valid, delivery_zone_id: zone, address: 'Rua A, 10' }).success).toBe(true);
+    expect(orderRequest.safeParse({ ...valid, delivery_zone_id: zone, address: '' }).success).toBe(false);
+    expect(orderRequest.safeParse({ ...valid, delivery_zone_id: null, address: null }).success).toBe(true);
   });
 
   it('o preço do cliente não passa pelo contrato', () => {

@@ -50,8 +50,9 @@ export default function ItemFormScreen() {
       duration: '',
     },
   });
-  const [itemType, cost, price] = useWatch({ control, name: ['itemType', 'cost', 'price'] });
+  const [itemType, cost, price, unit] = useWatch({ control, name: ['itemType', 'cost', 'price', 'unit'] });
   const isService = itemType === 'service';
+  const byKilo = !isService && unit === 'kg';
   const sellable = SELLABLE_TYPES.includes(itemType);
 
   useEffect(() => {
@@ -145,6 +146,7 @@ export default function ItemFormScreen() {
                 <Chips accessibilityLabel="Unidade" value={field.value} onChange={field.onChange} options={UNITS.map((u) => ({ value: u, label: u }))} />
               )}
             />
+            <Text style={styles.unitHint}>Vende por peso (carne, frios, doces a granel)? Escolha kg e cadastre o preço do quilo.</Text>
           </>
         ) : null}
       </Card>
@@ -155,7 +157,7 @@ export default function ItemFormScreen() {
           name="cost"
           render={({ field, fieldState }) => (
             <TextField
-              label={isService ? 'Custo estimado (opcional)' : 'Custo unitário (opcional)'}
+              label={isService ? 'Custo estimado (opcional)' : byKilo ? 'Custo do quilo (opcional)' : 'Custo unitário (opcional)'}
               value={field.value}
               onChangeText={field.onChange}
               error={fieldState.error?.message}
@@ -170,12 +172,13 @@ export default function ItemFormScreen() {
           name="price"
           render={({ field, fieldState }) => (
             <TextField
-              label={sellable ? 'Preço de venda' : 'Preço de venda (opcional)'}
+              label={`${sellable ? 'Preço de venda' : 'Preço de venda (opcional)'}${byKilo ? ' do quilo' : ''}`}
               value={field.value}
               onChangeText={field.onChange}
               error={fieldState.error?.message}
               keyboardType="decimal-pad"
               placeholder="0,00"
+              hint={byKilo && sellable ? 'Vendido por quilo: no pedido você digita o peso e o valor é calculado.' : undefined}
             />
           )}
         />
@@ -262,6 +265,7 @@ export default function ItemFormScreen() {
 }
 
 const styles = StyleSheet.create({
+  unitHint: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500, lineHeight: 17 },
   flex: { flex: 1 },
   label: { fontFamily: fonts.bold, fontSize: 12, color: colors.gray500 },
   value: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },

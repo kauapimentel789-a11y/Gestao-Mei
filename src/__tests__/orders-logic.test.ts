@@ -2,9 +2,12 @@ import {
   canTransition,
   draftTotals,
   formatQuantity,
+  formatWeight,
   isLate,
+  isWeightUnit,
   lineTotalCents,
   parseQuantity,
+  parseWeightKg,
 } from '@/features/orders/logic';
 
 describe('transições de status (espelho do banco)', () => {
@@ -59,7 +62,7 @@ describe('totais (mesma conta do banco)', () => {
       ],
       280,
     );
-    expect(t).toEqual({ subtotal: 10780, discount: 280, total: 10500 });
+    expect(t).toEqual({ subtotal: 10780, discount: 280, delivery: 0, total: 10500 });
   });
 });
 
@@ -77,5 +80,35 @@ describe('quantidades', () => {
     expect(parseQuantity('0')).toBeNull();
     expect(parseQuantity('1,2345')).toBeNull();
     expect(parseQuantity('abc')).toBeNull();
+  });
+});
+
+describe('venda por quilo e entrega', () => {
+  it('lê o peso em quilos ou gramas', () => {
+    expect(parseWeightKg('1,250')).toBe(1.25);
+    expect(parseWeightKg('0.8')).toBe(0.8);
+    expect(parseWeightKg('2 kg')).toBe(2);
+    expect(parseWeightKg('850 g')).toBe(0.85);
+    expect(parseWeightKg('850g')).toBe(0.85);
+    expect(parseWeightKg('1,2345')).toBeNull();
+    expect(parseWeightKg('abc')).toBeNull();
+    expect(parseWeightKg('0 g')).toBeNull();
+  });
+
+  it('mostra o peso de um jeito fácil', () => {
+    expect(formatWeight(1.25)).toBe('1,25 kg');
+    expect(formatWeight('0.850')).toBe('850 g');
+    expect(formatWeight(2)).toBe('2 kg');
+  });
+
+  it('preço do quilo × peso, arredondado como no banco', () => {
+    expect(lineTotalCents({ quantity: 1.25, unitPriceCents: 5990 })).toBe(7488);
+    expect(lineTotalCents({ quantity: 1.42, unitPriceCents: 5990 })).toBe(8506);
+  });
+
+  it('total soma a entrega depois do desconto', () => {
+    expect(draftTotals([{ quantity: 1, unitPriceCents: 2000 }], 100, 500)).toEqual({ subtotal: 2000, discount: 100, delivery: 500, total: 2400 });
+    expect(isWeightUnit('kg')).toBe(true);
+    expect(isWeightUnit('un')).toBe(false);
   });
 });

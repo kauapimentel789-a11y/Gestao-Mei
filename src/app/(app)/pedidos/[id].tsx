@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Check, MessageCircle, PackageMinus } from 'lucide-react-native';
+import { Check, MapPin, MessageCircle, PackageMinus } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -25,7 +25,8 @@ import { useConsumeOrder } from '@/features/inventory/api';
 import { useCustomerNotice } from '@/features/messages/CustomerNotice';
 import { statusEvent } from '@/features/messages/templates';
 import { CHANNEL_LABEL, type OrderDetail, useOrder, useSetOrderStatus } from '@/features/orders/api';
-import { canTransition, formatQuantity, isLate, STATUS_FLOW } from '@/features/orders/logic';
+import { canTransition, formatQuantity, formatWeight, isLate, isWeightUnit, STATUS_FLOW } from '@/features/orders/logic';
+import { WeightCheck } from '@/features/orders/WeightCheck';
 import { ServiceInvoice } from '@/features/invoices/ServiceInvoice';
 import { ServiceProfessional } from '@/features/professionals/ServiceProfessional';
 import { StatusChip } from '@/features/orders/StatusChip';
@@ -34,6 +35,7 @@ import { OrderTasks } from '@/features/tasks/OrderTasks';
 import { formatWhen } from '@/lib/dates';
 import { newId } from '@/lib/ids';
 import { friendlyError } from '@/lib/errors';
+import { mapsLink } from '@/lib/maps';
 import { formatCents } from '@/lib/money';
 import { whatsappUrl } from '@/lib/whatsapp';
 import { colors, fonts, radius, shadows } from '@/theme/tokens';
@@ -237,7 +239,9 @@ export default function OrderDetailScreen() {
             <View style={styles.flex}>
               <Text style={styles.itemName}>{it.description}</Text>
               <Text style={styles.muted}>
-                {formatQuantity(it.quantity)} {it.unit !== 'un' ? it.unit : ''} × {formatCents(it.unit_price_cents)}
+                {isWeightUnit(it.unit)
+                  ? `${formatWeight(it.quantity)} × ${formatCents(it.unit_price_cents)}/kg`
+                  : `${formatQuantity(it.quantity)} ${it.unit !== 'un' ? it.unit : ''} × ${formatCents(it.unit_price_cents)}`}
               </Text>
             </View>
             <Text style={styles.itemTotal}>{formatCents(it.line_total_cents)}</Text>
@@ -249,11 +253,37 @@ export default function OrderDetailScreen() {
             <Text style={styles.muted}>− {formatCents(o.discount_cents)}</Text>
           </View>
         ) : null}
+        {o.delivery_area || o.delivery_fee_cents > 0 ? (
+          <View style={styles.totalRow}>
+            <Text style={styles.muted}>Entrega{o.delivery_area ? ` · ${o.delivery_area}` : ''}</Text>
+            <Text style={styles.muted}>{o.delivery_fee_cents ? formatCents(o.delivery_fee_cents) : 'Grátis'}</Text>
+          </View>
+        ) : null}
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total</Text>
           <Text style={styles.totalValue}>{formatCents(o.total_cents)}</Text>
         </View>
       </Card>
+
+      {o.delivery_address ? (
+        <Card>
+          <Text style={styles.cardTitle}>Endereço de entrega</Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityHint="Abre o mapa"
+            onPress={() => Linking.openURL(mapsLink(o.delivery_address!))}
+            style={styles.addressRow}
+          >
+            <MapPin size={18} color={colors.primaryText} />
+            <Text style={[styles.body, styles.flex]}>
+              {o.delivery_address}
+              {o.delivery_area ? ` · ${o.delivery_area}` : ''}
+            </Text>
+          </Pressable>
+        </Card>
+      ) : null}
+
+      <WeightCheck order={o} />
 
       <OrderPayment order={o} prompt={payPrompt} onReceived={(paidCents) => notice.offer('payment', { paidCents })} />
 
@@ -522,6 +552,7 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
   totalValue: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.ink },
+  addressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
   payRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   historyRow: { gap: 2 },
   backdrop: { flex: 1, backgroundColor: 'rgba(11,11,15,0.45)', justifyContent: 'center', padding: 20 },

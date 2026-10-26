@@ -138,6 +138,7 @@ export default function SettingsScreen() {
         />
         {org.business_type === 'services' ? <NavRow label="Profissionais" onPress={() => router.push('/profissionais')} /> : null}
         <NavRow label="Fornecedores" onPress={() => router.push('/fornecedores')} />
+        {org.business_type !== 'services' ? <NavRow label="Taxas de entrega" onPress={() => router.push('/entregas')} /> : null}
         <NavRow label="Compras" onPress={() => router.push('/compras')} />
         <NavRow label="Orçamentos" onPress={() => router.push('/orcamentos')} />
         <NavRow label="Contas financeiras" onPress={() => router.push('/financeiro/contas')} />
