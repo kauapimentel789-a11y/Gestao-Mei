@@ -17,6 +17,7 @@ const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPAB
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const salt = Deno.env.get('PUBLIC_ORDER_SALT') ?? '';
+const MAX_BODY = 20_000;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -50,18 +51,29 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
+  // O content-length pode faltar (envio em partes), então o limite vale
+  // também para o texto lido.
   const length = Number(req.headers.get('content-length') ?? 0);
-  if (length > 20_000) return fail('invalid_request');
+  if (length > MAX_BODY) return fail('invalid_request');
 
   let body: unknown;
   try {
-    body = await req.json();
+    const text = await req.text();
+    if (text.length > MAX_BODY) return fail('invalid_request');
+    body = JSON.parse(text);
   } catch {
     return fail('invalid_request');
   }
   const parsed = publicRequest.safeParse(body);
   if (!parsed.success) return fail('invalid_request');
   const input = parsed.data;
+
+  // Sem o segredo, o hash do IP seria previsível: melhor recusar novos
+  // pedidos e agendamentos do que aceitá-los sem limite por visitante.
+  if (!salt && (input.action === 'order' || input.action === 'book')) {
+    console.error('encomenda: PUBLIC_ORDER_SALT não configurado');
+    return fail('internal');
+  }
 
   if (input.action === 'storefront') {
     const { data, error } = await supabase.rpc('public_storefront', { p_slug: input.slug });
