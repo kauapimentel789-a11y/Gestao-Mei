@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronRight, Package, Plus, Trash2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -16,9 +16,10 @@ import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { type Customer, useCustomer } from '@/features/customers/api';
 import { CustomerPicker } from '@/features/customers/CustomerPicker';
+import { useDeliveryZones } from '@/features/delivery/api';
 import { formatISODate, parseDateInput } from '@/features/finance/logic';
 import { CHANNEL_LABEL, type OrderChannel, type OrderItemInput, useCreateOrder } from '@/features/orders/api';
-import { draftTotals, parseQuantity } from '@/features/orders/logic';
+import { draftTotals, formatQuantity, formatWeight, isWeightUnit, lineTotalCents, parseQuantity, parseWeightKg } from '@/features/orders/logic';
 import { useOrg } from '@/features/organizations/useOrg';
 import { useProducts } from '@/features/products/api';
 import { SELLABLE_TYPES } from '@/features/products/types';
@@ -118,6 +119,9 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
   const createQuote = useCreateQuote(orgId);
   const updateQuote = useUpdateQuote(orgId);
   const isService = !isQuote && config.orderKind === 'service_order';
+  const zones = useDeliveryZones(orgId);
+  // Entrega só em pedido e venda (não em orçamento nem em serviço) e quando há bairros cadastrados.
+  const activeZones = isQuote || isService ? [] : (zones.data ?? []).filter((z) => z.active);
   const [validUntil, setValidUntil] = useState(edit?.validUntil ?? '');
   const prices = edit?.prices;
 
@@ -128,6 +132,10 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
   const customer = chosen !== undefined ? chosen : (preselected.data ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [qty, setQty] = useState<Record<string, number>>(edit?.qty ?? {});
+  // Texto do peso digitado nos itens vendidos por quilo (o número vai para qty).
+  const [weightText, setWeightText] = useState<Record<string, string>>({});
+  const [zoneId, setZoneId] = useState<string>('pickup');
+  const [address, setAddress] = useState<string | null>(null);
   const [custom, setCustom] = useState<CustomLine[]>(() => (edit?.custom ?? []).map((l) => ({ ...l, key: newId() })));
   const [channel, setChannel] = useState<OrderChannel>('whatsapp');
   const [date, setDate] = useState('');
@@ -138,10 +146,18 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
   const [error, setError] = useState<string | null>(null);
 
   const productById = useMemo(() => new Map((products.data ?? []).map((p) => [p.id, p])), [products.data]);
+  const zone = activeZones.find((z) => z.id === zoneId) ?? null;
+  // O endereço começa com o do cadastro do cliente e pode ser trocado.
+  const deliveryAddress = address ?? customer?.address ?? '';
+  const deliveryFee = zone?.fee_cents ?? 0;
 
-  const draft = useMemo(() => {
+  // Sem useMemo: o React Compiler já guarda o resultado entre renderizações.
+  const draft = (() => {
     const items: (OrderItemInput & { unitPriceCents: number })[] = [];
     let invalid: string | null = null;
+    for (const text of Object.values(weightText)) {
+      if (text.trim() && parseWeightKg(text) === null) invalid = 'Peso inválido. Ex.: 1,250 (kg) ou 850 g.';
+    }
     for (const [id, q] of Object.entries(qty)) {
       const p = productById.get(id);
       const kept = prices?.[id];
@@ -166,16 +182,17 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
     const totals = draftTotals(
       items.map((i) => ({ quantity: i.quantity, unitPriceCents: i.unitPriceCents })),
       discountCents ?? 0,
+      deliveryFee,
     );
     return { items, invalid, discountCents, totals };
-  }, [qty, custom, discount, productById, prices]);
+  })();
 
   const save = async () => {
     setError(null);
     if (draft.invalid) return setError(draft.invalid);
     if (draft.items.length === 0) return setError('Adicione pelo menos um item.');
     if (draft.discountCents === null) return setError('Desconto inválido. Ex.: 5,00');
-    if (draft.totals.total < 0) return setError('O desconto não pode ser maior que o valor dos itens.');
+    if (draft.totals.subtotal - (draft.discountCents ?? 0) < 0) return setError('O desconto não pode ser maior que o valor dos itens.');
     if (isQuote) {
       const valid = validUntil.trim() ? parseDateInput(validUntil) : null;
       if (validUntil.trim() && !valid) return setError('Validade inválida. Use DD/MM/AAAA.');
@@ -225,6 +242,7 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
         problemDescription: isService ? problem : undefined,
         discountCents: draft.discountCents,
         items: draft.items.map(({ unitPriceCents: _p, ...i }) => i),
+        delivery: zone ? { zoneId: zone.id, address: deliveryAddress.trim() } : null,
       });
       toast(`${config.orderNoun[0]!.toUpperCase()}${config.orderNoun.slice(1)} #${order.number} salvo`);
       router.replace({ pathname: '/pedidos/[id]', params: { id: order.id, aviso: 'novo' } });
@@ -272,6 +290,38 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
         />
         {products.data?.map((p) => {
           const q = qty[p.id] ?? 0;
+          if (isWeightUnit(p.unit)) {
+            const unitPrice = prices?.[p.id] ?? p.price_cents;
+            const text = weightText[p.id] ?? (q > 0 ? formatQuantity(q) : '');
+            const bad = text.trim() !== '' && parseWeightKg(text) === null;
+            return (
+              <View key={p.id} style={[styles.itemRow, q > 0 && styles.itemRowActive]}>
+                <View style={styles.flex}>
+                  <Text style={styles.itemName}>{p.name}</Text>
+                  <Text style={styles.muted}>
+                    {unitPrice != null ? `${formatCents(unitPrice)} o quilo` : 'Sem preço'}
+                    {q > 0 && unitPrice != null ? ` · ${formatWeight(q)} = ${formatCents(lineTotalCents({ quantity: q, unitPriceCents: unitPrice }))}` : ''}
+                  </Text>
+                  {bad ? <Text style={styles.weightError}>Use 1,250 ou 850 g</Text> : null}
+                </View>
+                <View style={[styles.weightBox, bad && styles.weightBoxError]}>
+                  <TextInput
+                    accessibilityLabel={`Peso de ${p.name} em quilos`}
+                    value={text}
+                    onChangeText={(t) => {
+                      setWeightText((s) => ({ ...s, [p.id]: t }));
+                      setQty((s) => ({ ...s, [p.id]: parseWeightKg(t) ?? 0 }));
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder="0,000"
+                    placeholderTextColor={colors.gray400}
+                    style={styles.weightInput}
+                  />
+                  <Text style={styles.weightUnit}>kg</Text>
+                </View>
+              </View>
+            );
+          }
           return (
             <View key={p.id} style={[styles.itemRow, q > 0 && styles.itemRowActive]}>
               <View style={styles.flex}>
@@ -343,6 +393,30 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
         </Pressable>
       </Card>
 
+      {activeZones.length > 0 ? (
+        <Card>
+          <Text style={styles.label}>Entrega</Text>
+          <Chips
+            accessibilityLabel="Entrega"
+            value={zoneId}
+            onChange={setZoneId}
+            options={[
+              { value: 'pickup', label: 'Retirada' },
+              ...activeZones.map((z) => ({ value: z.id, label: `${z.name} · ${z.fee_cents ? formatCents(z.fee_cents) : 'grátis'}` })),
+            ]}
+          />
+          {zone ? (
+            <TextField
+              label="Endereço de entrega"
+              value={deliveryAddress}
+              onChangeText={setAddress}
+              placeholder="Rua, número, complemento"
+              maxLength={300}
+            />
+          ) : null}
+        </Card>
+      ) : null}
+
       <Card>
         {isQuote ? (
           <TextField
@@ -385,6 +459,12 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Desconto</Text>
             <Text style={styles.summaryValue}>− {formatCents(draft.discountCents)}</Text>
+          </View>
+        ) : null}
+        {zone ? (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Entrega · {zone.name}</Text>
+            <Text style={styles.summaryValue}>{zone.fee_cents ? formatCents(zone.fee_cents) : 'Grátis'}</Text>
           </View>
         ) : null}
         <Text style={styles.summaryHint}>
@@ -444,6 +524,21 @@ const styles = StyleSheet.create({
   twoCols: { flexDirection: 'row', gap: 10 },
   addLine: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 14 },
   addLineText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primaryText },
+  weightBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    borderRadius: radius.input,
+    borderWidth: 1.5,
+    borderColor: colors.gray200,
+    backgroundColor: colors.surface,
+  },
+  weightBoxError: { borderColor: colors.primaryText },
+  weightInput: { width: 72, fontFamily: fonts.extrabold, fontSize: 16, color: colors.ink, textAlign: 'right', paddingVertical: 8 },
+  weightUnit: { fontFamily: fonts.bold, fontSize: 13, color: colors.gray500 },
+  weightError: { fontFamily: fonts.bold, fontSize: 12, color: colors.primaryText },
   multiline: { minHeight: 80, textAlignVertical: 'top', paddingTop: 12 },
   summary: { backgroundColor: colors.graphite, borderRadius: radius.card, padding: 18, gap: 6 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },

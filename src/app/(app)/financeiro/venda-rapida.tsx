@@ -14,11 +14,15 @@ import type { Customer } from '@/features/customers/api';
 import { CustomerPicker } from '@/features/customers/CustomerPicker';
 import { useAccounts, useCategories, useCreateEntry } from '@/features/finance/api';
 import { METHOD_LABEL, parseDateInput, type PaymentMethod, toISODate } from '@/features/finance/logic';
+import { formatWeight, isWeightUnit, lineTotalCents, parseWeightKg } from '@/features/orders/logic';
+import { centsToInput } from '@/features/quotes/logic';
+import { useProducts } from '@/features/products/api';
+import { SELLABLE_TYPES } from '@/features/products/types';
 import { useOrg } from '@/features/organizations/useOrg';
 import { formatDateBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
-import { parseBRLToCents } from '@/lib/money';
+import { formatCents, parseBRLToCents } from '@/lib/money';
 import { colors, fonts, radius } from '@/theme/tokens';
 import { goBack } from '@/lib/navigation';
 
@@ -27,6 +31,8 @@ const METHODS: PaymentMethod[] = ['pix', 'cash', 'debit_card', 'credit_card'];
 /**
  * Venda rápida: só o valor e como pagou. Vira um lançamento em "Vendas" (ou
  * "Serviços prestados"), que conta no faturamento do MEI. Não mexe no estoque.
+ * Com itens vendidos por quilo, "Vendeu por peso?" calcula o valor (preço do
+ * quilo × peso da balança) e preenche o valor e a descrição.
  */
 export default function QuickSaleScreen() {
   const { orgId, org, config } = useOrg();
@@ -46,6 +52,20 @@ export default function QuickSaleScreen() {
   const [errs, setErrs] = useState<Record<string, string | undefined>>({});
   const [error, setError] = useState<string | null>(null);
   const [key] = useState(newId);
+  const products = useProducts(orgId, { types: SELLABLE_TYPES, activeOnly: true });
+  const byWeight = (products.data ?? []).filter((p) => isWeightUnit(p.unit) && (p.price_cents ?? 0) > 0);
+  const [weighed, setWeighed] = useState<string | null>(null);
+  const [weight, setWeight] = useState('');
+  const weighedProduct = byWeight.find((p) => p.id === weighed) ?? null;
+  const kg = parseWeightKg(weight);
+
+  const applyWeight = (productId: string | null, text: string) => {
+    const p = byWeight.find((x) => x.id === productId);
+    const w = parseWeightKg(text);
+    if (!p || !w) return;
+    setAmount(centsToInput(lineTotalCents({ quantity: w, unitPriceCents: p.price_cents! })));
+    setWhat(`${formatWeight(w)} de ${p.name}`);
+  };
 
   const active = (accounts.data ?? []).filter((a) => a.active);
   // Dinheiro vai para o caixa; Pix e cartão para a primeira conta que não é caixa.
@@ -93,6 +113,35 @@ export default function QuickSaleScreen() {
   return (
     <Screen>
       <DetailBar title="Venda rápida" />
+
+      {byWeight.length > 0 ? (
+        <Card>
+          <Text style={styles.label}>Vendeu por peso?</Text>
+          <Chips
+            accessibilityLabel="Item vendido por quilo"
+            value={weighed}
+            onChange={(id) => {
+              setWeighed(id);
+              applyWeight(id, weight);
+            }}
+            options={byWeight.map((p) => ({ value: p.id, label: `${p.name} · ${formatCents(p.price_cents!)}/kg` }))}
+          />
+          {weighedProduct ? (
+            <TextField
+              label="Peso na balança"
+              value={weight}
+              onChangeText={(t) => {
+                setWeight(t);
+                applyWeight(weighed, t);
+              }}
+              keyboardType="decimal-pad"
+              placeholder="Ex.: 1,250 ou 850 g"
+              error={weight.trim() && !kg ? 'Use 1,250 (kg) ou 850 g.' : undefined}
+              hint={kg ? `${formatWeight(kg)} × ${formatCents(weighedProduct.price_cents!)} = ${formatCents(lineTotalCents({ quantity: kg, unitPriceCents: weighedProduct.price_cents! }))}` : undefined}
+            />
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card>
         <Text style={styles.label}>Quanto foi?</Text>

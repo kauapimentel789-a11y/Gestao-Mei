@@ -37,9 +37,35 @@ export function lineTotalCents(item: DraftItem): number {
   return Math.round((milli * item.unitPriceCents) / 1000) - (item.discountCents ?? 0);
 }
 
-export function draftTotals(items: DraftItem[], discountCents = 0) {
+export function draftTotals(items: DraftItem[], discountCents = 0, deliveryCents = 0) {
   const subtotal = items.reduce((sum, i) => sum + lineTotalCents(i), 0);
-  return { subtotal, discount: discountCents, total: subtotal - discountCents };
+  return { subtotal, discount: discountCents, delivery: deliveryCents, total: subtotal - discountCents + deliveryCents };
+}
+
+/** Item vendido por quilo: o preço é por kg e a quantidade é o peso. */
+export function isWeightUnit(unit: string | null | undefined): boolean {
+  return unit === 'kg';
+}
+
+/**
+ * Lê o peso digitado em quilos ("1,250", "0,8", "1.5"). Aceita também gramas
+ * quando termina com "g" ("850 g" = 0,85 kg). Até 3 casas (gramas).
+ */
+export function parseWeightKg(text: string): number | null {
+  const t = text.trim().toLowerCase().replace(/\s+/g, '');
+  const grams = /^(\d{1,6})g$/.exec(t);
+  if (grams) {
+    const g = Number(grams[1]);
+    return g > 0 ? g / 1000 : null;
+  }
+  return parseQuantity(t.replace(/kg$/, ''));
+}
+
+/** "1,25 kg" e "850 g" para mostrar o peso. */
+export function formatWeight(kg: number | string): string {
+  const n = typeof kg === 'string' ? Number(kg) : kg;
+  if (n > 0 && n < 1) return `${Math.round(n * 1000)} g`;
+  return `${formatQuantity(n)} kg`;
 }
 
 /** Formata a quantidade sem zeros à direita, com vírgula: 2 → "2", 0.5 → "0,5". */

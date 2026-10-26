@@ -66,6 +66,10 @@ export interface OrderDetail {
   scheduled_minutes: number | null;
   subtotal_cents: number;
   discount_cents: number;
+  /** Entrega (migração 0023): taxa, bairro copiado no pedido e endereço. */
+  delivery_fee_cents: number;
+  delivery_area: string | null;
+  delivery_address: string | null;
   total_cents: number;
   cancel_reason: string | null;
   stock_consumed_at: string | null;
@@ -174,7 +178,7 @@ export function useOrder(orgId: string, id: string) {
         .from('orders')
         .select(
           `id, organization_id, number, kind, status, channel, due_at, notes, problem_description, scheduled_for, scheduled_minutes,
-           subtotal_cents, discount_cents, total_cents, cancel_reason, stock_consumed_at, no_show_at, reminder_sent_at, professional_id, created_at,
+           subtotal_cents, discount_cents, delivery_fee_cents, delivery_area, delivery_address, total_cents, cancel_reason, stock_consumed_at, no_show_at, reminder_sent_at, professional_id, created_at,
            customer:customers (id, name, phone, phone_digits),
            items:order_items (id, position, product_id, description, unit, quantity, unit_price_cents, discount_cents, line_total_cents),
            history:order_status_history (id, from_status, to_status, reason, changed_at)`,
@@ -215,6 +219,8 @@ export interface CreateOrderInput {
   items: OrderItemInput[];
   problemDescription?: string;
   scheduledFor?: Date | null;
+  /** Entrega: bairro cadastrado (a taxa vem dele) e endereço. */
+  delivery?: { zoneId: string; address: string } | null;
 }
 
 export function useCreateOrder(orgId: string) {
@@ -233,6 +239,8 @@ export function useCreateOrder(orgId: string) {
         p_discount_cents: input.discountCents,
         p_problem_description: input.problemDescription || null,
         p_scheduled_for: input.scheduledFor?.toISOString() ?? null,
+        // Só manda os campos de entrega quando há entrega: funciona também num banco sem a 0023.
+        ...(input.delivery ? { p_delivery_zone_id: input.delivery.zoneId, p_delivery_address: input.delivery.address || null } : {}),
       });
       if (error) throw error;
       return data as { id: string; number: number };
@@ -254,5 +262,20 @@ export function useSetOrderStatus(orgId: string) {
       return data as { id: string; status: OrderStatus };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: orderKeys.all(orgId) }),
+  });
+}
+
+/** Grava o peso conferido na balança dos itens vendidos por quilo. */
+export function useSetOrderWeights(orgId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ orderId, weights }: { orderId: string; weights: { item_id: string; quantity: number }[] }) => {
+      const { error } = await supabase.rpc('set_order_weights', { p_order_id: orderId, p_weights: weights });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: orderKeys.all(orgId) });
+      qc.invalidateQueries({ queryKey: ['finance', orgId] });
+    },
   });
 }
