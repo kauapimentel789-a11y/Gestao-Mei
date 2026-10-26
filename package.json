@@ -6,6 +6,7 @@
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/metro-runtime": "~58.0.15",
     "@hookform/resolvers": "5.2.2",
+    "@sentry/react-native": "~8.28.0",
     "@supabase/supabase-js": "^2.118.0",
     "@tanstack/react-query": "^5.104.5",
     "expo": "~58.0.17",
@@ -30,13 +31,13 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.3.0",
-    "typescript": "~6.0.3",
-    "jest-expo": "~58.0.12",
+    "eslint": "^9.0.0",
     "eslint-config-expo": "~58.0.4",
     "jest": "^30.0.0",
-    "@types/jest": "^30.0.0",
-    "eslint": "^9.0.0"
+    "jest-expo": "~58.0.12",
+    "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",

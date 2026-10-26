@@ -23,14 +23,17 @@ import {
   useActiveOrganization,
 } from '@/features/organizations/ActiveOrganizationProvider';
 import { friendlyError } from '@/lib/errors';
+import { initMonitoring, withMonitoring } from '@/lib/monitoring';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { colors, fonts } from '@/theme/tokens';
+
+initMonitoring();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -98,6 +101,8 @@ function RootNavigator() {
     </Stack>
   );
 }
+
+export default withMonitoring(RootLayout);
 
 /** Fica true depois que o usuário abre o link de recuperação, até definir a nova senha. */
 function usePasswordRecovery() {
