@@ -14,6 +14,7 @@ import { useToast } from '@/components/Toast';
 import { type Customer, findCustomersByPhone, useCustomer, useSaveCustomer } from '@/features/customers/api';
 import { type CustomerFormInput, customerSchema } from '@/features/customers/schemas';
 import { useOrg } from '@/features/organizations/useOrg';
+import { formatBirthdayInput, parseBirthday } from '@/lib/birthday';
 import { formatDocument, isValidDocument } from '@/lib/document';
 import { friendlyError } from '@/lib/errors';
 import { colors, fonts } from '@/theme/tokens';
@@ -23,6 +24,8 @@ export default function CustomerFormScreen() {
   const { orgId, config } = useOrg();
   const noun = config.clientNoun;
   const Noun = noun[0]!.toUpperCase() + noun.slice(1);
+  // Produção e revenda entregam: o endereço é de entrega.
+  const sellsGoods = config.type !== 'services';
   const existing = useCustomer(orgId, id ?? '');
   const save = useSaveCustomer(orgId);
   const toast = useToast();
@@ -31,13 +34,18 @@ export default function CustomerFormScreen() {
 
   const { control, handleSubmit, reset, formState } = useForm<CustomerFormInput>({
     resolver: zodResolver(customerSchema),
-    defaultValues: { name: '', phone: '', document: '', notes: '' },
+    defaultValues: { name: '', phone: '', birthday: '', address: '', document: '', notes: '' },
   });
 
   useEffect(() => {
     if (existing.data) reset({
         name: existing.data.name,
         phone: existing.data.phone ?? '',
+        birthday:
+          existing.data.birth_day && existing.data.birth_month
+            ? formatBirthdayInput({ day: existing.data.birth_day, month: existing.data.birth_month, year: existing.data.birth_year })
+            : '',
+        address: existing.data.address ?? '',
         document: existing.data.document ? formatDocument(existing.data.document) : '',
         notes: existing.data.notes ?? '',
       });
@@ -51,7 +59,8 @@ export default function CustomerFormScreen() {
           const same = (await findCustomersByPhone(orgId, input.phone)).find((c) => c.id !== id);
           if (same) return setDuplicate(same);
         }
-        const c = await save.mutateAsync({ id, input });
+        const birthday = parseBirthday(input.birthday);
+        const c = await save.mutateAsync({ id, input: { ...input, birthday: birthday === 'invalid' ? null : birthday } });
         toast(id ? `${Noun} atualizado` : `${Noun} cadastrado`);
         router.replace({ pathname: '/clientes/[id]', params: { id: c.id } });
       } catch (e) {
@@ -85,6 +94,41 @@ export default function CustomerFormScreen() {
               error={fieldState.error?.message}
               keyboardType="phone-pad"
               placeholder="(11) 98765-4321"
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="birthday"
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Aniversário (opcional)"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={() => {
+                const b = parseBirthday(field.value);
+                if (b && b !== 'invalid') field.onChange(formatBirthdayInput(b));
+                field.onBlur();
+              }}
+              error={fieldState.error?.message}
+              keyboardType="numbers-and-punctuation"
+              maxLength={10}
+              placeholder="12/03 ou 12/03/1990"
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="address"
+          render={({ field, fieldState }) => (
+            <TextField
+              label={sellsGoods ? 'Endereço de entrega (opcional)' : 'Endereço (opcional)'}
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+              placeholder="Rua, número, bairro"
+              textContentType="fullStreetAddress"
             />
           )}
         />

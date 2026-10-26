@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { MessageCircle, NotebookPen, Pencil, ReceiptText } from 'lucide-react-native';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Cake, MapPin, MessageCircle, NotebookPen, Pencil, ReceiptText } from 'lucide-react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -10,11 +10,14 @@ import { QueryStates, Skeleton } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
 import { useCustomerAttendance, useCustomerNotes } from '@/features/agenda/api';
 import { NoteItem } from '@/features/agenda/ServiceNotes';
-import { useCustomer } from '@/features/customers/api';
+import { type Customer, useCustomer } from '@/features/customers/api';
+import { birthdayText } from '@/features/messages/templates';
 import { useCustomerOrders } from '@/features/orders/api';
 import { OrderRow } from '@/features/orders/OrderRow';
 import { useOrg } from '@/features/organizations/useOrg';
+import { ageOn, birthdayWhen, daysUntilBirthday, formatBirthdayLong } from '@/lib/birthday';
 import { friendlyError } from '@/lib/errors';
+import { mapsLink } from '@/lib/maps';
 import { formatCents } from '@/lib/money';
 import { whatsappUrl } from '@/lib/whatsapp';
 import { colors, fonts } from '@/theme/tokens';
@@ -62,6 +65,14 @@ export default function CustomerDetailScreen() {
       />
       <Card>
         {c.phone ? <Text style={styles.body}>{c.phone}</Text> : <Text style={styles.muted}>Sem telefone</Text>}
+        {c.birth_day && c.birth_month ? <BirthdayLine customer={c} /> : null}
+        {c.address ? (
+          <Pressable accessibilityRole="link" accessibilityHint="Abre o mapa" onPress={() => Linking.openURL(mapsLink(c.address!))} style={styles.infoRow}>
+            <MapPin size={16} color={colors.gray500} />
+            <Text style={[styles.body, styles.flex]}>{c.address}</Text>
+            <Text style={styles.link}>Mapa</Text>
+          </Pressable>
+        ) : null}
         {c.notes ? <Text style={styles.body}>{c.notes}</Text> : null}
         {appointments ? (
           <Attendance customerId={c.id} total={total} />
@@ -105,6 +116,38 @@ export default function CustomerDetailScreen() {
         ))}
       </Card>
     </Screen>
+  );
+}
+
+/** Aniversário: data, idade e, quando está perto, a mensagem pronta no WhatsApp. */
+function BirthdayLine({ customer: c }: { customer: Customer }) {
+  const { org, config } = useOrg();
+  const days = daysUntilBirthday(c.birth_day!, c.birth_month!);
+  const age = c.birth_year ? ageOn({ day: c.birth_day!, month: c.birth_month!, year: c.birth_year }) : null;
+  const soon = days <= 7;
+  const wa = soon && c.phone_digits
+    ? whatsappUrl(c.phone_digits, birthdayText({ profile: config.profile, business: org.name, customerName: c.name, daysUntil: days }))
+    : null;
+  return (
+    <View style={[styles.birthday, soon && styles.birthdaySoon]}>
+      <View style={styles.infoRow}>
+        <Cake size={16} color={soon ? colors.primaryText : colors.gray500} />
+        <Text style={[styles.body, styles.flex, soon && styles.birthdayText]}>
+          Aniversário: {formatBirthdayLong(c.birth_day!, c.birth_month!)}
+          {age !== null ? ` · ${age} anos` : ''}
+        </Text>
+        {days <= 30 ? <Text style={styles.link}>{birthdayWhen(days)}</Text> : null}
+      </View>
+      {wa ? (
+        <Button
+          size="medium"
+          variant="tint"
+          label={days === 0 ? 'Mandar parabéns' : 'Mandar mensagem de aniversário'}
+          trailing={<MessageCircle size={18} color={colors.primaryText} />}
+          onPress={() => Linking.openURL(wa)}
+        />
+      ) : null}
+    </View>
   );
 }
 
@@ -153,6 +196,12 @@ function CustomerNotes({ customerId, numbers }: { customerId: string; numbers: M
 
 const styles = StyleSheet.create({
   body: { fontFamily: fonts.medium, fontSize: 14, color: colors.gray600 },
+  flex: { flex: 1 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 28 },
+  link: { fontFamily: fonts.bold, fontSize: 13, color: colors.primaryText },
+  birthday: { gap: 8 },
+  birthdaySoon: { backgroundColor: colors.primaryTint, borderRadius: 14, padding: 10 },
+  birthdayText: { fontFamily: fonts.bold, color: colors.primaryText },
   muted: { fontFamily: fonts.medium, fontSize: 12, color: colors.gray500 },
   metrics: { flexDirection: 'row', gap: 12 },
   metric: { flex: 1, backgroundColor: colors.bg, borderRadius: 16, padding: 12, gap: 2 },

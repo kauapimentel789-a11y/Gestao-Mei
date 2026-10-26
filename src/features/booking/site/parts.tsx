@@ -21,6 +21,7 @@ import { Animated, Linking, Platform, Pressable, StyleSheet, Text, TextInput, ty
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { FadeIn, useLoop, usePressScale } from '@/components/motion';
+import { mapsLink } from '@/lib/maps';
 import { formatCents } from '@/lib/money';
 
 import type { BookingPage, BookingService } from '../../../../supabase/functions/_shared/public-order';
@@ -41,9 +42,7 @@ const AREA_KICKER: Record<string, string> = {
   other: 'ATENDIMENTO COM HORA MARCADA',
 };
 
-export function mapsLink(address: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-}
+export { mapsLink };
 
 // ---------------------------------------------------------------------------
 // Botões

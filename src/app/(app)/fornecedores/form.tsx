@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -45,6 +45,9 @@ function SupplierForm({ id, existing }: { id?: string; existing?: Supplier }) {
     phone: existing?.phone ?? '',
     email: existing?.email ?? '',
     notes: existing?.notes ?? '',
+    contact_name: existing?.contact_name ?? '',
+    address: existing?.address ?? '',
+    supplies: existing?.supplies ?? '',
     active: existing?.active ?? true,
   });
   const [errs, setErrs] = useState<Partial<Record<keyof SupplierInput, string>>>({});
@@ -56,13 +59,15 @@ function SupplierForm({ id, existing }: { id?: string; existing?: Supplier }) {
     if (!form.name.trim()) next.name = 'Informe o nome.';
     if (normalizeDocument(form.document) === 'invalid') next.document = 'CPF tem 11 dígitos e CNPJ, 14.';
     if (form.email.trim() && !/^[^@\s]+@[^@\s]+$/.test(form.email.trim())) next.email = 'E-mail inválido.';
+    if (form.address.trim() && form.address.trim().length < 3) next.address = 'Endereço muito curto.';
     setErrs(next);
     if (Object.values(next).some(Boolean)) return;
     setError(null);
     try {
-      await save.mutateAsync({ id, input: form });
+      const saved = await save.mutateAsync({ id, input: form });
       toast(id ? 'Fornecedor atualizado' : 'Fornecedor cadastrado');
-      goBack();
+      if (id) goBack();
+      else router.replace({ pathname: '/fornecedores/[id]', params: { id: saved.id } });
     } catch (e) {
       setError(friendlyError(e));
     }
@@ -73,9 +78,25 @@ function SupplierForm({ id, existing }: { id?: string; existing?: Supplier }) {
       <DetailBar title={id ? 'Editar fornecedor' : 'Novo fornecedor'} />
       <Card>
         <TextField label="Nome" value={form.name} onChangeText={set('name')} error={errs.name} />
-        <TextField label="CPF ou CNPJ (opcional)" value={form.document} onChangeText={set('document')} keyboardType="number-pad" error={errs.document} />
-        <TextField label="Telefone (opcional)" value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" />
+        <TextField
+          label="O que vende (opcional)"
+          value={form.supplies}
+          onChangeText={set('supplies')}
+          placeholder="Ex.: farinha, açúcar, embalagens"
+          maxLength={300}
+        />
+        <TextField label="Com quem falar (opcional)" value={form.contact_name} onChangeText={set('contact_name')} placeholder="Nome do vendedor ou atendente" maxLength={120} />
+        <TextField label="WhatsApp ou telefone (opcional)" value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" placeholder="(11) 98765-4321" />
         <TextField label="E-mail (opcional)" value={form.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" error={errs.email} />
+        <TextField
+          label="Endereço (opcional)"
+          value={form.address}
+          onChangeText={set('address')}
+          placeholder="Rua, número, bairro, cidade"
+          maxLength={200}
+          error={errs.address}
+        />
+        <TextField label="CPF ou CNPJ (opcional)" value={form.document} onChangeText={set('document')} keyboardType="number-pad" error={errs.document} />
         <TextField label="Observações (opcional)" value={form.notes} onChangeText={set('notes')} multiline />
       </Card>
       {id ? (
