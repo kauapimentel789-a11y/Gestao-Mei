@@ -2,8 +2,8 @@
 // /privacidade, abertos com ou sem login. Texto simples, em linguagem do dia
 // a dia. Revisar com um advogado antes de crescer.
 //
-// O e-mail de contato (encarregado de dados) vem de EXPO_PUBLIC_CONTACT_EMAIL,
-// configurado na Vercel; sem ele, o texto fala só em "suporte".
+// E-mail de contato para assuntos de dados (LGPD), público de propósito.
+// EXPO_PUBLIC_CONTACT_EMAIL troca o endereço sem mexer no código.
 
 export interface LegalSection {
   title: string;
@@ -19,12 +19,10 @@ export interface LegalDocument {
 
 export const LEGAL_UPDATED_AT = '26/10/2026';
 
-const contactEmail = process.env.EXPO_PUBLIC_CONTACT_EMAIL?.trim() || null;
+export const CONTACT_EMAIL = process.env.EXPO_PUBLIC_CONTACT_EMAIL?.trim() || 'gestaofacil.suporte@gmail.com';
 
 function contactLine(): string {
-  return contactEmail
-    ? `Para dúvidas ou pedidos sobre seus dados, escreva para ${contactEmail}. Respondemos em até 15 dias.`
-    : 'Para dúvidas ou pedidos sobre seus dados, fale com o suporte do Gestão Fácil. Respondemos em até 15 dias.';
+  return `Para dúvidas ou pedidos sobre seus dados, escreva para ${CONTACT_EMAIL}. Respondemos em até 15 dias.`;
 }
 
 export const TERMS: LegalDocument = {
