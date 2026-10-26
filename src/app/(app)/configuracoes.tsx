@@ -9,6 +9,7 @@ import { NavRow } from '@/components/NavRow';
 import { Screen } from '@/components/Screen';
 import { useToast } from '@/components/Toast';
 import { getBusinessConfig, PRACTICE_AREA_INFO } from '@/config/business';
+import { useIsPlatformAdmin } from '@/features/admin/api';
 import { AlertsCard } from '@/features/alerts/AlertsCard';
 import { BookingCard } from '@/features/booking/BookingCard';
 import { NoticesCard } from '@/features/messages/CustomerNotice';
@@ -43,6 +44,7 @@ export default function SettingsScreen() {
   const setPublic = useSetPublicOrders(session?.user.id);
   const link = publicOrderUrl(org.slug);
   const pix = usePixSettings(org.id);
+  const platformAdmin = useIsPlatformAdmin(session?.user.id);
 
   return (
     <Screen>
@@ -55,6 +57,13 @@ export default function SettingsScreen() {
         </Text>
         <View style={styles.circlePlaceholder} />
       </View>
+
+      {platformAdmin.data ? (
+        <Card style={styles.navCard}>
+          <Text style={styles.cardTitle}>Dono do Gestão Fácil</Text>
+          <NavRow first label="Painel do Gestão Fácil" onPress={() => router.push('/admin')} />
+        </Card>
+      ) : null}
 
       <Card>
         <Text style={styles.cardTitle}>Empresa</Text>
