@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { Birthday } from '@/lib/birthday';
 import { documentDigits } from '@/lib/document';
 import { supabase } from '@/lib/supabase';
 
@@ -12,6 +13,11 @@ export interface Customer {
   /** CPF ou CNPJ, só dígitos (migração 0020). */
   document: string | null;
   notes: string | null;
+  /** Aniversário e endereço (migração 0022). */
+  birth_day: number | null;
+  birth_month: number | null;
+  birth_year: number | null;
+  address: string | null;
   created_at: string;
 }
 
@@ -20,14 +26,32 @@ export interface CustomerInput {
   phone?: string | null;
   document?: string | null;
   notes?: string | null;
+  birthday?: Birthday | null;
+  address?: string | null;
 }
 
-const COLUMNS = 'id, organization_id, name, phone, phone_digits, document, notes, created_at';
+export interface UpcomingBirthday {
+  id: string;
+  name: string;
+  phone: string | null;
+  phone_digits: string | null;
+  address: string | null;
+  birth_day: number;
+  birth_month: number;
+  birth_year: number | null;
+  next_birthday: string;
+  days_until: number;
+  /** Idade que vai fazer, quando o ano é conhecido. */
+  turning: number | null;
+}
+
+const COLUMNS = 'id, organization_id, name, phone, phone_digits, document, notes, birth_day, birth_month, birth_year, address, created_at';
 
 export const customerKeys = {
   all: (orgId: string) => ['customers', orgId] as const,
   list: (orgId: string, search: string) => ['customers', orgId, 'list', search] as const,
   detail: (orgId: string, id: string) => ['customers', orgId, 'detail', id] as const,
+  birthdays: (orgId: string, days: number) => ['customers', orgId, 'birthdays', days] as const,
 };
 
 /** Escapa curingas do ilike para a busca não virar padrão. */
@@ -90,6 +114,10 @@ export function useSaveCustomer(orgId: string) {
         phone: input.phone?.trim() || null,
         document: documentDigits(input.document ?? '') || null,
         notes: input.notes?.trim() || null,
+        birth_day: input.birthday?.day ?? null,
+        birth_month: input.birthday?.month ?? null,
+        birth_year: input.birthday?.year ?? null,
+        address: input.address?.trim() || null,
       };
       const { data, error } = id
         ? await supabase.from('customers').update(values).eq('id', id).select(COLUMNS).single()
@@ -111,6 +139,18 @@ export function useCustomersByIds(orgId: string, ids: string[]) {
       const { data, error } = await supabase.from('customers').select(COLUMNS).eq('organization_id', orgId).in('id', sorted);
       if (error) throw error;
       return data as Customer[];
+    },
+  });
+}
+
+/** Aniversários de hoje até daqui a `days` dias, do mais próximo (data de Brasília, no banco). */
+export function useUpcomingBirthdays(orgId: string, days = 30) {
+  return useQuery({
+    queryKey: customerKeys.birthdays(orgId, days),
+    queryFn: async (): Promise<UpcomingBirthday[]> => {
+      const { data, error } = await supabase.rpc('upcoming_birthdays', { p_organization_id: orgId, p_days: days });
+      if (error) throw error;
+      return data as UpcomingBirthday[];
     },
   });
 }

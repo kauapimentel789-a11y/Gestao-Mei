@@ -137,3 +137,27 @@ export function noticeTitle(event: NoticeEvent, profile: BusinessProfile): strin
 export function statusEvent(status: OrderStatus): NoticeEvent | null {
   return status === 'received' ? null : status;
 }
+
+/**
+ * Mensagem de aniversário. No dia, parabéns; antes, um convite para encomendar
+ * (produção), comprar (revenda) ou marcar horário (atendimentos).
+ */
+export function birthdayText(c: { profile: BusinessProfile; business: string; customerName: string; daysUntil: number }): string {
+  const name = firstName(c.customerName);
+  if (c.daysUntil <= 0) {
+    const invite =
+      c.profile === 'production' ? ' Se quiser comemorar com um docinho ou uma encomenda especial, é só chamar aqui.' : '';
+    return `Feliz aniversário${name ? `, ${name}` : ''}! A ${c.business} deseja um dia muito especial para você.${invite}`;
+  }
+  const hello = `Olá${name ? `, ${name}` : ''}!`;
+  switch (c.profile) {
+    case 'production':
+      return `${hello} Seu aniversário está chegando e a ${c.business} quer fazer parte da festa. Que tal já garantir sua encomenda? É só responder aqui.`;
+    case 'resale':
+      return `${hello} Seu aniversário está chegando! Passe na ${c.business} para escolher um presente para você. Qualquer dúvida, é só responder aqui.`;
+    case 'appointments':
+      return `${hello} Seu aniversário está chegando! Que tal marcar um horário na ${c.business} para comemorar? É só responder aqui.`;
+    default:
+      return `${hello} Seu aniversário está chegando e a ${c.business} já deseja um dia muito especial para você.`;
+  }
+}

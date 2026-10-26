@@ -11,6 +11,7 @@ import { useAgenda } from '@/features/agenda/api';
 import { canRemind, overlapping } from '@/features/agenda/logic';
 import { RemindersCard } from '@/features/agenda/RemindersCard';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { BirthdaysCard } from '@/features/customers/Birthdays';
 import { DasCard } from '@/features/das/DasCard';
 import { MoneyCard } from '@/features/finance/MoneyCard';
 import { toISODate } from '@/features/finance/logic';
@@ -175,6 +176,8 @@ export default function HomeScreen() {
         ))}
       </Card>
       )}
+
+      <BirthdaysCard />
 
       <MoneyCard orgId={orgId} />
 

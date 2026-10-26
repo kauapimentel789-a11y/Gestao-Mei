@@ -9,8 +9,13 @@ export interface Supplier {
   name: string;
   document: string | null;
   phone: string | null;
+  phone_digits: string | null;
   email: string | null;
   notes: string | null;
+  /** Com quem falar, endereço e o que vende (migração 0022). */
+  contact_name: string | null;
+  address: string | null;
+  supplies: string | null;
   active: boolean;
 }
 
@@ -20,10 +25,13 @@ export interface SupplierInput {
   phone: string;
   email: string;
   notes: string;
+  contact_name: string;
+  address: string;
+  supplies: string;
   active: boolean;
 }
 
-const COLUMNS = 'id, name, document, phone, email, notes, active';
+const COLUMNS = 'id, name, document, phone, phone_digits, email, notes, contact_name, address, supplies, active';
 
 export const supplierKeys = {
   all: (orgId: string) => ['suppliers', orgId] as const,
@@ -54,6 +62,9 @@ export function useSaveSupplier(orgId: string) {
         phone: input.phone.trim() || null,
         email: input.email.trim() || null,
         notes: input.notes.trim() || null,
+        contact_name: input.contact_name.trim() || null,
+        address: input.address.trim() || null,
+        supplies: input.supplies.trim() || null,
       };
       const { data, error } = id
         ? await supabase.from('suppliers').update({ ...values, active: input.active }).eq('id', id).select(COLUMNS).single()

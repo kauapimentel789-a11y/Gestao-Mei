@@ -47,6 +47,7 @@ export const purchaseKeys = {
   all: (orgId: string) => ['purchases', orgId] as const,
   list: (orgId: string) => ['purchases', orgId, 'list'] as const,
   detail: (orgId: string, id: string) => ['purchases', orgId, 'detail', id] as const,
+  bySupplier: (orgId: string, supplierId: string) => ['purchases', orgId, 'supplier', supplierId] as const,
 };
 
 export function usePurchases(orgId: string) {
@@ -57,6 +58,26 @@ export function usePurchases(orgId: string) {
         .from('purchase_summaries')
         .select(SUMMARY)
         .eq('organization_id', orgId)
+        .order('purchase_date', { ascending: false })
+        .order('number', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as PurchaseSummary[];
+    },
+  });
+}
+
+/** Compras de um fornecedor, da mais recente. */
+export function useSupplierPurchases(orgId: string, supplierId: string) {
+  return useQuery({
+    queryKey: purchaseKeys.bySupplier(orgId, supplierId),
+    enabled: Boolean(supplierId),
+    queryFn: async (): Promise<PurchaseSummary[]> => {
+      const { data, error } = await supabase
+        .from('purchase_summaries')
+        .select(SUMMARY)
+        .eq('organization_id', orgId)
+        .eq('supplier_id', supplierId)
         .order('purchase_date', { ascending: false })
         .order('number', { ascending: false })
         .limit(100);

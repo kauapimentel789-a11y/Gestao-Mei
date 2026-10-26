@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronRight, Plus, Trash2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
@@ -38,6 +38,7 @@ interface Line {
 }
 
 export default function NewPurchaseScreen() {
+  const { fornecedorId } = useLocalSearchParams<{ fornecedorId?: string }>();
   const { orgId } = useOrg();
   const toast = useToast();
   const products = useProducts(orgId, { types: ['raw_material', 'resale', 'finished', 'consumable', 'component'], activeOnly: true });
@@ -47,7 +48,7 @@ export default function NewPurchaseScreen() {
   const create = useCreatePurchase(orgId);
 
   const [key] = useState(newId);
-  const [supplierId, setSupplierId] = useState<string | null>(null);
+  const [supplierId, setSupplierId] = useState<string | null>(fornecedorId ?? null);
   const [supplierOpen, setSupplierOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
@@ -206,7 +207,7 @@ export default function NewPurchaseScreen() {
               style={styles.addLine}
               onPress={async () => {
                 try {
-                  const s = await saveSupplier.mutateAsync({ input: { name: term, document: '', phone: '', email: '', notes: '', active: true } });
+                  const s = await saveSupplier.mutateAsync({ input: { name: term, document: '', phone: '', email: '', notes: '', contact_name: '', address: '', supplies: '', active: true } });
                   setSupplierId(s.id);
                   setSupplierOpen(false);
                 } catch (e) {

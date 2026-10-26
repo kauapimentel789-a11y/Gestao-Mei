@@ -1,4 +1,4 @@
-import { type NoticeContext, noticeText, noticeTitle, statusEvent } from '@/features/messages/templates';
+import { birthdayText, type NoticeContext, noticeText, noticeTitle, statusEvent } from '@/features/messages/templates';
 
 const now = new Date(2026, 10, 9, 10, 0); // segunda, 09/11/2026
 
@@ -74,5 +74,18 @@ describe('statusEvent', () => {
   it('só não avisa a etapa inicial', () => {
     expect(statusEvent('received')).toBeNull();
     expect(statusEvent('completed')).toBe('completed');
+  });
+});
+
+describe('birthdayText', () => {
+  it('dá parabéns no dia', () => {
+    expect(birthdayText({ profile: 'production', business: 'Doce Ana', customerName: 'Maria Souza', daysUntil: 0 })).toBe(
+      'Feliz aniversário, Maria! A Doce Ana deseja um dia muito especial para você. Se quiser comemorar com um docinho ou uma encomenda especial, é só chamar aqui.',
+    );
+  });
+
+  it('convida para encomendar antes do dia', () => {
+    expect(birthdayText({ profile: 'production', business: 'Doce Ana', customerName: 'Maria', daysUntil: 5 })).toContain('garantir sua encomenda');
+    expect(birthdayText({ profile: 'appointments', business: 'Studio', customerName: 'Bia', daysUntil: 3 })).toContain('marcar um horário');
   });
 });

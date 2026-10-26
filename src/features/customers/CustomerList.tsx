@@ -1,6 +1,6 @@
 // Lista de clientes (ou pacientes): tela de cadastro ou aba, em atendimentos.
 import { router } from 'expo-router';
-import { Plus, Users } from 'lucide-react-native';
+import { Cake, Plus, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -21,7 +21,12 @@ export function CustomerList({ tab }: { tab?: boolean }) {
   const term = useDebounced(search, 300);
   const list = useCustomers(orgId, term);
   const noun = config.clientNoun;
-  const add = <CircleButton label={`Novo ${noun}`} icon={<Plus size={20} color={colors.ink} />} onPress={() => router.push('/clientes/form')} />;
+  const add = (
+    <View style={styles.buttons}>
+      <CircleButton label="Aniversários" icon={<Cake size={20} color={colors.ink} />} onPress={() => router.push('/clientes/aniversarios')} />
+      <CircleButton label={`Novo ${noun}`} icon={<Plus size={20} color={colors.ink} />} onPress={() => router.push('/clientes/form')} />
+    </View>
+  );
 
   return (
     <Screen>
@@ -79,6 +84,7 @@ export function CustomerList({ tab }: { tab?: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  buttons: { flexDirection: 'row', gap: 8 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },
   list: { paddingVertical: 4, gap: 0 },
