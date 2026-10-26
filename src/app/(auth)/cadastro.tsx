@@ -98,6 +98,17 @@ export default function SignUpScreen() {
         )}
       />
       <FormError message={serverError} />
+      <Text style={styles.text}>
+        Ao criar a conta, você concorda com os{' '}
+        <Text accessibilityRole="link" style={styles.link} onPress={() => router.push('/termos')}>
+          Termos de uso
+        </Text>{' '}
+        e a{' '}
+        <Text accessibilityRole="link" style={styles.link} onPress={() => router.push('/privacidade')}>
+          Política de privacidade
+        </Text>
+        .
+      </Text>
       <Button label="Criar conta" onPress={onSubmit} loading={formState.isSubmitting} />
       <TextLink label="Já tenho conta" onPress={() => goBack()} />
     </AuthShell>
@@ -106,4 +117,5 @@ export default function SignUpScreen() {
 
 const styles = StyleSheet.create({
   text: { fontFamily: fonts.medium, fontSize: 14, color: colors.gray600, lineHeight: 20 },
+  link: { fontFamily: fonts.bold, color: colors.primaryText },
 });

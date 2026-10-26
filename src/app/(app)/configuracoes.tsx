@@ -188,6 +188,13 @@ export default function SettingsScreen() {
         }}
       />
 
+      <Card style={styles.navCard}>
+        <Text style={styles.cardTitle}>Privacidade</Text>
+        <NavRow first label="Termos de uso" onPress={() => router.push('/termos')} />
+        <NavRow label="Política de privacidade" onPress={() => router.push('/privacidade')} />
+        <NavRow label="Excluir minha conta" onPress={() => router.push('/excluir-conta')} />
+      </Card>
+
       <Card>
         <Text style={styles.cardTitle}>Conta</Text>
         <Row label="E-mail" value={session?.user.email ?? ''} />
