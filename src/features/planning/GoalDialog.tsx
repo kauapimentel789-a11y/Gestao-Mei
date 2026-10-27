@@ -61,7 +61,7 @@ export function GoalDialog({ visible, goal, loading, onClose, onSave }: Props) {
               value={date}
               onChangeText={setDate}
               placeholder="dd/mm/aaaa"
-              keyboardType="numbers-and-punctuation"
+              mask="date"
               error={errs.date}
               hint="Com prazo, o app mostra quanto guardar por mês."
             />

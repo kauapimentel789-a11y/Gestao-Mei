@@ -50,10 +50,10 @@ export function ScheduleDialog({ current, minutes, loading, onClose, onSave }: P
           <Text style={styles.title}>{current ? 'Reagendar' : 'Agendar'}</Text>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" />
+              <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" />
             </View>
             <View style={styles.time}>
-              <TextField label="Hora" value={time} onChangeText={setTime} placeholder="hh:mm" keyboardType="numbers-and-punctuation" />
+              <TextField label="Hora" value={time} onChangeText={setTime} placeholder="hh:mm" mask="time" />
             </View>
           </View>
           <Text style={styles.label}>Duração prevista</Text>

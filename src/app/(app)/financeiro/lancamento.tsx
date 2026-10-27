@@ -149,7 +149,7 @@ export default function NewEntryScreen() {
           value={due}
           onChangeText={setDue}
           placeholder="dd/mm/aaaa"
-          keyboardType="numbers-and-punctuation"
+          mask="date"
           error={errs.due}
         />
         {settled ? (
@@ -167,7 +167,7 @@ export default function NewEntryScreen() {
             value={competence}
             onChangeText={setCompetence}
             placeholder="Igual à data acima"
-            keyboardType="numbers-and-punctuation"
+            mask="date"
             hint="Data a que o valor se refere no resultado (ex.: aluguel de outubro pago em novembro)."
             error={errs.competence}
           />

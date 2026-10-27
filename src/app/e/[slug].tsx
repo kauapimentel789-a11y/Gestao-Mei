@@ -193,8 +193,7 @@ function OrderForm({ store }: { store: Storefront }) {
           value={date}
           onChangeText={setDate}
           placeholder="dd/mm/aaaa"
-          keyboardType="numbers-and-punctuation"
-          maxLength={10}
+          mask="date"
         />
         <TextField label="Observações (opcional)" value={notes} onChangeText={setNotes} multiline maxLength={1000} />
       </Card>

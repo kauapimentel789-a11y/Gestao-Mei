@@ -113,7 +113,7 @@ export default function InstallmentPurchaseScreen() {
           options={[...activeCards.map((c) => ({ value: c.id, label: c.name })), { value: BOLETO, label: 'Carnê ou boleto' }]}
         />
         {activeCards.length === 0 ? <TextLink label="Cadastrar um cartão" onPress={() => router.push('/cartoes')} /> : null}
-        <TextField label="Data da compra" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" error={errs.date} />
+        <TextField label="Data da compra" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" error={errs.date} />
         {onCard ? (
           <Text style={styles.muted}>Cada parcela entra na fatura do mês em que vai ser cobrada. O dinheiro só sai da conta quando você paga a fatura.</Text>
         ) : (
@@ -122,7 +122,7 @@ export default function InstallmentPurchaseScreen() {
             value={firstDue}
             onChangeText={setFirstDue}
             placeholder="dd/mm/aaaa"
-            keyboardType="numbers-and-punctuation"
+            mask="date"
             error={errs.firstDue}
             hint="As outras vencem no mesmo dia dos meses seguintes e aparecem em Contas a pagar."
           />

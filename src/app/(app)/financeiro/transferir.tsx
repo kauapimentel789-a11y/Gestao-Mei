@@ -68,7 +68,7 @@ export default function TransferScreen() {
         <Chips accessibilityLabel="Conta de destino" value={toId} onChange={setToId} options={options.filter((o) => o.value !== fromId)} />
         {errs.accounts ? <Text style={styles.error}>{errs.accounts}</Text> : null}
         <TextField label="Valor" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0,00" error={errs.amount} />
-        <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" error={errs.date} />
+        <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" error={errs.date} />
         <TextField label="Descrição (opcional)" value={description} onChangeText={setDescription} placeholder="Ex.: saque, depósito" />
       </Card>
       <Text style={styles.note}>Transferência só move dinheiro entre suas contas. Não entra como receita nem despesa.</Text>

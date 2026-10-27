@@ -200,7 +200,7 @@ function NewAccountDialog({ visible, onClose, onCreated }: { visible: boolean; o
               <Text style={styles.muted}>Saldo inicial negativo</Text>
               <Switch value={negative} onValueChange={setNegative} trackColor={{ true: colors.primary }} accessibilityLabel="Saldo inicial negativo" />
             </View>
-            <TextField label="Data do saldo" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" error={errs.date} />
+            <TextField label="Data do saldo" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" error={errs.date} />
             <FormError message={error} />
             <Button variant="ink" size="medium" label="Voltar" onPress={onClose} />
             <Button size="medium" label="Criar conta" loading={create.isPending} onPress={submit} />

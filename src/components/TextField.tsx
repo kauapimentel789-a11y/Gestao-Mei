@@ -1,14 +1,32 @@
 import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 
+import { maskDate, maskTime } from '@/lib/inputMasks';
 import { colors, fonts, radius } from '@/theme/tokens';
 
 interface TextFieldProps extends TextInputProps {
   label: string;
   error?: string;
   hint?: string;
+  /** Data (DD/MM/AAAA) ou hora (HH:MM): teclado de números e separadores automáticos. */
+  mask?: 'date' | 'time';
 }
 
-export function TextField({ label, error, hint, style, ...rest }: TextFieldProps) {
+const MASKS = {
+  date: { format: maskDate, maxLength: 10 },
+  time: { format: maskTime, maxLength: 5 },
+};
+
+export function TextField({ label, error, hint, style, mask, ...rest }: TextFieldProps) {
+  const m = mask ? MASKS[mask] : null;
+  const onChangeText = rest.onChangeText;
+  const masked: TextInputProps | null = m
+    ? {
+        inputMode: 'numeric',
+        keyboardType: 'number-pad',
+        maxLength: m.maxLength,
+        onChangeText: onChangeText ? (t: string) => onChangeText(m.format(t)) : undefined,
+      }
+    : null;
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
@@ -17,6 +35,7 @@ export function TextField({ label, error, hint, style, ...rest }: TextFieldProps
         placeholderTextColor={colors.gray400}
         style={[styles.input, error ? styles.inputError : null, style]}
         {...rest}
+        {...masked}
       />
       {error ? (
         <Text style={styles.error} accessibilityLiveRegion="polite">

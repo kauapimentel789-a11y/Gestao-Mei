@@ -65,7 +65,7 @@ export function PaymentDialog({ visible, receiving, openCents, accounts, loading
               Em aberto: {formatCents(openCents)}. Para {receiving ? 'receber' : 'pagar'} em partes, informe só o valor de agora.
             </Text>
             <TextField label="Valor" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" error={errs.amount} />
-            <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" error={errs.date} />
+            <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" error={errs.date} />
             <Text style={styles.label}>{receiving ? 'Entrou em' : 'Saiu de'}</Text>
             <Chips accessibilityLabel="Conta" value={accountId} onChange={setAccountId} options={active.map((a) => ({ value: a.id, label: a.name }))} />
             {errs.account ? <Text style={styles.error}>{errs.account}</Text> : null}
