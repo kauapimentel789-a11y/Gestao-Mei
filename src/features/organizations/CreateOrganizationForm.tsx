@@ -13,6 +13,7 @@ import { ProgressSteps } from '@/components/ProgressSteps';
 import { TextField } from '@/components/TextField';
 import { Chips } from '@/components/Chips';
 import { TextLink } from '@/components/TextLink';
+import { PendingInvites } from '@/features/family/PendingInvites';
 import { BUSINESS_CONFIG, BUSINESS_PROFILES, type BusinessProfile, PRACTICE_AREA_INFO, PRACTICE_AREAS } from '@/config/business';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AuthShell } from '@/features/auth/AuthShell';
@@ -77,6 +78,7 @@ export function CreateOrganizationForm({ inApp = false }: { inApp?: boolean }) {
 
   return (
     <AuthShell title="Sua empresa" subtitle={`Passo ${step + 1} de 3`}>
+      {!inApp && step === 0 ? <PendingInvites /> : null}
       <ProgressSteps total={3} current={step} />
 
       {step === 0 && (

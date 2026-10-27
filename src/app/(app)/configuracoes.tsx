@@ -194,7 +194,7 @@ function BusinessSettings() {
 /** Configurações de Minhas finanças: cadastros do pessoal, a empresa e a conta. */
 function PersonalSettings() {
   const { session } = useAuth();
-  const { lastBusiness, select } = useActiveOrganization();
+  const { active, lastBusiness, personalSpaces, select } = useActiveOrganization();
   const platformAdmin = useIsPlatformAdmin(session?.user.id);
 
   return (
@@ -210,8 +210,12 @@ function PersonalSettings() {
 
       <Card style={styles.navCard}>
         <Text style={styles.cardTitle}>Minhas finanças</Text>
-        <Text style={styles.body}>Só você vê o que lança aqui. A sua empresa não enxerga estes dados, e o pessoal não enxerga os da empresa.</Text>
-        <NavRow first label="Contas" onPress={() => router.push('/contas')} />
+        <Text style={styles.body}>
+          Só você e quem você convidar veem o que é lançado aqui. A sua empresa não enxerga estes dados, e o pessoal não enxerga os da empresa.
+        </Text>
+        <NavRow first label="Família: dividir com quem mora com você" onPress={() => router.push('/familia')} />
+        <NavRow label="Assistente de IA" onPress={() => router.push('/assistente')} />
+        <NavRow label="Contas" onPress={() => router.push('/contas')} />
         <NavRow label="Cartões de crédito" onPress={() => router.push('/cartoes')} />
         <NavRow label="Contas a pagar" onPress={() => router.push('/a-pagar')} />
         <NavRow label="Orçamento" onPress={() => router.push('/orcamento')} />
@@ -220,6 +224,24 @@ function PersonalSettings() {
         <NavRow label="Categorias" onPress={() => router.push('/financeiro/categorias')} />
         <NavRow label="Transferir entre contas" onPress={() => router.push('/financeiro/transferir')} />
       </Card>
+
+      {personalSpaces.length > 1 ? (
+        <Card style={styles.navCard}>
+          <Text style={styles.cardTitle}>Trocar de finanças</Text>
+          <Text style={styles.body}>Você participa de mais de um espaço de finanças pessoais.</Text>
+          {personalSpaces.map((m, i) => (
+            <NavRow
+              key={m.organization.id}
+              first={i === 0}
+              label={`${m.role === 'owner' ? 'As que eu criei' : 'As da família que me convidou'}${m.organization.id === active?.organization.id ? ' (aberto)' : ''}`}
+              onPress={() => {
+                select(m.organization.id);
+                router.replace('/');
+              }}
+            />
+          ))}
+        </Card>
+      ) : null}
 
       <Card style={styles.navCard}>
         <Text style={styles.cardTitle}>Sua empresa</Text>
