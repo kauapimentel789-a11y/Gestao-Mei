@@ -13,6 +13,7 @@ import { RemindersCard } from '@/features/agenda/RemindersCard';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { BirthdaysCard } from '@/features/customers/Birthdays';
 import { DasCard } from '@/features/das/DasCard';
+import { PendingInvites } from '@/features/family/PendingInvites';
 import { MoneyCard } from '@/features/finance/MoneyCard';
 import { toISODate } from '@/features/finance/logic';
 import { useLowStock } from '@/features/inventory/api';
@@ -92,6 +93,7 @@ function BusinessHome() {
       </View>
 
       <SpaceSwitcher />
+      <PendingInvites />
 
       <View style={styles.hero}>
         <View style={styles.glow} pointerEvents="none" />

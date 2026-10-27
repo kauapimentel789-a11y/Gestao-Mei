@@ -10,12 +10,18 @@ import { type Membership, useMyMemberships } from './api';
 
 const STORAGE_KEY = 'gf.activeOrganization';
 const LAST_BUSINESS_KEY = 'gf.lastBusiness';
+const LAST_PERSONAL_KEY = 'gf.lastPersonal';
 
 interface ActiveOrganizationState {
   memberships: Membership[];
   active: Membership | null;
-  /** O espaço pessoal da pessoa, se já foi aberto. */
+  /**
+   * O espaço pessoal em uso: o último aberto, senão o próprio, senão o da
+   * família que a convidou. Null se ainda não abriu nenhum.
+   */
   personal: Membership | null;
+  /** Todos os espaços pessoais: o próprio e os da família que a convidou. */
+  personalSpaces: Membership[];
   /** Empresas, sem o espaço pessoal. */
   businesses: Membership[];
   /** Empresa usada por último (para voltar do pessoal). */
@@ -34,13 +40,15 @@ export function ActiveOrganizationProvider({ children }: { children: ReactNode }
   const query = useMyMemberships(userId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lastBusinessId, setLastBusinessId] = useState<string | null>(null);
+  const [lastPersonalId, setLastPersonalId] = useState<string | null>(null);
   const [storedLoaded, setStoredLoaded] = useState(false);
   const memberships = useMemo(() => query.data ?? [], [query.data]);
 
   useEffect(() => {
-    Promise.all([secureStorage.getItem(STORAGE_KEY), secureStorage.getItem(LAST_BUSINESS_KEY)]).then(([v, last]) => {
+    Promise.all([secureStorage.getItem(STORAGE_KEY), secureStorage.getItem(LAST_BUSINESS_KEY), secureStorage.getItem(LAST_PERSONAL_KEY)]).then(([v, last, lastPersonal]) => {
       setSelectedId(v);
       setLastBusinessId(last);
+      setLastPersonalId(lastPersonal);
       setStoredLoaded(true);
     });
   }, []);
@@ -49,9 +57,13 @@ export function ActiveOrganizationProvider({ children }: { children: ReactNode }
     (organizationId: string) => {
       setSelectedId(organizationId);
       secureStorage.setItem(STORAGE_KEY, organizationId);
-      if (memberships.some((m) => m.organization.id === organizationId && m.organization.kind === 'business')) {
+      const kind = memberships.find((m) => m.organization.id === organizationId)?.organization.kind;
+      if (kind === 'business') {
         setLastBusinessId(organizationId);
         secureStorage.setItem(LAST_BUSINESS_KEY, organizationId);
+      } else if (kind === 'personal') {
+        setLastPersonalId(organizationId);
+        secureStorage.setItem(LAST_PERSONAL_KEY, organizationId);
       }
     },
     [memberships],
@@ -59,7 +71,9 @@ export function ActiveOrganizationProvider({ children }: { children: ReactNode }
 
   const active =
     memberships.find((m) => m.organization.id === selectedId) ?? memberships[0] ?? null;
-  const personal = memberships.find((m) => m.organization.kind === 'personal' && m.role === 'owner') ?? null;
+  const personalSpaces = memberships.filter((m) => m.organization.kind === 'personal');
+  const personal =
+    personalSpaces.find((m) => m.organization.id === lastPersonalId) ?? personalSpaces.find((m) => m.role === 'owner') ?? personalSpaces[0] ?? null;
   const businesses = memberships.filter((m) => m.organization.kind === 'business');
   const lastBusiness = businesses.find((m) => m.organization.id === lastBusinessId) ?? businesses[0] ?? null;
 
@@ -67,6 +81,7 @@ export function ActiveOrganizationProvider({ children }: { children: ReactNode }
     memberships,
     active,
     personal,
+    personalSpaces,
     businesses,
     lastBusiness,
     loading: Boolean(userId) && (query.isPending || !storedLoaded),

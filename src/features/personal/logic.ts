@@ -43,7 +43,7 @@ export function personalInsight(input: { inCents: number; outCents: number; prev
   return parts.join(' ');
 }
 
-const PERSONAL_PATHS = ['/', '/financeiro', '/contas', '/cartoes', '/a-pagar', '/orcamento', '/metas', '/configuracoes', '/nova-empresa', '/excluir-conta', '/admin'];
+const PERSONAL_PATHS = ['/', '/financeiro', '/contas', '/cartoes', '/a-pagar', '/orcamento', '/metas', '/familia', '/assistente', '/configuracoes', '/nova-empresa', '/excluir-conta', '/admin'];
 const BUSINESS_FINANCE = ['mei', 'quem-me-deve', 'venda-rapida'];
 
 /**

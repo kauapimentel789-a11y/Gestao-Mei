@@ -19,3 +19,9 @@ export function bookingManageUrl(token: string): string | null {
   const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : base;
   return origin ? `${origin}/horario/${token}` : null;
 }
+
+/** Endereço do app na web (convite da família). Na web usa o site em que a pessoa está. */
+export function appHomeUrl(): string | null {
+  const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : base;
+  return origin ?? null;
+}

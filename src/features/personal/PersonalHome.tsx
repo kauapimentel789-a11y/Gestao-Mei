@@ -1,7 +1,7 @@
 // Início de "Minhas finanças": saldo das contas, o mês (entrou, saiu, sobrou),
 // para onde foi o dinheiro e os últimos lançamentos. Valores do banco.
 import { router } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, Layers, Settings, Wallet } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, Layers, Settings, Sparkles, Wallet } from 'lucide-react-native';
 import { type ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { QueryStates, Skeleton } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { BillRow, useBills } from '@/features/cards/BillsList';
+import { PendingInvites } from '@/features/family/PendingInvites';
 import { useAccounts, useFinanceSummary, usePeriodEntries } from '@/features/finance/api';
 import { Donut, SLICE_COLORS } from '@/features/finance/charts';
 import { expenseSlices, formatCompactCents, formatPct } from '@/features/finance/dashboard';
@@ -75,6 +76,7 @@ export function PersonalHome() {
       </View>
 
       <SpaceSwitcher />
+      <PendingInvites />
 
       <Pressable accessibilityRole="button" accessibilityLabel="Ver contas" onPress={() => router.push('/contas')} style={styles.hero}>
         <View style={styles.glow} pointerEvents="none" />
@@ -96,6 +98,17 @@ export function PersonalHome() {
         <QuickAction label="Parcelei" onPress={() => router.push('/financeiro/parcelado')} icon={<Layers size={22} color={colors.primaryText} />} />
         <QuickAction label="Cartões" onPress={() => router.push('/cartoes')} icon={<CreditCard size={22} color={colors.primaryText} />} />
       </View>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Abrir o assistente"
+        onPress={() => router.push('/assistente')}
+        style={({ pressed }) => [styles.ask, pressed && styles.pressed]}
+      >
+        <Sparkles size={20} color={colors.primaryText} />
+        <Text style={styles.askText}>Pergunte ao assistente: “quanto gastei com mercado?”</Text>
+        <ChevronRight size={18} color={colors.gray500} />
+      </Pressable>
 
       <Card>
         <View style={styles.cardHead}>
@@ -264,6 +277,18 @@ const styles = StyleSheet.create({
   heroValue: { fontFamily: fonts.extrabold, fontSize: 34, letterSpacing: -0.7, color: colors.white },
   heroSub: { fontFamily: fonts.semibold, fontSize: 12, color: colors.primarySoft },
   actions: { flexDirection: 'row', gap: 8 },
+  ask: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: minTouch,
+    backgroundColor: colors.primaryTint,
+    borderRadius: radius.card,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  pressed: { opacity: 0.8 },
+  askText: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.primaryText },
   action: { flex: 1, alignItems: 'center', gap: 6 },
   actionTile: { width: 56, height: 56, borderRadius: radius.quickAction, backgroundColor: colors.primaryTint, alignItems: 'center', justifyContent: 'center' },
   actionTilePrimary: { backgroundColor: colors.primary },

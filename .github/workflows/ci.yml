@@ -81,6 +81,12 @@ jobs:
         run: >-
           supabase functions deploy excluir-conta --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
           --import-map supabase/functions/excluir-conta/deno.json
+      - name: Publicar a Edge Function do assistente de IA
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        # Confere o login dentro da função; a chave da IA fica no segredo ANTHROPIC_API_KEY.
+        run: >-
+          supabase functions deploy assistente --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+          --import-map supabase/functions/assistente/deno.json
       - name: Aviso
         if: env.SUPABASE_DB_URL == '' || env.SUPABASE_ACCESS_TOKEN == ''
         run: echo "::notice::Segredos do Supabase não configurados; migrações e função não foram publicadas."
