@@ -117,6 +117,7 @@ export default function NewEntryScreen() {
           { value: 'receivable', label: personal ? 'Recebi' : 'Receita' },
         ]}
       />
+      {personal && !receiving ? <TextLink label="Comprou parcelado ou no cartão?" onPress={() => router.replace('/financeiro/parcelado')} /> : null}
 
       <Card>
         <TextField

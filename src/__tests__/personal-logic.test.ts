@@ -36,10 +36,10 @@ describe('Minhas finanças', () => {
   });
 
   it('sabe quais telas existem no pessoal', () => {
-    for (const p of ['/', '/financeiro', '/contas', '/financeiro/lancamento', '/financeiro/categorias', '/financeiro/abc-123', '/configuracoes/']) {
+    for (const p of ['/', '/financeiro', '/contas', '/financeiro/lancamento', '/financeiro/categorias', '/financeiro/abc-123', '/configuracoes/', '/cartoes', '/a-pagar', '/cartao/abc', '/financeiro/parcelado']) {
       expect(personalAllows(p)).toBe(true);
     }
-    for (const p of ['/pedidos', '/pedidos/novo', '/financeiro/mei', '/financeiro/venda-rapida', '/clientes', '/estoque', '/financeiro/a/b']) {
+    for (const p of ['/pedidos', '/pedidos/novo', '/financeiro/mei', '/financeiro/venda-rapida', '/clientes', '/estoque', '/financeiro/a/b', '/cartao', '/cartao/a/b']) {
       expect(personalAllows(p)).toBe(false);
     }
   });

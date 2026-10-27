@@ -11,6 +11,7 @@ import { ReasonDialog } from '@/components/ReasonDialog';
 import { Screen } from '@/components/Screen';
 import { TextLink } from '@/components/TextLink';
 import { useToast } from '@/components/Toast';
+import { useCancelInstallmentPurchase } from '@/features/cards/api';
 import { type Payment, useAccounts, useCancelEntry, useEntry, useReversePayment, useSettleEntry } from '@/features/finance/api';
 import { EntryStatusChip } from '@/features/finance/EntryRow';
 import { formatISODate, METHOD_LABEL, NATURE_LABEL } from '@/features/finance/logic';
@@ -30,6 +31,7 @@ export default function EntryDetailScreen() {
   const settle = useSettleEntry(orgId);
   const reverse = useReversePayment(orgId);
   const cancel = useCancelEntry(orgId);
+  const cancelPlan = useCancelInstallmentPurchase(orgId);
   const toast = useToast();
   const [payKey, setPayKey] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
@@ -57,6 +59,9 @@ export default function EntryDetailScreen() {
   const { entry: e, payments } = query.data;
   const receiving = e.direction === 'receivable';
   const accountName = (accId: string) => accounts.data?.find((a) => a.id === accId)?.name ?? 'Conta';
+  const onCard = e.card_id !== null;
+  const plan = e.installment_plan_id;
+  const installment = e.installment_count && e.installment_count > 1 ? `parcela ${e.installment_number}/${e.installment_count}` : null;
   const reversed = new Set(payments.map((p) => p.reverses_payment_id).filter((x): x is number => x != null));
 
   return (
@@ -77,6 +82,8 @@ export default function EntryDetailScreen() {
         <Info label="Vencimento" value={formatISODate(e.due_date)} />
         <Info label="Competência" value={formatISODate(e.competence_date)} />
         <Info label="Categoria" value={personal ? e.category_name : `${e.category_name} (${NATURE_LABEL[e.category_nature].toLowerCase()})`} />
+        {onCard ? <Info label="Cartão" value={[e.card_name, installment].filter(Boolean).join(' · ')} /> : null}
+        {!onCard && installment ? <Info label="Carnê" value={installment} /> : null}
         {e.customer_name ? <Info label="Cliente" value={e.customer_name} /> : null}
         {e.supplier_name ? <Info label="Fornecedor" value={e.supplier_name} /> : null}
         {e.notes ? <Info label="Observações" value={e.notes} /> : null}
@@ -89,7 +96,14 @@ export default function EntryDetailScreen() {
         ) : null}
       </Card>
 
-      {e.open_cents > 0 ? (
+      {onCard && e.status !== 'cancelled' ? (
+        <Card>
+          <Text style={styles.body}>Esta compra é paga junto com a fatura do cartão. O dinheiro sai da conta quando você paga a fatura.</Text>
+          <Button size="medium" label="Ver fatura" onPress={() => router.push({ pathname: '/cartao/[id]', params: { id: e.card_id! } })} />
+        </Card>
+      ) : null}
+
+      {e.open_cents > 0 && !onCard ? (
         <Button
           label={receiving ? 'Registrar recebimento' : 'Registrar pagamento'}
           onPress={() => {
@@ -136,7 +150,16 @@ export default function EntryDetailScreen() {
       {e.purchase_id ? (
         <TextLink label="Ver compra" onPress={() => router.push({ pathname: '/compras/[id]', params: { id: e.purchase_id! } })} />
       ) : null}
-      {!e.cancelled_at && !e.order_id && !e.purchase_id && e.paid_cents === 0 ? (
+      {!e.cancelled_at && plan && e.paid_cents === 0 ? (
+        <TextLink
+          label="Cancelar compra parcelada"
+          onPress={() => {
+            setDialogError(null);
+            setCancelOpen(true);
+          }}
+        />
+      ) : null}
+      {!e.cancelled_at && !plan && !e.order_id && !e.purchase_id && e.paid_cents === 0 ? (
         <TextLink
           label="Cancelar lançamento"
           onPress={() => {
@@ -199,19 +222,24 @@ export default function EntryDetailScreen() {
 
       <ReasonDialog
         visible={cancelOpen}
-        title="Cancelar lançamento?"
-        description="Ele continua no histórico como cancelado e sai de contas a receber e a pagar."
+        title={plan ? 'Cancelar compra parcelada?' : 'Cancelar lançamento?'}
+        description={
+          plan
+            ? 'Todas as parcelas são canceladas e saem das faturas e de contas a pagar. Elas continuam no histórico.'
+            : 'Ele continua no histórico como cancelado e sai de contas a receber e a pagar.'
+        }
         keepLabel="Manter"
-        confirmLabel="Cancelar lançamento"
+        confirmLabel={plan ? 'Cancelar compra' : 'Cancelar lançamento'}
         placeholder="Ex.: lançado em dobro"
-        loading={cancel.isPending}
+        loading={cancel.isPending || cancelPlan.isPending}
         error={dialogError}
         onClose={() => setCancelOpen(false)}
         onConfirm={async (reason) => {
           try {
-            await cancel.mutateAsync({ entryId: e.id, reason });
+            if (plan) await cancelPlan.mutateAsync({ planId: plan, reason });
+            else await cancel.mutateAsync({ entryId: e.id, reason });
             setCancelOpen(false);
-            toast('Lançamento cancelado');
+            toast(plan ? 'Compra cancelada' : 'Lançamento cancelado');
           } catch (err) {
             setDialogError(friendlyError(err));
           }

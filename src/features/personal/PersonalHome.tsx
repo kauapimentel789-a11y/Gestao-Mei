@@ -1,7 +1,7 @@
 // Início de "Minhas finanças": saldo das contas, o mês (entrou, saiu, sobrou),
 // para onde foi o dinheiro e os últimos lançamentos. Valores do banco.
 import { router } from 'expo-router';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, Settings, Tags, Wallet } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, Layers, Settings, Wallet } from 'lucide-react-native';
 import { type ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -9,11 +9,12 @@ import { Card } from '@/components/Card';
 import { QueryStates, Skeleton } from '@/components/ListStates';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { useAccounts, useFinanceSummary, useOpenEntries, usePeriodEntries } from '@/features/finance/api';
+import { BillRow, useBills } from '@/features/cards/BillsList';
+import { useAccounts, useFinanceSummary, usePeriodEntries } from '@/features/finance/api';
 import { Donut, SLICE_COLORS } from '@/features/finance/charts';
 import { expenseSlices, formatCompactCents, formatPct } from '@/features/finance/dashboard';
 import { EntryRow } from '@/features/finance/EntryRow';
-import { cashNet, periodFor } from '@/features/finance/logic';
+import { cashNet, periodFor, toISODate } from '@/features/finance/logic';
 import { SpaceSwitcher } from '@/features/organizations/SpaceSwitcher';
 import { useSpace } from '@/features/organizations/useOrg';
 import { useFinanceReport } from '@/features/reports/api';
@@ -35,7 +36,7 @@ export function PersonalHome() {
   const prevSummary = useFinanceSummary(orgId, previous.from, previous.to);
   const report = useFinanceReport(orgId, month.from, month.to);
   const entries = usePeriodEntries(orgId, month.from, month.to);
-  const toPay = useOpenEntries(orgId, 'payable');
+  const bills = useBills(orgId);
 
   const firstName = String(session?.user.user_metadata?.display_name ?? '').split(' ')[0];
   const active = (accounts.data ?? []).filter((a) => a.active);
@@ -44,7 +45,8 @@ export function PersonalHome() {
   const slices = expenseSlices(report.data?.expense_by_category ?? []);
   const spent = slices.reduce((sum, x) => sum + x.cents, 0);
   const recent = (entries.data ?? []).filter((e) => e.status !== 'cancelled').slice(0, 5);
-  const pending = toPay.data ?? [];
+  const pending = bills.items;
+  const today = toISODate(new Date());
 
   return (
     <Screen>
@@ -81,8 +83,8 @@ export function PersonalHome() {
           onPress={() => router.push({ pathname: '/financeiro/lancamento', params: { tipo: 'entrada' } })}
           icon={<ArrowDownLeft size={22} color={colors.primaryText} />}
         />
-        <QuickAction label="Transferir" onPress={() => router.push('/financeiro/transferir')} icon={<ArrowLeftRight size={22} color={colors.primaryText} />} />
-        <QuickAction label="Categorias" onPress={() => router.push('/financeiro/categorias')} icon={<Tags size={22} color={colors.primaryText} />} />
+        <QuickAction label="Parcelei" onPress={() => router.push('/financeiro/parcelado')} icon={<Layers size={22} color={colors.primaryText} />} />
+        <QuickAction label="Cartões" onPress={() => router.push('/cartoes')} icon={<CreditCard size={22} color={colors.primaryText} />} />
       </View>
 
       <Card>
@@ -112,10 +114,13 @@ export function PersonalHome() {
 
       {pending.length > 0 ? (
         <Card style={styles.list}>
-          <Text style={styles.cardTitle}>Contas a pagar</Text>
-          {pending.slice(0, 3).map((e, i) => (
-            <View key={e.id} style={i > 0 && styles.divider}>
-              <EntryRow entry={e} />
+          <Pressable accessibilityRole="button" onPress={() => router.push('/a-pagar')} style={styles.cardHead}>
+            <Text style={styles.cardTitle}>Contas a pagar</Text>
+            <ChevronRight size={18} color={colors.gray500} />
+          </Pressable>
+          {pending.slice(0, 3).map((b, i) => (
+            <View key={b.key} style={i > 0 && styles.divider}>
+              <BillRow item={b} overdue={b.dueDate < today} />
             </View>
           ))}
           {pending.length > 3 ? <Text style={styles.muted}>+ {pending.length - 3} em aberto</Text> : null}
