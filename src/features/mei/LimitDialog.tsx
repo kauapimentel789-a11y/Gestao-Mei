@@ -32,7 +32,7 @@ export function LimitDialog({ visible, loading, defaultFrom, onClose, onSave }: 
             se tiver dúvida, inclusive se o seu primeiro ano tem limite proporcional.
           </Text>
           <TextField label="Limite do ano (R$)" value={value} onChangeText={setValue} keyboardType="decimal-pad" placeholder="0,00" />
-          <TextField label="Vale a partir de" value={from} onChangeText={setFrom} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" />
+          <TextField label="Vale a partir de" value={from} onChangeText={setFrom} placeholder="dd/mm/aaaa" mask="date" />
           <TextField label="Origem da informação (opcional)" value={note} onChangeText={setNote} placeholder="Ex.: site do Simples Nacional" maxLength={300} error={error} />
           <Button variant="ink" size="medium" label="Voltar" onPress={onClose} />
           <Button

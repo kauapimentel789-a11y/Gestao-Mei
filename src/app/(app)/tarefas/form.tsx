@@ -102,7 +102,7 @@ function TaskForm({ task }: { task?: TaskOverview }) {
       <Card>
         <Text style={styles.label}>Prioridade</Text>
         <Chips accessibilityLabel="Prioridade" value={priority} onChange={setPriority} options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABEL[p] }))} />
-        <TextField label="Prazo (opcional)" value={due} onChangeText={setDue} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" />
+        <TextField label="Prazo (opcional)" value={due} onChangeText={setDue} placeholder="dd/mm/aaaa" mask="date" />
         <View style={styles.quick}>
           <QuickDate label="Hoje" onPress={() => setDue(formatDateBR(new Date()))} />
           <QuickDate label="Amanhã" onPress={() => setDue(formatDateBR(tomorrow))} />

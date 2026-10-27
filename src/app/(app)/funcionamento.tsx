@@ -165,8 +165,7 @@ function Turn({
           value={value.opens}
           onChangeText={(opens) => onChange({ ...value, opens })}
           placeholder="08:00"
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
+          mask="time"
           editable={editable}
         />
       </View>
@@ -176,8 +175,7 @@ function Turn({
           value={value.closes}
           onChangeText={(closes) => onChange({ ...value, closes })}
           placeholder="18:00"
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
+          mask="time"
           editable={editable}
         />
       </View>

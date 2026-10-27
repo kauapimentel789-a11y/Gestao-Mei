@@ -1,5 +1,7 @@
 // Regras puras do financeiro usadas nas telas (o banco valida e calcula tudo).
 
+import { DATE_BR, DATE_DIGITS } from '@/lib/dates';
+
 export type Direction = 'receivable' | 'payable';
 export type EntryStatus = 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled';
 export type AccountKind = 'cash' | 'bank' | 'digital_wallet' | 'other';
@@ -69,9 +71,9 @@ export function toISODate(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** "25/10/2026" → "2026-10-25"; null se a data não existir. */
+/** "25/10/2026" (ou "25102026") → "2026-10-25"; null se a data não existir. */
 export function parseDateInput(text: string): string | null {
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text.trim());
+  const m = DATE_BR.exec(text.trim()) ?? DATE_DIGITS.exec(text.trim());
   if (!m) return null;
   const [day, month, year] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const d = new Date(year, month - 1, day);

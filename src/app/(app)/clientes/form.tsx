@@ -111,8 +111,7 @@ export default function CustomerFormScreen() {
                 field.onBlur();
               }}
               error={fieldState.error?.message}
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
+              mask="date"
               placeholder="12/03 ou 12/03/1990"
             />
           )}

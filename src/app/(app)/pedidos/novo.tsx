@@ -424,17 +424,17 @@ function OrderForm({ isQuote, clienteId, edit }: { isQuote: boolean; clienteId?:
             value={validUntil}
             onChangeText={setValidUntil}
             placeholder="DD/MM/AAAA"
-            keyboardType="numbers-and-punctuation"
+            mask="date"
           />
         ) : (
           <>
             <Text style={styles.label}>{isService ? 'Agendamento' : 'Prazo de entrega'} (opcional)</Text>
             <View style={styles.twoCols}>
               <View style={styles.flex}>
-                <TextField label="Data" value={date} onChangeText={setDate} placeholder="DD/MM/AAAA" keyboardType="numbers-and-punctuation" />
+                <TextField label="Data" value={date} onChangeText={setDate} placeholder="DD/MM/AAAA" mask="date" />
               </View>
               <View style={styles.flex}>
-                <TextField label="Horário" value={time} onChangeText={setTime} placeholder="HH:MM" keyboardType="numbers-and-punctuation" />
+                <TextField label="Horário" value={time} onChangeText={setTime} placeholder="HH:MM" mask="time" />
               </View>
             </View>
             <Text style={styles.label}>Origem</Text>

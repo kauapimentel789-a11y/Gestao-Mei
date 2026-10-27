@@ -183,7 +183,7 @@ function RegisterForm({ orderId }: { orderId: string }) {
           <TextField label="Número da nota" value={number} onChangeText={setNumber} autoCapitalize="characters" maxLength={30} />
         </View>
         <View style={styles.flex}>
-          <TextField label="Emitida em" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" maxLength={10} />
+          <TextField label="Emitida em" value={date} onChangeText={setDate} mask="date" />
         </View>
       </View>
       <FormError message={error} />

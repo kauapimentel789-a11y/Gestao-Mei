@@ -141,7 +141,7 @@ export default function NewAppointmentScreen() {
                 setConfirmConflict(false);
               }}
               placeholder="dd/mm/aaaa"
-              keyboardType="numbers-and-punctuation"
+              mask="date"
             />
           </View>
           <View style={styles.time}>
@@ -153,7 +153,7 @@ export default function NewAppointmentScreen() {
                 setConfirmConflict(false);
               }}
               placeholder="hh:mm"
-              keyboardType="numbers-and-punctuation"
+              mask="time"
             />
           </View>
         </View>

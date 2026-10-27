@@ -193,7 +193,7 @@ export default function QuickSaleScreen() {
               value={due}
               onChangeText={setDue}
               placeholder="dd/mm/aaaa"
-              keyboardType="numbers-and-punctuation"
+              mask="date"
               error={errs.due}
             />
             <Text style={styles.muted}>Fica em Quem me deve, com o botão para cobrar pelo WhatsApp.</Text>

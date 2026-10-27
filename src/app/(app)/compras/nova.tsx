@@ -110,7 +110,7 @@ export default function NewPurchaseScreen() {
         </Pressable>
         <View style={styles.twoCols}>
           <View style={styles.flex}>
-            <TextField label="Data da compra" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" />
+            <TextField label="Data da compra" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" />
           </View>
           <View style={styles.flex}>
             <TextField label="Nota ou recibo (opcional)" value={invoice} onChangeText={setInvoice} />
@@ -172,7 +172,7 @@ export default function NewPurchaseScreen() {
             <Chips accessibilityLabel="Forma de pagamento" value={method} onChange={setMethod} options={METHODS.map((m) => ({ value: m, label: METHOD_LABEL[m] }))} />
           </>
         ) : (
-          <TextField label="Vencimento (opcional)" value={due} onChangeText={setDue} placeholder="Igual à data da compra" keyboardType="numbers-and-punctuation" />
+          <TextField label="Vencimento (opcional)" value={due} onChangeText={setDue} placeholder="Igual à data da compra" mask="date" />
         )}
         <TextField label="Observações (opcional)" value={notes} onChangeText={setNotes} multiline />
       </Card>

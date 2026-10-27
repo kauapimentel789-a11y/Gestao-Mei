@@ -65,7 +65,7 @@ export function ContributionDialog({ visible, savedCents, loading, onClose, onSa
               ]}
             />
             <TextField label="Valor" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0,00" error={errs.amount} />
-            <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" keyboardType="numbers-and-punctuation" error={errs.date} />
+            <TextField label="Data" value={date} onChangeText={setDate} placeholder="dd/mm/aaaa" mask="date" error={errs.date} />
             <TextField label="Observação (opcional)" value={note} onChangeText={setNote} placeholder="Ex.: 13º salário" />
             <Text style={styles.muted}>Isto não tira dinheiro das suas contas: só marca quanto está separado para a meta.</Text>
             <FormError message={error} />
