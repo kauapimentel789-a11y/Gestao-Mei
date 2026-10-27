@@ -45,7 +45,9 @@ import { EntryRow } from '@/features/finance/EntryRow';
 import { cashNet, type FinanceSummary, operatingResult, type PeriodMode, periodFor } from '@/features/finance/logic';
 import { useMeiYear } from '@/features/mei/api';
 import { LEVEL_TEXT, limitLevel, yearTotal } from '@/features/mei/logic';
+import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
 import { useOrg } from '@/features/organizations/useOrg';
+import { PersonalEntries } from '@/features/personal/PersonalEntries';
 import { useFinanceReport } from '@/features/reports/api';
 import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
@@ -54,6 +56,11 @@ import { colors, fonts, minTouch, radius, shadows } from '@/theme/tokens';
 type ListTab = 'receivable' | 'payable' | 'period';
 
 export default function FinanceScreen() {
+  const { active } = useActiveOrganization();
+  return active?.organization.kind === 'personal' ? <PersonalEntries /> : <BusinessFinance />;
+}
+
+function BusinessFinance() {
   const { orgId, config } = useOrg();
   const [mode, setMode] = useState<PeriodMode>('month');
   const [offset, setOffset] = useState(0);

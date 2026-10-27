@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -17,7 +17,7 @@ import type { Customer } from '@/features/customers/api';
 import { CustomerPicker } from '@/features/customers/CustomerPicker';
 import { useAccounts, useCategories, useCreateEntry } from '@/features/finance/api';
 import { type Direction, METHOD_LABEL, parseDateInput, type PaymentMethod, toISODate } from '@/features/finance/logic';
-import { useOrg } from '@/features/organizations/useOrg';
+import { useSpace } from '@/features/organizations/useOrg';
 import { useSuppliers } from '@/features/suppliers/api';
 import { formatDateBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
@@ -28,13 +28,15 @@ import { colors, fonts } from '@/theme/tokens';
 const METHODS: PaymentMethod[] = ['pix', 'cash', 'debit_card', 'credit_card', 'bank_transfer', 'boleto', 'other'];
 
 export default function NewEntryScreen() {
-  const { orgId } = useOrg();
+  const { orgId, personal } = useSpace();
+  // ?tipo=entrada abre já como receita (atalhos de Minhas finanças).
+  const { tipo } = useLocalSearchParams<{ tipo?: string }>();
   const categories = useCategories(orgId);
   const accounts = useAccounts(orgId);
   const create = useCreateEntry(orgId);
   const toast = useToast();
 
-  const [direction, setDirection] = useState<Direction>('payable');
+  const [direction, setDirection] = useState<Direction>(tipo === 'entrada' ? 'receivable' : 'payable');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -63,9 +65,9 @@ export default function NewEntryScreen() {
   const onSubmit = async () => {
     const cents = parseBRLToCents(amount);
     const dueIso = parseDateInput(due);
-    const compIso = competence.trim() ? parseDateInput(competence) : dueIso;
+    const compIso = competence.trim() && !personal ? parseDateInput(competence) : dueIso;
     const next: Record<string, string | undefined> = {};
-    if (description.trim().length < 2) next.description = 'Descreva o lançamento.';
+    if (description.trim().length < 2) next.description = personal ? 'Diga com o que foi.' : 'Descreva o lançamento.';
     if (!cents || cents <= 0) next.amount = 'Informe o valor.';
     if (!chosenCategory) next.category = 'Escolha a categoria.';
     if (!dueIso) next.due = 'Use o formato dd/mm/aaaa.';
@@ -85,14 +87,14 @@ export default function NewEntryScreen() {
         categoryId: chosenCategory,
         dueDate: dueIso,
         competenceDate: compIso,
-        customerId: receiving ? (customer?.id ?? null) : null,
-        supplierId: receiving ? null : supplierId,
+        customerId: receiving && !personal ? (customer?.id ?? null) : null,
+        supplierId: receiving || personal ? null : supplierId,
         notes: notes.trim(),
         idempotencyKey: key,
         // Já pago: a baixa usa a data informada, que também vira o vencimento.
         paid: settled && chosenAccount ? { accountId: chosenAccount, method, paidOn: dueIso } : null,
       });
-      toast(receiving ? 'Receita lançada' : 'Despesa lançada');
+      toast(personal ? (receiving ? 'Entrada salva' : 'Gasto salvo') : receiving ? 'Receita lançada' : 'Despesa lançada');
       router.replace({ pathname: '/financeiro/[id]', params: { id: entry.id } });
     } catch (e) {
       setError(friendlyError(e));
@@ -101,7 +103,7 @@ export default function NewEntryScreen() {
 
   return (
     <Screen>
-      <DetailBar title="Novo lançamento" />
+      <DetailBar title={personal ? 'Novo lançamento pessoal' : 'Novo lançamento'} />
 
       <SegmentedControl
         accessibilityLabel="Tipo"
@@ -111,8 +113,8 @@ export default function NewEntryScreen() {
           setCategoryId(null);
         }}
         segments={[
-          { value: 'payable', label: 'Despesa' },
-          { value: 'receivable', label: 'Receita' },
+          { value: 'payable', label: personal ? 'Gastei' : 'Despesa' },
+          { value: 'receivable', label: personal ? 'Recebi' : 'Receita' },
         ]}
       />
 
@@ -121,7 +123,7 @@ export default function NewEntryScreen() {
           label="Descrição"
           value={description}
           onChangeText={setDescription}
-          placeholder={receiving ? 'Ex.: venda na feira' : 'Ex.: conta de luz'}
+          placeholder={personal ? (receiving ? 'Ex.: salário' : 'Ex.: mercado do mês') : receiving ? 'Ex.: venda na feira' : 'Ex.: conta de luz'}
           error={errs.description}
         />
         <TextField label="Valor" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0,00" error={errs.amount} />
@@ -158,19 +160,21 @@ export default function NewEntryScreen() {
             <Chips accessibilityLabel="Forma de pagamento" value={method} onChange={setMethod} options={METHODS.map((m) => ({ value: m, label: METHOD_LABEL[m] }))} />
           </>
         ) : null}
-        <TextField
-          label="Competência (opcional)"
-          value={competence}
-          onChangeText={setCompetence}
-          placeholder="Igual à data acima"
-          keyboardType="numbers-and-punctuation"
-          hint="Data a que o valor se refere no resultado (ex.: aluguel de outubro pago em novembro)."
-          error={errs.competence}
-        />
+        {personal ? null : (
+          <TextField
+            label="Competência (opcional)"
+            value={competence}
+            onChangeText={setCompetence}
+            placeholder="Igual à data acima"
+            keyboardType="numbers-and-punctuation"
+            hint="Data a que o valor se refere no resultado (ex.: aluguel de outubro pago em novembro)."
+            error={errs.competence}
+          />
+        )}
       </Card>
 
       <Card>
-        {receiving ? (
+        {personal ? null : receiving ? (
           <Pressable accessibilityRole="button" onPress={() => setPickerOpen(true)} style={styles.switchRow}>
             <Text style={styles.label}>Cliente (opcional)</Text>
             <Text style={styles.value}>{customer?.name ?? 'Escolher'}</Text>
@@ -185,7 +189,11 @@ export default function NewEntryScreen() {
       </Card>
 
       <FormError message={error} />
-      <Button label={receiving ? 'Lançar receita' : 'Lançar despesa'} onPress={onSubmit} loading={create.isPending} />
+      <Button
+        label={personal ? (receiving ? 'Salvar entrada' : 'Salvar gasto') : receiving ? 'Lançar receita' : 'Lançar despesa'}
+        onPress={onSubmit}
+        loading={create.isPending}
+      />
 
       <PickerModal
         visible={supplierOpen}

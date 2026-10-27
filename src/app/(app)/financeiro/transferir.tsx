@@ -11,7 +11,7 @@ import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { useAccounts, useCreateTransfer } from '@/features/finance/api';
 import { parseDateInput, toISODate } from '@/features/finance/logic';
-import { useOrg } from '@/features/organizations/useOrg';
+import { useSpace } from '@/features/organizations/useOrg';
 import { formatDateBR } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
@@ -20,7 +20,7 @@ import { colors, fonts } from '@/theme/tokens';
 import { goBack } from '@/lib/navigation';
 
 export default function TransferScreen() {
-  const { orgId } = useOrg();
+  const { orgId } = useSpace();
   const accounts = useAccounts(orgId);
   const create = useCreateTransfer(orgId);
   const toast = useToast();

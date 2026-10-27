@@ -17,6 +17,7 @@ import { clearLateAlerts } from '@/features/alerts/LateOrderAlerts';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { clearDasReminder } from '@/features/das/DasReminder';
 import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
+import { useOrg } from '@/features/organizations/useOrg';
 import { useSetPracticeArea, useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
 import { HourlyRateDialog } from '@/features/organizations/HourlyRateDialog';
 import { usePixSettings } from '@/features/organizations/pix';
@@ -32,9 +33,14 @@ import { goBack } from '@/lib/navigation';
 const ROLE_LABEL = { owner: 'Dono', admin: 'Administrador', member: 'Membro' } as const;
 
 export default function SettingsScreen() {
+  const { active } = useActiveOrganization();
+  return active?.organization.kind === 'personal' ? <PersonalSettings /> : <BusinessSettings />;
+}
+
+function BusinessSettings() {
   const { session } = useAuth();
-  const { active, memberships, select } = useActiveOrganization();
-  const org = active!.organization;
+  const { active, businesses, select } = useActiveOrganization();
+  const { org } = useOrg();
   const canEdit = active!.role === 'owner' || active!.role === 'admin';
   const updateRate = useUpdateHourlyRate(session?.user.id);
   const toast = useToast();
@@ -48,15 +54,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <View style={styles.bar}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => goBack()} style={styles.circle}>
-          <ChevronLeft size={20} color={colors.ink} />
-        </Pressable>
-        <Text style={styles.barTitle} accessibilityRole="header">
-          Configurações
-        </Text>
-        <View style={styles.circlePlaceholder} />
-      </View>
+      <SettingsBar />
 
       {platformAdmin.data ? (
         <Card style={styles.navCard}>
@@ -145,10 +143,10 @@ export default function SettingsScreen() {
         <NavRow label="Categorias financeiras" onPress={() => router.push('/financeiro/categorias')} />
       </Card>
 
-      {memberships.length > 1 ? (
+      {businesses.length > 1 ? (
         <Card>
           <Text style={styles.cardTitle}>Trocar empresa</Text>
-          {memberships.map((m) => (
+          {businesses.map((m) => (
             <Pressable
               key={m.organization.id}
               accessibilityRole="radio"
@@ -188,6 +186,69 @@ export default function SettingsScreen() {
         }}
       />
 
+      <AccountCards />
+    </Screen>
+  );
+}
+
+/** Configurações de Minhas finanças: cadastros do pessoal, a empresa e a conta. */
+function PersonalSettings() {
+  const { session } = useAuth();
+  const { lastBusiness, select } = useActiveOrganization();
+  const platformAdmin = useIsPlatformAdmin(session?.user.id);
+
+  return (
+    <Screen>
+      <SettingsBar />
+
+      {platformAdmin.data ? (
+        <Card style={styles.navCard}>
+          <Text style={styles.cardTitle}>Dono do Gestão Fácil</Text>
+          <NavRow first label="Painel do Gestão Fácil" onPress={() => router.push('/admin')} />
+        </Card>
+      ) : null}
+
+      <Card style={styles.navCard}>
+        <Text style={styles.cardTitle}>Minhas finanças</Text>
+        <Text style={styles.body}>Só você vê o que lança aqui. A sua empresa não enxerga estes dados, e o pessoal não enxerga os da empresa.</Text>
+        <NavRow first label="Contas" onPress={() => router.push('/contas')} />
+        <NavRow label="Categorias" onPress={() => router.push('/financeiro/categorias')} />
+        <NavRow label="Transferir entre contas" onPress={() => router.push('/financeiro/transferir')} />
+      </Card>
+
+      <Card style={styles.navCard}>
+        <Text style={styles.cardTitle}>Sua empresa</Text>
+        {lastBusiness ? (
+          <NavRow first label={`Ir para ${lastBusiness.organization.name}`} onPress={() => select(lastBusiness.organization.id)} />
+        ) : (
+          <NavRow first label="Cadastrar minha empresa" onPress={() => router.push('/nova-empresa')} />
+        )}
+      </Card>
+
+      <AccountCards />
+    </Screen>
+  );
+}
+
+function SettingsBar() {
+  return (
+    <View style={styles.bar}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => goBack()} style={styles.circle}>
+        <ChevronLeft size={20} color={colors.ink} />
+      </Pressable>
+      <Text style={styles.barTitle} accessibilityRole="header">
+        Configurações
+      </Text>
+      <View style={styles.circlePlaceholder} />
+    </View>
+  );
+}
+
+/** Privacidade e conta: iguais na empresa e no pessoal. */
+function AccountCards() {
+  const { session } = useAuth();
+  return (
+    <>
       <Card style={styles.navCard}>
         <Text style={styles.cardTitle}>Privacidade</Text>
         <NavRow first label="Termos de uso" onPress={() => router.push('/termos')} />
@@ -208,7 +269,7 @@ export default function SettingsScreen() {
           }}
         />
       </Card>
-    </Screen>
+    </>
   );
 }
 

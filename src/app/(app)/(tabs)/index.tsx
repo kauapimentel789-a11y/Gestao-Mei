@@ -19,7 +19,10 @@ import { useLowStock } from '@/features/inventory/api';
 import { useOrderCounts, useOrders } from '@/features/orders/api';
 import { formatQuantity } from '@/features/orders/logic';
 import { OrderRow } from '@/features/orders/OrderRow';
+import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
+import { SpaceSwitcher } from '@/features/organizations/SpaceSwitcher';
 import { useOrg } from '@/features/organizations/useOrg';
+import { PersonalHome } from '@/features/personal/PersonalHome';
 import { useSetupStatus } from '@/features/setup/api';
 import { SetupCard } from '@/features/setup/SetupCard';
 import { useTasks } from '@/features/tasks/api';
@@ -33,6 +36,11 @@ import { colors, fonts, minTouch, radius } from '@/theme/tokens';
 const logo = require('../../../../assets/brand/logo-tile-dark.png');
 
 export default function HomeScreen() {
+  const { active } = useActiveOrganization();
+  return active?.organization.kind === 'personal' ? <PersonalHome /> : <BusinessHome />;
+}
+
+function BusinessHome() {
   const { session } = useAuth();
   const { org, orgId, config } = useOrg();
   const counts = useOrderCounts(orgId);
@@ -82,6 +90,8 @@ export default function HomeScreen() {
           <Settings size={20} color={colors.ink} />
         </Pressable>
       </View>
+
+      <SpaceSwitcher />
 
       <View style={styles.hero}>
         <View style={styles.glow} pointerEvents="none" />
