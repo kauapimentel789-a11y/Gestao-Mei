@@ -94,7 +94,8 @@ function period(input: Record<string, unknown>) {
 // Ferramentas
 // ---------------------------------------------------------------------------
 
-const nullable = (type: string, description: string) => ({ type: [type, 'null'], description });
+// Campo opcional: anyOf com null (o modo strict não aceita enum junto de type em lista).
+const nullable = (schema: Record<string, unknown>, description: string) => ({ anyOf: [schema, { type: 'null' }], description });
 
 const TOOLS = [
   {
@@ -119,8 +120,8 @@ const TOOLS = [
       properties: {
         de: { type: 'string', description: 'Primeiro dia, AAAA-MM-DD.' },
         ate: { type: 'string', description: 'Último dia, AAAA-MM-DD.' },
-        tipo: { type: ['string', 'null'], enum: ['gasto', 'recebimento', null], description: 'Só gastos, só recebimentos, ou null para os dois.' },
-        busca: nullable('string', 'Parte da descrição ou da categoria, ou null.'),
+        tipo: nullable({ type: 'string', enum: ['gasto', 'recebimento'] }, 'Só gastos, só recebimentos, ou null para os dois.'),
+        busca: nullable({ type: 'string' }, 'Parte da descrição ou da categoria, ou null.'),
         so_em_aberto: { type: 'boolean', description: 'true para só o que falta pagar ou receber.' },
       },
       required: ['de', 'ate', 'tipo', 'busca', 'so_em_aberto'],
@@ -170,7 +171,7 @@ const TOOLS = [
         categoria: { type: 'string', description: 'Nome exato de uma das categorias do tipo, da lista do contexto.' },
         data: { type: 'string', description: 'Dia do gasto ou do vencimento, AAAA-MM-DD.' },
         ja_pago: { type: 'boolean', description: 'true se o dinheiro já saiu ou entrou; false se é uma conta para pagar ou receber depois.' },
-        conta: nullable('string', 'Nome da conta de onde saiu ou para onde entrou, quando já pago. null para a conta principal.'),
+        conta: nullable({ type: 'string' }, 'Nome da conta de onde saiu ou para onde entrou, quando já pago. null para a conta principal.'),
       },
       required: ['tipo', 'descricao', 'valor_reais', 'categoria', 'data', 'ja_pago', 'conta'],
       additionalProperties: false,
