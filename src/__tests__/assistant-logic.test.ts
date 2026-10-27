@@ -1,4 +1,5 @@
 import { type ChatMessage, historyForRequest, MAX_HISTORY, proposalToEntry, remainingLabel } from '@/features/assistant/logic';
+import { joinTranscript } from '@/features/assistant/useDictation';
 
 const msg = (i: number, text = `m${i}`): ChatMessage => ({ id: String(i), role: i % 2 ? 'assistant' : 'user', text });
 
@@ -50,5 +51,11 @@ describe('remainingLabel', () => {
     expect(remainingLabel(3)).toBe('Restam 3 perguntas hoje.');
     expect(remainingLabel(1)).toBe('Resta 1 pergunta hoje.');
     expect(remainingLabel(0)).toBe('Esta foi a última pergunta de hoje.');
+  });
+});
+
+describe('joinTranscript', () => {
+  it('junta os trechos falados', () => {
+    expect(joinTranscript([[{ transcript: 'gastei 40' }], [{ transcript: '  no mercado ' }]])).toBe('gastei 40 no mercado');
   });
 });

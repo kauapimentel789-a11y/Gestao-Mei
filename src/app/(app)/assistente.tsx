@@ -1,7 +1,7 @@
 // Assistente de IA de Minhas finanças: perguntas sobre gastos, contas e metas,
 // e lançamentos sugeridos para salvar com um toque. A conversa fica só na
 // tela; quem responde é a Edge Function `assistente`.
-import { Send, Sparkles } from 'lucide-react-native';
+import { Mic, Send, Sparkles, Square } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { FormError } from '@/components/FormError';
 import { AssistantError, useAskAssistant } from '@/features/assistant/api';
 import { type ChatMessage, MAX_TEXT, remainingLabel, STARTERS } from '@/features/assistant/logic';
 import { ProposalCard } from '@/features/assistant/ProposalCard';
+import { useDictation } from '@/features/assistant/useDictation';
 import { useSpace } from '@/features/organizations/useOrg';
 import { newId } from '@/lib/ids';
 import { colors, fonts, minTouch, radius, spacing } from '@/theme/tokens';
@@ -23,10 +24,12 @@ export default function AssistantScreen() {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const dictation = useDictation(setText, setError);
 
   const send = async (value: string) => {
     const question = value.trim();
     if (!question || ask.isPending) return;
+    dictation.stop();
     const next = [...messages, { id: newId(), role: 'user' as const, text: question }];
     setMessages(next);
     setText('');
@@ -109,7 +112,7 @@ export default function AssistantScreen() {
           <TextInput
             value={text}
             onChangeText={setText}
-            placeholder="Escreva sua pergunta"
+            placeholder={dictation.listening ? 'Pode falar…' : 'Escreva ou fale sua pergunta'}
             placeholderTextColor={colors.gray500}
             style={styles.input}
             multiline
@@ -119,6 +122,23 @@ export default function AssistantScreen() {
             submitBehavior="submit"
             returnKeyType="send"
           />
+          {dictation.supported ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={dictation.listening ? 'Parar de ouvir' : 'Falar a pergunta'}
+              disabled={ask.isPending}
+              onPress={() => {
+                if (dictation.listening) dictation.stop();
+                else {
+                  setError(null);
+                  dictation.start(text);
+                }
+              }}
+              style={[styles.micBtn, dictation.listening && styles.micOn, ask.isPending && styles.disabled]}
+            >
+              {dictation.listening ? <Square size={16} color={colors.white} fill={colors.white} /> : <Mic size={20} color={colors.primaryText} />}
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Enviar"
@@ -180,5 +200,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   sendBtn: { width: minTouch, height: minTouch, borderRadius: minTouch / 2, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  micBtn: { width: minTouch, height: minTouch, borderRadius: minTouch / 2, backgroundColor: colors.primaryTint, alignItems: 'center', justifyContent: 'center' },
+  micOn: { backgroundColor: colors.danger },
   disabled: { opacity: 0.4 },
 });
