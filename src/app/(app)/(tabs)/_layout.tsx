@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router/tabs';
 import {
   CalendarDays,
   ClipboardList,
+  CreditCard,
   House,
   Landmark,
   type LucideIcon,
@@ -24,6 +25,7 @@ const ICONS: Record<TabKey, LucideIcon> = {
   tarefas: ClipboardList,
   financeiro: Wallet,
   contas: Landmark,
+  cartoes: CreditCard,
 };
 
 const ROUTES: Record<TabKey, string> = {
@@ -35,6 +37,7 @@ const ROUTES: Record<TabKey, string> = {
   tarefas: 'tarefas',
   financeiro: 'financeiro',
   contas: 'contas',
+  cartoes: 'cartoes',
 };
 
 const ALL_TABS = Object.keys(ROUTES) as TabKey[];

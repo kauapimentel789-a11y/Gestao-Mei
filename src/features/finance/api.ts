@@ -47,6 +47,11 @@ export interface EntryOverview {
   supplier_id: string | null;
   supplier_name: string | null;
   purchase_id: string | null;
+  installment_plan_id: string | null;
+  installment_number: number | null;
+  installment_count: number | null;
+  card_id: string | null;
+  card_name: string | null;
 }
 
 export interface Payment {
@@ -83,8 +88,8 @@ export const financeKeys = {
   transfers: (orgId: string) => ['finance', orgId, 'transfers'] as const,
 };
 
-const ENTRY_COLUMNS =
-  'id, direction, description, amount_cents, paid_cents, open_cents, status, competence_date, due_date, category_id, category_name, category_nature, customer_id, customer_name, order_id, order_number, notes, cancelled_at, cancel_reason, created_at, supplier_id, supplier_name, purchase_id';
+export const ENTRY_COLUMNS =
+  'id, direction, description, amount_cents, paid_cents, open_cents, status, competence_date, due_date, category_id, category_name, category_nature, customer_id, customer_name, order_id, order_number, notes, cancelled_at, cancel_reason, created_at, supplier_id, supplier_name, purchase_id, installment_plan_id, installment_number, installment_count, card_id, card_name';
 const PAYMENT_COLUMNS = 'id, entry_id, account_id, amount_cents, paid_on, method, notes, reverses_payment_id, created_at';
 
 export function useFinanceSummary(orgId: string, from: string, to: string) {
@@ -216,7 +221,7 @@ export function useTransfers(orgId: string) {
 
 // ------------------------------------------------------------------ escrita
 
-function useInvalidateFinance(orgId: string, alsoOrders = false) {
+export function useInvalidateFinance(orgId: string, alsoOrders = false) {
   const qc = useQueryClient();
   return () =>
     Promise.all([

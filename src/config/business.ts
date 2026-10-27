@@ -10,7 +10,7 @@ export type BusinessType = 'production' | 'resale' | 'services';
 export type BusinessProfile = BusinessType | 'appointments';
 export type PracticeArea = 'health' | 'professional' | 'beauty' | 'other';
 
-export type TabKey = 'inicio' | 'pedidos' | 'estoque' | 'agenda' | 'clientes' | 'tarefas' | 'financeiro' | 'contas';
+export type TabKey = 'inicio' | 'pedidos' | 'estoque' | 'agenda' | 'clientes' | 'tarefas' | 'financeiro' | 'contas' | 'cartoes';
 
 export type OrderKind = 'order' | 'sale' | 'service_order';
 export type OrderStatus = 'received' | 'confirmed' | 'in_progress' | 'completed' | 'delivered' | 'cancelled';
@@ -56,6 +56,7 @@ const baseLabels: Record<TabKey, string> = {
   tarefas: 'Tarefas',
   financeiro: 'Financeiro',
   contas: 'Contas',
+  cartoes: 'Cartões',
 };
 
 const FULL_FLOW: OrderStatus[] = ['received', 'confirmed', 'in_progress', 'completed', 'delivered'];
@@ -122,7 +123,7 @@ export const BUSINESS_CONFIG: Record<BusinessProfile, BusinessConfig> = {
 };
 
 /** "Minhas finanças" (espaço pessoal): abas e rótulos próprios, sem tipo de negócio. */
-export const PERSONAL_TABS: TabKey[] = ['inicio', 'financeiro', 'contas'];
+export const PERSONAL_TABS: TabKey[] = ['inicio', 'financeiro', 'cartoes', 'contas'];
 export const PERSONAL_TAB_LABELS: Record<TabKey, string> = { ...baseLabels, financeiro: 'Lançamentos' };
 
 export const BUSINESS_TYPES = ['production', 'resale', 'services'] as const satisfies readonly BusinessType[];

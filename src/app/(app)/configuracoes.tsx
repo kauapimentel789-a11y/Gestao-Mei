@@ -212,6 +212,8 @@ function PersonalSettings() {
         <Text style={styles.cardTitle}>Minhas finanças</Text>
         <Text style={styles.body}>Só você vê o que lança aqui. A sua empresa não enxerga estes dados, e o pessoal não enxerga os da empresa.</Text>
         <NavRow first label="Contas" onPress={() => router.push('/contas')} />
+        <NavRow label="Cartões de crédito" onPress={() => router.push('/cartoes')} />
+        <NavRow label="Contas a pagar" onPress={() => router.push('/a-pagar')} />
         <NavRow label="Categorias" onPress={() => router.push('/financeiro/categorias')} />
         <NavRow label="Transferir entre contas" onPress={() => router.push('/financeiro/transferir')} />
       </Card>
