@@ -15,7 +15,8 @@ import { type Payment, useAccounts, useCancelEntry, useEntry, useReversePayment,
 import { EntryStatusChip } from '@/features/finance/EntryRow';
 import { formatISODate, METHOD_LABEL, NATURE_LABEL } from '@/features/finance/logic';
 import { PaymentDialog } from '@/features/finance/PaymentDialog';
-import { useOrg } from '@/features/organizations/useOrg';
+import { getBusinessConfig } from '@/config/business';
+import { useSpace } from '@/features/organizations/useOrg';
 import { friendlyError } from '@/lib/errors';
 import { newId } from '@/lib/ids';
 import { formatCents } from '@/lib/money';
@@ -23,7 +24,7 @@ import { colors, fonts } from '@/theme/tokens';
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { orgId, config } = useOrg();
+  const { orgId, business, personal } = useSpace();
   const query = useEntry(orgId, id);
   const accounts = useAccounts(orgId);
   const settle = useSettleEntry(orgId);
@@ -60,7 +61,7 @@ export default function EntryDetailScreen() {
 
   return (
     <Screen>
-      <DetailBar title={receiving ? 'A receber' : 'A pagar'} />
+      <DetailBar title={personal ? (receiving ? 'Entrada' : 'Gasto') : receiving ? 'A receber' : 'A pagar'} />
 
       <Card>
         <View style={styles.rowBetween}>
@@ -75,14 +76,14 @@ export default function EntryDetailScreen() {
         ) : null}
         <Info label="Vencimento" value={formatISODate(e.due_date)} />
         <Info label="Competência" value={formatISODate(e.competence_date)} />
-        <Info label="Categoria" value={`${e.category_name} (${NATURE_LABEL[e.category_nature].toLowerCase()})`} />
+        <Info label="Categoria" value={personal ? e.category_name : `${e.category_name} (${NATURE_LABEL[e.category_nature].toLowerCase()})`} />
         {e.customer_name ? <Info label="Cliente" value={e.customer_name} /> : null}
         {e.supplier_name ? <Info label="Fornecedor" value={e.supplier_name} /> : null}
         {e.notes ? <Info label="Observações" value={e.notes} /> : null}
         {e.cancelled_at ? <Info label="Cancelado" value={e.cancel_reason ?? ''} /> : null}
-        {e.order_id ? (
+        {e.order_id && business ? (
           <TextLink
-            label={`Ver ${config.orderNoun} #${e.order_number}`}
+            label={`Ver ${getBusinessConfig(business.business_type, business.practice_area).orderNoun} #${e.order_number}`}
             onPress={() => router.push({ pathname: '/pedidos/[id]', params: { id: e.order_id! } })}
           />
         ) : null}

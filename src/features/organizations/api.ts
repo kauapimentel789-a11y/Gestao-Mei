@@ -6,23 +6,42 @@ import { supabase } from '@/lib/supabase';
 
 import type { CreateOrganizationInput } from './schemas';
 
-export interface Organization {
+interface OrganizationBase {
   id: string;
   name: string;
   slug: string;
-  business_type: BusinessType;
-  enabled_modules: BusinessType[];
   hourly_rate_cents: number;
   public_orders_enabled: boolean;
+}
+
+/** Empresa (PJ). */
+export interface Organization extends OrganizationBase {
+  kind: 'business';
+  business_type: BusinessType;
+  enabled_modules: BusinessType[];
   practice_area: PracticeArea | null;
 }
 
-export interface Membership {
-  role: 'owner' | 'admin' | 'member';
-  organization: Organization;
+/** "Minhas finanças": espaço pessoal (PF) da mesma conta, sem tipo de negócio. */
+export interface PersonalSpace extends OrganizationBase {
+  kind: 'personal';
+  business_type: null;
+  enabled_modules: [];
+  practice_area: null;
 }
 
-const COLUMNS = 'id, name, slug, business_type, enabled_modules, hourly_rate_cents, public_orders_enabled, practice_area';
+export type Space = Organization | PersonalSpace;
+
+export interface Membership {
+  role: 'owner' | 'admin' | 'member';
+  organization: Space;
+}
+
+export function isPersonal(space: Space): space is PersonalSpace {
+  return space.kind === 'personal';
+}
+
+const COLUMNS = 'id, name, slug, kind, business_type, enabled_modules, hourly_rate_cents, public_orders_enabled, practice_area';
 
 export const organizationKeys = {
   mine: (userId: string) => ['organizations', 'mine', userId] as const,
@@ -59,6 +78,19 @@ export function useCreateOrganization(userId: string | undefined) {
       });
       if (error) throw error;
       return data as Organization;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
+  });
+}
+
+/** Abre o espaço pessoal (ou devolve o que já existe; o banco garante um só). */
+export function useCreatePersonalSpace(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<PersonalSpace> => {
+      const { data, error } = await supabase.rpc('create_personal_space');
+      if (error) throw error;
+      return data as PersonalSpace;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: organizationKeys.mine(userId ?? 'anon') }),
   });

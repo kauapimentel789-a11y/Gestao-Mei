@@ -12,13 +12,13 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextField } from '@/components/TextField';
 import { useToast } from '@/components/Toast';
 import { useCategories, useCreateCategory, useUpdateCategory } from '@/features/finance/api';
-import { type CategoryNature, type Direction, NATURE_LABEL, NATURES_BY_DIRECTION } from '@/features/finance/logic';
-import { useOrg } from '@/features/organizations/useOrg';
+import { type CategoryNature, type Direction, NATURE_LABEL, NATURES_BY_DIRECTION, PERSONAL_NATURE } from '@/features/finance/logic';
+import { useSpace } from '@/features/organizations/useOrg';
 import { friendlyError } from '@/lib/errors';
 import { colors, fonts } from '@/theme/tokens';
 
 export default function CategoriesScreen() {
-  const { orgId } = useOrg();
+  const { orgId, personal } = useSpace();
   const categories = useCategories(orgId);
   const create = useCreateCategory(orgId);
   const update = useUpdateCategory(orgId);
@@ -51,11 +51,11 @@ export default function CategoriesScreen() {
         value={direction}
         onChange={(d) => {
           setDirection(d);
-          setNature(NATURES_BY_DIRECTION[d][0]!);
+          setNature(personal ? PERSONAL_NATURE[d] : NATURES_BY_DIRECTION[d][0]!);
         }}
         segments={[
-          { value: 'payable', label: 'Despesas' },
-          { value: 'receivable', label: 'Receitas' },
+          { value: 'payable', label: personal ? 'Gastos' : 'Despesas' },
+          { value: 'receivable', label: personal ? 'Entradas' : 'Receitas' },
         ]}
       />
 
@@ -65,7 +65,7 @@ export default function CategoriesScreen() {
           <View key={c.id} style={[styles.row, i > 0 && styles.divider, !c.active && styles.inactive]}>
             <View style={styles.flex}>
               <Text style={styles.name}>{c.name}</Text>
-              <Text style={styles.muted}>{NATURE_LABEL[c.nature]}</Text>
+              {personal ? null : <Text style={styles.muted}>{NATURE_LABEL[c.nature]}</Text>}
             </View>
             <Switch
               value={c.active}
@@ -87,12 +87,16 @@ export default function CategoriesScreen() {
       <Card>
         <Text style={styles.cardTitle}>Nova categoria</Text>
         <TextField label="Nome" value={name} onChangeText={setName} error={nameError} />
-        <Text style={styles.label}>Natureza</Text>
-        <Chips accessibilityLabel="Natureza" value={nature} onChange={setNature} options={NATURES_BY_DIRECTION[direction].map((n) => ({ value: n, label: NATURE_LABEL[n] }))} />
-        <Text style={styles.muted}>
-          A natureza define onde o valor aparece: só vendas, despesas do negócio e impostos entram no resultado estimado. Compras de estoque, investimentos e
-          retiradas aparecem separados.
-        </Text>
+        {personal ? null : (
+          <>
+            <Text style={styles.label}>Natureza</Text>
+            <Chips accessibilityLabel="Natureza" value={nature} onChange={setNature} options={NATURES_BY_DIRECTION[direction].map((n) => ({ value: n, label: NATURE_LABEL[n] }))} />
+            <Text style={styles.muted}>
+              A natureza define onde o valor aparece: só vendas, despesas do negócio e impostos entram no resultado estimado. Compras de estoque, investimentos e
+              retiradas aparecem separados.
+            </Text>
+          </>
+        )}
         <FormError message={error} />
         <Button size="medium" label="Criar categoria" onPress={add} loading={create.isPending} />
       </Card>

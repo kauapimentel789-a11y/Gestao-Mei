@@ -54,6 +54,9 @@ export const NATURE_LABEL: Record<CategoryNature, string> = {
   tax: 'Imposto ou taxa',
 };
 
+/** Natureza das categorias criadas em Minhas finanças, onde ela não é mostrada. */
+export const PERSONAL_NATURE: Record<Direction, CategoryNature> = { receivable: 'other_revenue', payable: 'operating_expense' };
+
 export const NATURES_BY_DIRECTION: Record<Direction, CategoryNature[]> = {
   receivable: ['operating_revenue', 'other_revenue'],
   payable: ['operating_expense', 'inventory_purchase', 'investment', 'tax', 'owner_withdrawal'],
