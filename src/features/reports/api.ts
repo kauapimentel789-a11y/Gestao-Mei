@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { financeKeys } from '@/features/finance/api';
 import { supabase } from '@/lib/supabase';
 
 export interface CategoryTotal {
@@ -40,7 +41,8 @@ export interface FinanceReport {
 
 export function useFinanceReport(orgId: string, from: string, to: string) {
   return useQuery({
-    queryKey: ['reports', orgId, from, to],
+    // Debaixo de financeKeys.all: um lançamento novo atualiza os gráficos.
+    queryKey: [...financeKeys.all(orgId), 'report', from, to],
     queryFn: async (): Promise<FinanceReport> => {
       const { data, error } = await supabase.rpc('finance_report', { p_organization_id: orgId, p_from: from, p_to: to });
       if (error) throw error;
