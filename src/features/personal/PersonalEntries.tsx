@@ -1,7 +1,7 @@
 // Aba "Lançamentos" de Minhas finanças: o mês escolhido, quanto entrou e saiu e
 // a lista filtrada por gastos ou entradas.
 import { router } from 'expo-router';
-import { ChevronLeft, ChevronRight, Tags, Wallet } from 'lucide-react-native';
+import { ChartColumn, ChevronLeft, ChevronRight, Tags, Wallet } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -46,7 +46,10 @@ export function PersonalEntries() {
             </Text>
             <Text style={styles.subtitle}>Tudo o que entrou e saiu</Text>
           </View>
-          <CircleButton label="Categorias" icon={<Tags size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/categorias')} />
+          <View style={styles.headerActions}>
+            <CircleButton label="Relatórios" icon={<ChartColumn size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/relatorios')} />
+            <CircleButton label="Categorias" icon={<Tags size={20} color={colors.ink} />} onPress={() => router.push('/financeiro/categorias')} />
+          </View>
         </View>
 
         <View style={styles.periodRow}>
@@ -112,6 +115,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', gap: 8 },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.5, color: colors.ink },

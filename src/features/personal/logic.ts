@@ -43,8 +43,8 @@ export function personalInsight(input: { inCents: number; outCents: number; prev
   return parts.join(' ');
 }
 
-const PERSONAL_PATHS = ['/', '/financeiro', '/contas', '/cartoes', '/a-pagar', '/configuracoes', '/nova-empresa', '/excluir-conta', '/admin'];
-const BUSINESS_FINANCE = ['mei', 'quem-me-deve', 'relatorios', 'venda-rapida'];
+const PERSONAL_PATHS = ['/', '/financeiro', '/contas', '/cartoes', '/a-pagar', '/orcamento', '/metas', '/configuracoes', '/nova-empresa', '/excluir-conta', '/admin'];
+const BUSINESS_FINANCE = ['mei', 'quem-me-deve', 'venda-rapida'];
 
 /**
  * Telas que existem em Minhas finanças. As demais são da empresa: quem abre o
@@ -54,6 +54,6 @@ export function personalAllows(pathname: string): boolean {
   const path = pathname.replace(/\/+$/, '') || '/';
   if (PERSONAL_PATHS.includes(path)) return true;
   const [first, second, ...rest] = path.split('/').filter(Boolean);
-  if (first === 'cartao' && second !== undefined && rest.length === 0) return true;
+  if ((first === 'cartao' || first === 'meta') && second !== undefined && rest.length === 0) return true;
   return first === 'financeiro' && second !== undefined && rest.length === 0 && !BUSINESS_FINANCE.includes(second);
 }

@@ -17,6 +17,10 @@ import { EntryRow } from '@/features/finance/EntryRow';
 import { cashNet, periodFor, toISODate } from '@/features/finance/logic';
 import { SpaceSwitcher } from '@/features/organizations/SpaceSwitcher';
 import { useSpace } from '@/features/organizations/useOrg';
+import { useBudgetOverview, useGoals } from '@/features/planning/api';
+import { GoalRow } from '@/features/planning/GoalRow';
+import { budgetProgress, budgetTotals } from '@/features/planning/logic';
+import { ProgressBar } from '@/features/planning/ProgressBar';
 import { useFinanceReport } from '@/features/reports/api';
 import { formatLongToday, greeting } from '@/lib/dates';
 import { formatCents } from '@/lib/money';
@@ -37,6 +41,8 @@ export function PersonalHome() {
   const report = useFinanceReport(orgId, month.from, month.to);
   const entries = usePeriodEntries(orgId, month.from, month.to);
   const bills = useBills(orgId);
+  const budget = useBudgetOverview(orgId, month.from);
+  const goals = useGoals(orgId);
 
   const firstName = String(session?.user.user_metadata?.display_name ?? '').split(' ')[0];
   const active = (accounts.data ?? []).filter((a) => a.active);
@@ -47,6 +53,10 @@ export function PersonalHome() {
   const recent = (entries.data ?? []).filter((e) => e.status !== 'cancelled').slice(0, 5);
   const pending = bills.items;
   const today = toISODate(new Date());
+  const totals = budgetTotals(budget.data ?? []);
+  const budgetNow = budgetProgress(totals.spent, totals.limit, 100);
+  const overBudget = (budget.data ?? []).filter((b) => b.amount_cents !== null && budgetProgress(b.spent_cents, b.amount_cents, b.alert_pct ?? 80).level !== 'ok');
+  const activeGoals = (goals.data ?? []).filter((g) => !g.completed_at);
 
   return (
     <Screen>
@@ -126,6 +136,44 @@ export function PersonalHome() {
           {pending.length > 3 ? <Text style={styles.muted}>+ {pending.length - 3} em aberto</Text> : null}
         </Card>
       ) : null}
+
+      {budget.data ? (
+        <Pressable accessibilityRole="button" onPress={() => router.push('/orcamento')}>
+          <Card>
+            <View style={styles.cardHead}>
+              <Text style={styles.cardTitle}>Orçamento do mês</Text>
+              <ChevronRight size={18} color={colors.gray500} />
+            </View>
+            {totals.count === 0 ? (
+              <Text style={styles.muted}>Defina quanto quer gastar por categoria e veja quando estiver chegando perto do limite.</Text>
+            ) : (
+              <>
+                <ProgressBar ratio={budgetNow.ratio} level={budgetNow.level} label="Orçamento do mês" />
+                <Text style={styles.insight}>
+                  {formatCents(totals.spent)} de {formatCents(totals.limit)}
+                  {overBudget.length > 0 ? ` · atenção em ${overBudget.map((b) => b.category_name).join(', ')}` : ' · tudo dentro do limite'}
+                </Text>
+              </>
+            )}
+          </Card>
+        </Pressable>
+      ) : null}
+
+      <Card style={styles.list}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/metas')} style={styles.cardHead}>
+          <Text style={styles.cardTitle}>Metas</Text>
+          <ChevronRight size={18} color={colors.gray500} />
+        </Pressable>
+        {activeGoals.length === 0 ? (
+          <Text style={styles.muted}>Junte dinheiro para uma viagem, uma reserva ou o que quiser. Toque para criar uma meta.</Text>
+        ) : (
+          activeGoals.slice(0, 2).map((g, i) => (
+            <View key={g.id} style={i > 0 && styles.divider}>
+              <GoalRow goal={g} today={today} />
+            </View>
+          ))
+        )}
+      </Card>
 
       <Card>
         <Text style={styles.cardTitle}>Para onde foi o dinheiro</Text>
