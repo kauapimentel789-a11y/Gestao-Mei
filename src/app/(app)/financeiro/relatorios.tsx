@@ -11,14 +11,21 @@ import { Screen } from '@/components/Screen';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { type CategoryNature, NATURE_LABEL } from '@/features/finance/logic';
 import { formatQuantity } from '@/features/orders/logic';
+import { useActiveOrganization } from '@/features/organizations/ActiveOrganizationProvider';
 import { useOrg } from '@/features/organizations/useOrg';
+import { PersonalReports } from '@/features/personal/PersonalReports';
 import { type CategoryTotal, type FinanceReport, useFinanceReport } from '@/features/reports/api';
 import { marginPercent, monthLabel, type ReportRange, reportPeriod, shares } from '@/features/reports/logic';
 import { friendlyError } from '@/lib/errors';
 import { formatCents } from '@/lib/money';
 import { colors, fonts, minTouch } from '@/theme/tokens';
 
-export default function ReportsScreen() {
+export default function ReportsRoute() {
+  const { active } = useActiveOrganization();
+  return active?.organization.kind === 'personal' ? <PersonalReports /> : <ReportsScreen />;
+}
+
+function ReportsScreen() {
   const { orgId, config } = useOrg();
   const [range, setRange] = useState<ReportRange>('month');
   const [offset, setOffset] = useState(0);

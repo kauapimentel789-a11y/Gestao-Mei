@@ -214,6 +214,9 @@ function PersonalSettings() {
         <NavRow first label="Contas" onPress={() => router.push('/contas')} />
         <NavRow label="Cartões de crédito" onPress={() => router.push('/cartoes')} />
         <NavRow label="Contas a pagar" onPress={() => router.push('/a-pagar')} />
+        <NavRow label="Orçamento" onPress={() => router.push('/orcamento')} />
+        <NavRow label="Metas" onPress={() => router.push('/metas')} />
+        <NavRow label="Relatórios" onPress={() => router.push('/financeiro/relatorios')} />
         <NavRow label="Categorias" onPress={() => router.push('/financeiro/categorias')} />
         <NavRow label="Transferir entre contas" onPress={() => router.push('/financeiro/transferir')} />
       </Card>
