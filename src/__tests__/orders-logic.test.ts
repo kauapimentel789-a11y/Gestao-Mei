@@ -1,3 +1,4 @@
+import { BUSINESS_CONFIG } from '@/config/business';
 import {
   canTransition,
   draftTotals,
@@ -6,6 +7,7 @@ import {
   isLate,
   isWeightUnit,
   lineTotalCents,
+  nextQuickStatus,
   parseQuantity,
   parseWeightKg,
 } from '@/features/orders/logic';
@@ -110,5 +112,24 @@ describe('venda por quilo e entrega', () => {
     expect(draftTotals([{ quantity: 1, unitPriceCents: 2000 }], 100, 500)).toEqual({ subtotal: 2000, discount: 100, delivery: 500, total: 2400 });
     expect(isWeightUnit('kg')).toBe(true);
     expect(isWeightUnit('un')).toBe(false);
+  });
+});
+
+describe('atalho da lista (próxima etapa)', () => {
+  const full = BUSINESS_CONFIG.production.statusFlow;
+  const appt = BUSINESS_CONFIG.appointments.statusFlow;
+  it('segue o fluxo do negócio, uma etapa por vez', () => {
+    expect(nextQuickStatus('received', full)).toBe('confirmed');
+    expect(nextQuickStatus('in_progress', full)).toBe('completed');
+    expect(nextQuickStatus('completed', full)).toBe('delivered');
+  });
+  it('atendimentos pulam direto para atendido', () => {
+    expect(nextQuickStatus('received', appt)).toBe('confirmed');
+    expect(nextQuickStatus('confirmed', appt)).toBe('delivered');
+    expect(nextQuickStatus('in_progress', appt)).toBe('delivered');
+  });
+  it('nada para pedido encerrado', () => {
+    expect(nextQuickStatus('delivered', full)).toBeNull();
+    expect(nextQuickStatus('cancelled', full)).toBeNull();
   });
 });

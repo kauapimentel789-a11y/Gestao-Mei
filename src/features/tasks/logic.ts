@@ -92,3 +92,9 @@ export function nextActions(status: TaskStatus): { status: TaskStatus; label: st
       return [];
   }
 }
+
+/** Toque no círculo da lista: aberta vira concluída; concluída volta a fazer. */
+export function quickToggleStatus(status: TaskStatus): TaskStatus | null {
+  if (status === 'cancelled') return null;
+  return status === 'done' ? 'todo' : 'done';
+}

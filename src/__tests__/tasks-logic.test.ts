@@ -1,4 +1,4 @@
-import { filterTasks, isTaskLate, nextActions, sortTasks, type TaskLike } from '@/features/tasks/logic';
+import { filterTasks, isTaskLate, nextActions, quickToggleStatus, sortTasks, type TaskLike } from '@/features/tasks/logic';
 
 const task = (over: Partial<TaskLike & { id: string }>): TaskLike & { id: string } => ({
   id: 'x',
@@ -61,5 +61,15 @@ describe('nextActions', () => {
   });
   it('a primeira ação de uma tarefa a fazer é começar', () => {
     expect(nextActions('todo')[0].status).toBe('in_progress');
+  });
+});
+
+describe('quickToggleStatus', () => {
+  it('aberta conclui, concluída reabre, cancelada não muda', () => {
+    expect(quickToggleStatus('todo')).toBe('done');
+    expect(quickToggleStatus('in_progress')).toBe('done');
+    expect(quickToggleStatus('blocked')).toBe('done');
+    expect(quickToggleStatus('done')).toBe('todo');
+    expect(quickToggleStatus('cancelled')).toBeNull();
   });
 });

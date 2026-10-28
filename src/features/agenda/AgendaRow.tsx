@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { AlertTriangle, BellRing, Check } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { QuickAdvance } from '@/features/orders/QuickAdvance';
 import { StatusChip } from '@/features/orders/StatusChip';
 import { useOrg } from '@/features/organizations/useOrg';
 import { formatTimeBR } from '@/lib/dates';
@@ -67,7 +68,9 @@ export function AgendaRow({ item: o, first, conflict }: { item: AgendaItem; firs
             <BellRing size={14} color={colors.primaryText} />
             <Text style={styles.remindText}>Lembrar</Text>
           </Pressable>
-        ) : null}
+        ) : (
+          <QuickAdvance order={o} />
+        )}
       </View>
     </Pressable>
   );
