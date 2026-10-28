@@ -36,10 +36,13 @@ export function greeting(now: Date = new Date()): string {
   return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 }
 
-/** "25/10/2026" (aceita "-" ou "." no lugar da barra). */
-export const DATE_BR = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/;
-/** "25102026", como sai do teclado só de números. */
-export const DATE_DIGITS = /^(\d{2})(\d{2})(\d{4})$/;
+/** "25/10/2026" ou "25/10/26" (aceita "-" ou "." no lugar da barra). */
+export const DATE_BR = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4}|\d{2})$/;
+/** "25102026" ou "251026", como sai do teclado só de números. */
+export const DATE_DIGITS = /^(\d{2})(\d{2})(\d{4}|\d{2})$/;
+
+/** Ano com dois dígitos ("26") vira 2026. */
+export const fullYear = (text: string) => (text.length === 2 ? 2000 + Number(text) : Number(text));
 
 /**
  * Lê data e hora digitadas ("25/10/2026" e "15:30") no fuso do aparelho.
@@ -51,7 +54,7 @@ export function parseDateTimeBR(dateText: string, timeText = ''): Date | null {
   const tt = timeText.trim().toLowerCase();
   const t = tt ? (/^(\d{1,2})(?:[:h.](\d{2})?)?$/.exec(tt) ?? /^(\d{1,2})(\d{2})$/.exec(tt)) : ['', '12', '00'];
   if (!t) return null;
-  const [day, month, year] = [Number(d[1]), Number(d[2]), Number(d[3])];
+  const [day, month, year] = [Number(d[1]), Number(d[2]), fullYear(d[3]!)];
   const [hour, minute] = [Number(t[1]), Number(t[2] ?? 0)];
   if (hour > 23 || minute > 59) return null;
   const date = new Date(year, month - 1, day, hour, minute);

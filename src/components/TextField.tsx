@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 
-import { maskDate, maskTime } from '@/lib/inputMasks';
+import { applyMask } from '@/lib/inputMasks';
 import { colors, fonts, radius } from '@/theme/tokens';
 
 interface TextFieldProps extends TextInputProps {
@@ -11,20 +12,23 @@ interface TextFieldProps extends TextInputProps {
   mask?: 'date' | 'time';
 }
 
-const MASKS = {
-  date: { format: maskDate, maxLength: 10 },
-  time: { format: maskTime, maxLength: 5 },
-};
-
 export function TextField({ label, error, hint, style, mask, ...rest }: TextFieldProps) {
-  const m = mask ? MASKS[mask] : null;
-  const onChangeText = rest.onChangeText;
-  const masked: TextInputProps | null = m
+  // Depois de corrigir no meio, o cursor volta para onde a pessoa estava (sem isso ele pula para o fim).
+  const [selection, setSelection] = useState<{ start: number; end: number }>();
+  const { onChangeText, value = '' } = rest;
+  // Sem maxLength: com o campo cheio, o teclado bloquearia a correção de um número no meio.
+  const masked: TextInputProps | null = mask
     ? {
         inputMode: 'numeric',
         keyboardType: 'number-pad',
-        maxLength: m.maxLength,
-        onChangeText: onChangeText ? (t: string) => onChangeText(m.format(t)) : undefined,
+        selection,
+        onChangeText: onChangeText
+          ? (t: string) => {
+              const r = applyMask(mask, value, t);
+              setSelection(r.caret < r.text.length ? { start: r.caret, end: r.caret } : undefined);
+              onChangeText(r.text);
+            }
+          : undefined,
       }
     : null;
   return (

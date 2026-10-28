@@ -13,17 +13,19 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const isLeap = (y: number) => y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
 
 /**
- * Lê "12/03" ou "12/03/1990" (aceita "12-03", "1203" e "12031990").
+ * Lê "12/03" ou "12/03/1990" (aceita "12-03", "1203", "12031990" e "12/03/90").
  * Vazio vira null; data que não existe vira 'invalid'.
  */
 export function parseBirthday(text: string, now: Date = new Date()): Birthday | null | 'invalid' {
   const t = text.trim();
   if (!t) return null;
-  const m = /^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{4}))?$/.exec(t) ?? /^(\d{2})(\d{2})(\d{4})?$/.exec(t);
+  const m = /^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{4}|\d{2}))?$/.exec(t) ?? /^(\d{2})(\d{2})(\d{4}|\d{2})?$/.exec(t);
   if (!m) return 'invalid';
   const day = Number(m[1]);
   const month = Number(m[2]);
-  const year = m[3] ? Number(m[3]) : null;
+  // "90" é 1990; "05" é 2005 (ninguém nasce no futuro).
+  const yy = m[3]?.length === 2 ? 2000 + Number(m[3]) : null;
+  const year = m[3] ? (yy === null ? Number(m[3]) : yy > now.getFullYear() ? yy - 100 : yy) : null;
   if (month < 1 || month > 12 || day < 1 || day > DAYS_IN_MONTH[month - 1]!) return 'invalid';
   if (year !== null) {
     if (year < 1900 || year > now.getFullYear()) return 'invalid';
