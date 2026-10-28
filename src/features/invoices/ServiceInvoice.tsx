@@ -1,11 +1,12 @@
-// Nota fiscal (NFS-e) no detalhe do serviço: dados prontos para copiar no
-// Emissor Nacional, botão para abrir o site do governo e o registro do número
-// da nota emitida. O app não emite a nota.
+// Nota fiscal (NFS-e) no detalhe do serviço. Com o certificado conectado
+// (Configurações → Nota fiscal automática), a nota sai com um toque pelo
+// Emissor Nacional. Sem ele: dados prontos para copiar no site do governo e o
+// registro do número da nota emitida.
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { Copy, ExternalLink, FileText } from 'lucide-react-native';
+import { Copy, ExternalLink, FileText, Zap } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -24,10 +25,18 @@ import { formatCents } from '@/lib/money';
 import { colors, fonts, radius } from '@/theme/tokens';
 
 import { type ServiceInvoice as Invoice, useCancelInvoice, useOrderInvoices, useRegisterInvoice } from './api';
-import { EMISSOR_NACIONAL_URL, invoiceAmount, invoiceDescription, isValidInvoiceNumber, normalizeInvoiceNumber } from './logic';
+import { nfseErrorText, useCancelNfse, useEmitNfse, useNfsePdf, useNfseSettings } from './emissor';
+import { EMISSOR_NACIONAL_URL, invoiceAmount, invoiceDescription, isValidInvoiceNumber, normalizeInvoiceNumber, NFSE_CONSULTA_URL } from './logic';
 
 function isoDay(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/** Abre o PDF da nota numa aba nova (só na versão web). */
+function openPdf(base64: string) {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  window.open(url, '_blank');
 }
 
 export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
@@ -38,6 +47,12 @@ export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
   const [cancelTarget, setCancelTarget] = useState<Invoice | null>(null);
   const cancel = useCancelInvoice(orgId);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const nfse = useNfseSettings(orgId);
+  const emit = useEmitNfse(orgId);
+  const cancelNfse = useCancelNfse(orgId);
+  const pdf = useNfsePdf();
+  const [emitError, setEmitError] = useState<string | null>(null);
+  const [manual, setManual] = useState(false);
 
   // Sem a atualização do banco (tabela ainda não existe), o cartão não aparece.
   if (invoices.isPending || invoices.error) return null;
@@ -47,6 +62,8 @@ export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
   if (o.total_cents <= 0 && !active) return null;
 
   const doc = customer.data?.document ?? null;
+  const automatic = !!nfse.data?.connected;
+  const fromApp = !!active?.access_key;
   const copy = async (label: string, value: string) => {
     await Clipboard.setStringAsync(value);
     toast(`${label} copiado`);
@@ -64,12 +81,66 @@ export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
           <Text style={styles.body}>
             Nota nº {active.number}, emitida em {formatISODate(active.issued_on)}, de {formatCents(active.amount_cents)}.
           </Text>
-          <Button size="medium" variant="outline" label="Abrir o Emissor Nacional" onPress={() => Linking.openURL(EMISSOR_NACIONAL_URL)} />
+          {fromApp ? (
+            <>
+              {Platform.OS === 'web' ? (
+                <Button
+                  size="medium"
+                  variant="tint"
+                  label="Ver o PDF da nota"
+                  loading={pdf.isPending}
+                  onPress={() =>
+                    pdf.mutate(active.id, {
+                      onSuccess: (r) => openPdf(r.pdf_base64),
+                      onError: (e) => toast(nfseErrorText(e)),
+                    })
+                  }
+                />
+              ) : null}
+              <CopyRow label="Chave de acesso" value={active.access_key!} onCopy={() => copy('Chave', active.access_key!)} />
+              <Button size="medium" variant="outline" label="Consultar no site do governo" onPress={() => Linking.openURL(NFSE_CONSULTA_URL)} />
+            </>
+          ) : (
+            <Button size="medium" variant="outline" label="Abrir o Emissor Nacional" onPress={() => Linking.openURL(EMISSOR_NACIONAL_URL)} />
+          )}
           <Pressable accessibilityRole="button" onPress={() => setCancelTarget(active)} style={styles.link}>
-            <Text style={styles.linkText}>Cancelei esta nota no Emissor</Text>
+            <Text style={styles.linkText}>{fromApp && automatic ? 'Cancelar esta nota' : 'Cancelei esta nota no Emissor'}</Text>
           </Pressable>
         </>
-      ) : o.status === 'cancelled' ? null : (
+      ) : o.status === 'cancelled' ? null : automatic && !manual ? (
+        <>
+          <Text style={styles.body}>
+            {o.customer ? `Para ${o.customer.name}${doc ? ` (${documentLabel(doc)} ${formatDocument(doc)})` : ''}` : 'Sem tomador identificado'} ·{' '}
+            {formatCents(o.total_cents)}
+          </Text>
+          <Text style={styles.hint}>{invoiceDescription(o.items, o.number)}</Text>
+          {o.customer && !doc && customer.data ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: '/clientes/form', params: { id: o.customer!.id } })}
+              style={styles.link}
+            >
+              <Text style={styles.linkText}>Adicionar CPF ou CNPJ de {o.customer.name.split(' ')[0]} (opcional)</Text>
+            </Pressable>
+          ) : null}
+          {emitError ? <Text style={styles.error}>{emitError}</Text> : null}
+          <Button
+            label="Emitir nota agora"
+            trailing={<Zap size={18} color={colors.white} />}
+            loading={emit.isPending}
+            onPress={() => {
+              setEmitError(null);
+              emit.mutate(o.id, {
+                onSuccess: (r) => toast(`Nota nº ${r.number} emitida`),
+                onError: (e) => setEmitError(nfseErrorText(e)),
+              });
+            }}
+          />
+          <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={styles.link}>
+            <Text style={styles.linkText}>Prefiro emitir no site do Emissor</Text>
+          </Pressable>
+        </>
+      ) : (
         <>
           <Text style={styles.body}>
             Emita a nota de graça no Emissor Nacional (gov.br). Toque num dado para copiar e colar lá. Depois, anote aqui o número da nota.
@@ -108,6 +179,11 @@ export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
             onPress={() => Linking.openURL(EMISSOR_NACIONAL_URL)}
           />
           <RegisterForm orderId={o.id} />
+          {!automatic ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/nota-fiscal')} style={styles.link}>
+              <Text style={styles.linkText}>Emitir com um toque, sem copiar e colar</Text>
+            </Pressable>
+          ) : null}
         </>
       )}
 
@@ -123,12 +199,16 @@ export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
 
       <ReasonDialog
         visible={cancelTarget !== null}
-        title={`Nota nº ${cancelTarget?.number ?? ''} cancelada?`}
-        description="Use quando você já cancelou a nota no Emissor Nacional. Aqui ela fica no histórico com o motivo, e o pedido pode receber outra nota."
-        confirmLabel="Marcar como cancelada"
+        title={`Cancelar a nota nº ${cancelTarget?.number ?? ''}?`}
+        description={
+          cancelTarget?.access_key && automatic
+            ? 'A nota é cancelada no Emissor Nacional na hora. Aqui ela fica no histórico com o motivo, e o atendimento pode receber outra nota.'
+            : 'Use quando você já cancelou a nota no Emissor Nacional. Aqui ela fica no histórico com o motivo, e o pedido pode receber outra nota.'
+        }
+        confirmLabel={cancelTarget?.access_key && automatic ? 'Cancelar a nota' : 'Marcar como cancelada'}
         keepLabel="Voltar"
-        placeholder="Ex.: valor errado"
-        loading={cancel.isPending}
+        placeholder="Ex.: valor digitado errado"
+        loading={cancel.isPending || cancelNfse.isPending}
         error={cancelError}
         onClose={() => {
           setCancelTarget(null);
@@ -137,16 +217,21 @@ export function ServiceInvoice({ order: o }: { order: OrderDetail }) {
         onConfirm={(reason) => {
           if (!cancelTarget) return;
           setCancelError(null);
-          cancel.mutate(
-            { id: cancelTarget.id, reason },
-            {
-              onSuccess: () => {
-                setCancelTarget(null);
-                toast('Nota marcada como cancelada');
-              },
-              onError: (e) => setCancelError(friendlyError(e)),
+          const done = {
+            onSuccess: () => {
+              setCancelTarget(null);
+              toast('Nota cancelada');
             },
-          );
+          };
+          if (cancelTarget.access_key && automatic) {
+            if (reason.trim().length < 15) return setCancelError('O governo pede um motivo com pelo menos 15 letras.');
+            cancelNfse.mutate(
+              { invoiceId: cancelTarget.id, reasonCode: 9, reason: reason.trim() },
+              { ...done, onError: (e) => setCancelError(nfseErrorText(e)) },
+            );
+            return;
+          }
+          cancel.mutate({ id: cancelTarget.id, reason }, { ...done, onError: (e) => setCancelError(friendlyError(e)) });
         }}
       />
     </Card>
@@ -235,5 +320,6 @@ const styles = StyleSheet.create({
   formRow: { flexDirection: 'row', gap: 10 },
   link: { minHeight: 40, justifyContent: 'center' },
   linkText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primaryText },
+  error: { fontFamily: fonts.semibold, fontSize: 13, color: colors.danger, lineHeight: 18 },
   history: { gap: 4, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 10 },
 });
