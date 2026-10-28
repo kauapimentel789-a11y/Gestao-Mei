@@ -20,6 +20,7 @@ import { useActiveOrganization } from '@/features/organizations/ActiveOrganizati
 import { useOrg } from '@/features/organizations/useOrg';
 import { useSetPracticeArea, useSetPublicOrders, useUpdateHourlyRate } from '@/features/organizations/api';
 import { HourlyRateDialog } from '@/features/organizations/HourlyRateDialog';
+import { useNfseSettings } from '@/features/invoices/emissor';
 import { usePixSettings } from '@/features/organizations/pix';
 import { PracticeAreaDialog } from '@/features/organizations/PracticeAreaDialog';
 import { friendlyError } from '@/lib/errors';
@@ -50,6 +51,7 @@ function BusinessSettings() {
   const setPublic = useSetPublicOrders(session?.user.id);
   const link = publicOrderUrl(org.slug);
   const pix = usePixSettings(org.id);
+  const nfse = useNfseSettings(org.id);
   const platformAdmin = useIsPlatformAdmin(session?.user.id);
 
   return (
@@ -86,6 +88,13 @@ function BusinessSettings() {
           value={pix.data ? `${PIX_KEY_LABEL[pix.data.keyType]} · ${pix.data.key}` : pix.isPending ? '…' : 'Não cadastrada'}
           onPress={() => router.push('/pix')}
         />
+        {org.business_type === 'services' ? (
+          <Row
+            label="Nota fiscal automática"
+            value={nfse.data?.connected ? 'Conectada' : nfse.isPending ? '…' : 'Desligada'}
+            onPress={() => router.push('/nota-fiscal')}
+          />
+        ) : null}
         <Row label="Seu papel" value={ROLE_LABEL[active!.role]} />
       </Card>
 

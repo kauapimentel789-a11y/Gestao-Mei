@@ -9,5 +9,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules", "supabase/functions/encomenda", "supabase/functions/excluir-conta", "supabase/functions/assistente"]
+  "exclude": ["node_modules", "supabase/functions/encomenda", "supabase/functions/excluir-conta", "supabase/functions/assistente", "supabase/functions/nota-fiscal"]
 }

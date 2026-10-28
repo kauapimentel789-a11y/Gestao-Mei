@@ -11,9 +11,12 @@ export interface ServiceInvoice {
   cancelled_at: string | null;
   cancel_reason: string | null;
   created_at: string;
+  /** Chave de acesso (50 números) quando a nota saiu pelo app (migração 0031). */
+  access_key: string | null;
+  source: 'manual' | 'emissor';
 }
 
-const COLUMNS = 'id, order_id, number, issued_on, amount_cents, cancelled_at, cancel_reason, created_at';
+const COLUMNS = 'id, order_id, number, issued_on, amount_cents, cancelled_at, cancel_reason, created_at, access_key, source';
 
 export const invoiceKeys = {
   all: (orgId: string) => ['service-invoices', orgId] as const,
