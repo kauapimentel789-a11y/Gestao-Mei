@@ -19,6 +19,7 @@ import { useMembers, useSetTaskStatus, useTask } from '@/features/tasks/api';
 import { isTaskLate, nextActions, PRIORITY_LABEL, TASK_STATUS_LABEL, type TaskStatus } from '@/features/tasks/logic';
 import { formatWhen } from '@/lib/dates';
 import { friendlyError } from '@/lib/errors';
+import { goBack } from '@/lib/navigation';
 import { colors, fonts } from '@/theme/tokens';
 
 const DIALOG = {
@@ -68,6 +69,8 @@ export default function TaskDetailScreen() {
       await setStatus.mutateAsync({ id: t.id, status, note });
       setDialog(null);
       toast(`Tarefa: ${TASK_STATUS_LABEL[status].toLowerCase()}`);
+      // Concluiu: volta para onde estava, sem precisar tocar em voltar.
+      if (status === 'done') goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -76,15 +76,15 @@ function TaskForm({ task }: { task?: TaskOverview }) {
     const dueDate = due.trim() ? parseDateInput(due) : null;
     if (due.trim() && !dueDate) return setError('Prazo inválido. Use dd/mm/aaaa.');
     try {
-      const saved = await save.mutateAsync({
+      await save.mutateAsync({
         id: task?.id,
         idempotencyKey: key,
         orderId: pedido ?? null,
         input: { title: title.trim(), description: description.trim(), priority, dueDate, assigneeId },
       });
       toast(task ? 'Tarefa atualizada' : 'Tarefa criada');
-      if (task) goBack();
-      else router.replace({ pathname: '/tarefas/[id]', params: { id: saved.id } });
+      // Volta para a lista (ou para o pedido): dali já dá para concluir com um toque.
+      goBack();
     } catch (e) {
       setError(friendlyError(e));
     }

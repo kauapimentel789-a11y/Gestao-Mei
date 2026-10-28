@@ -80,3 +80,12 @@ export function parseQuantity(text: string): number | null {
   const n = Number(t);
   return n > 0 && n <= 1_000_000 ? n : null;
 }
+
+/**
+ * Próxima etapa para o atalho da lista: a primeira do fluxo do negócio depois
+ * da atual. Nada quando o pedido já terminou ou foi cancelado.
+ */
+export function nextQuickStatus(status: OrderStatus, flow: OrderStatus[]): OrderStatus | null {
+  const idx = STATUS_FLOW.indexOf(status);
+  return flow.find((s) => STATUS_FLOW.indexOf(s) > idx && canTransition(status, s)) ?? null;
+}

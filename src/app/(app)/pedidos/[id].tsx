@@ -49,6 +49,7 @@ function lateText(dueAt: string, now = new Date()) {
 
 export default function OrderDetailScreen() {
   // aviso=novo: acabou de ser criado, então já oferece a mensagem de confirmação.
+  // aviso=receber: marcado como atendido pela lista, então já abre o recebimento.
   const { id, aviso } = useLocalSearchParams<{ id: string; aviso?: string }>();
   const { orgId, org, config } = useOrg();
   const order = useOrder(orgId, id);
@@ -75,6 +76,16 @@ export default function OrderDetailScreen() {
     notice.offer('created');
     router.setParams({ aviso: undefined });
   }, [aviso, o, notice]);
+
+  // Ajuste de estado durante a renderização, quando o pedido e o recebimento carregam.
+  const [askedReceive, setAskedReceive] = useState(false);
+  if (aviso === 'receber' && !askedReceive && o && !orderEntry.isPending) {
+    setAskedReceive(true);
+    if ((orderEntry.data ? orderEntry.data.entry.open_cents : o.total_cents) > 0) setPayPrompt((n) => n + 1);
+  }
+  useEffect(() => {
+    if (askedReceive) router.setParams({ aviso: undefined });
+  }, [askedReceive]);
 
   const change = async (status: OrderStatus, reason?: string, options: { notify?: boolean } = {}) => {
     if (!o) return;
@@ -405,7 +416,8 @@ function OrderPayment({ order: o, prompt = 0, onReceived }: { order: OrderDetail
   const open = fin ? fin.entry.open_cents : o.status === 'cancelled' ? 0 : o.total_cents;
 
   // Novo pedido de recebimento vindo do "Marcar como atendido" (ajuste de estado durante a renderização).
-  const [seenPrompt, setSeenPrompt] = useState(prompt);
+  // Começa em 0: o pedido pode chegar já valendo 1 (aviso=receber, vindo da lista).
+  const [seenPrompt, setSeenPrompt] = useState(0);
   if (prompt !== seenPrompt) {
     setSeenPrompt(prompt);
     if (open > 0) {

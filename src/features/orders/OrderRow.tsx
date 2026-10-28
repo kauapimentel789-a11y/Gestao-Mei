@@ -8,6 +8,7 @@ import { colors, fonts } from '@/theme/tokens';
 
 import type { OrderSummary } from './api';
 import { isLate } from './logic';
+import { QuickAdvance } from './QuickAdvance';
 import { StatusChip } from './StatusChip';
 
 function initials(name: string | null) {
@@ -48,6 +49,7 @@ export function OrderRow({ order, config }: { order: OrderSummary; config: Busin
       <View style={styles.right}>
         <Text style={styles.total}>{formatCents(order.total_cents)}</Text>
         <StatusChip status={order.status} label={order.no_show_at ? 'Faltou' : config.statusLabels[order.status]} late={late} />
+        <QuickAdvance order={order} />
       </View>
     </Pressable>
   );
