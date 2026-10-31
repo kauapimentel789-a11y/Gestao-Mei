@@ -1,4 +1,4 @@
-import { CHUNK_SIZE, createChunkedStore, type RawStore } from '@/lib/secureStorage';
+import { CHUNK_SIZE, createChunkedStore, createWebStore, type RawStore } from '@/lib/secureStorage';
 
 jest.mock('expo-secure-store', () => ({}));
 
@@ -46,5 +46,45 @@ describe('createChunkedStore', () => {
     const raw = memoryRaw();
     await createChunkedStore(raw).setItem('sb:auth/token', 'v');
     for (const k of raw.data.keys()) expect(k).toMatch(/^[A-Za-z0-9._-]+$/);
+  });
+});
+
+describe('createWebStore', () => {
+  function fakeLocal() {
+    const data = new Map<string, string>();
+    return {
+      data,
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+      removeItem: (k: string) => void data.delete(k),
+    };
+  }
+
+  it('mantém o login se o navegador apagar o localStorage no meio do uso', async () => {
+    const local = fakeLocal();
+    const store = createWebStore(() => local);
+    await store.setItem('sb-token', 'sessao');
+    local.data.clear();
+    expect(await store.getItem('sb-token')).toBe('sessao');
+  });
+
+  it('funciona quando o localStorage dá erro', async () => {
+    const store = createWebStore(() => {
+      throw new Error('bloqueado');
+    });
+    await store.setItem('k', 'v');
+    expect(await store.getItem('k')).toBe('v');
+  });
+
+  it('sair da conta apaga as duas cópias', async () => {
+    const local = fakeLocal();
+    const store = createWebStore(() => local);
+    await store.setItem('k', 'v');
+    await store.removeItem('k');
+    expect(await store.getItem('k')).toBeNull();
+    await store.setItem('k', 'v');
+    local.data.delete('k');
+    store.forget('k');
+    expect(await store.getItem('k')).toBeNull();
   });
 });
