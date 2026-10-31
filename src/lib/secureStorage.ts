@@ -56,29 +56,71 @@ export function createChunkedStore(raw: RawStore): KeyValueStore {
   };
 }
 
-const webStore: KeyValueStore = {
-  async getItem(key) {
-    try {
-      return globalThis.localStorage?.getItem(key) ?? null;
-    } catch {
-      return null;
-    }
-  },
-  async setItem(key, value) {
-    try {
-      globalThis.localStorage?.setItem(key, value);
-    } catch {
-      // armazenamento indisponível (modo privado): a sessão dura só a aba
-    }
-  },
-  async removeItem(key) {
-    try {
-      globalThis.localStorage?.removeItem(key);
-    } catch {
-      // idem
-    }
-  },
-};
+export interface WebStorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+/**
+ * Web: localStorage com uma cópia em memória. Alguns navegadores embutidos
+ * (ex.: o do app do Google ou do Gmail no iPhone) apagam ou não gravam o
+ * localStorage no meio do uso; sem a cópia, o login "sumia" e o banco recusava
+ * as ações com "permission denied". A cópia vale enquanto a aba estiver aberta.
+ */
+export function createWebStore(getStorage: () => WebStorageLike | undefined): KeyValueStore & {
+  /** Outra aba apagou a chave (ex.: saiu da conta): esquece a cópia. */
+  forget(key: string): void;
+} {
+  const memory = new Map<string, string>();
+  return {
+    async getItem(key) {
+      try {
+        const v = getStorage()?.getItem(key);
+        if (v !== null && v !== undefined) return v;
+      } catch {
+        // armazenamento indisponível: usa a cópia em memória
+      }
+      return memory.get(key) ?? null;
+    },
+    async setItem(key, value) {
+      memory.set(key, value);
+      try {
+        getStorage()?.setItem(key, value);
+      } catch {
+        // modo privado ou cota cheia: fica só a cópia em memória
+      }
+    },
+    async removeItem(key) {
+      memory.delete(key);
+      try {
+        getStorage()?.removeItem(key);
+      } catch {
+        // idem
+      }
+    },
+    forget(key) {
+      memory.delete(key);
+    },
+  };
+}
+
+function browserStorage(): WebStorageLike | undefined {
+  try {
+    return globalThis.localStorage ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const webStore = createWebStore(browserStorage);
+
+// Saiu da conta em outra aba: a cópia em memória desta aba não pode reviver o login.
+if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('storage', (e: StorageEvent) => {
+    if (e.key && e.newValue === null) webStore.forget(e.key);
+  });
+}
 
 export const secureStorage: KeyValueStore =
   Platform.OS === 'web'

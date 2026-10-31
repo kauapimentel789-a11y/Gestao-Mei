@@ -122,8 +122,21 @@ const AUTH_CODES: Record<string, string> = {
   over_request_rate_limit: 'Muitas tentativas. Aguarde alguns minutos.',
 };
 
+/** O pedido chegou ao banco sem login válido (sessão perdida ou vencida). */
+export function isSessionLost(error: unknown): boolean {
+  const e = (error ?? {}) as ErrorLike;
+  if (e.code === 'PGRST301' || e.code === 'PGRST302' || e.code === 'PGRST303') return true;
+  if (e.message === 'not_authenticated') return true;
+  // Sem login o pedido vira "anon", que não pode chamar nossas funções.
+  return e.code === '42501' && /permission denied for function/i.test(e.message ?? '');
+}
+
+export const SESSION_LOST_MESSAGE =
+  'Seu login caiu e não conseguimos salvar. Toque em "Sair da conta", entre de novo e tente outra vez. Dica: abra o site direto no Safari ou no Chrome.';
+
 export function friendlyError(error: unknown): string {
   const e = (error ?? {}) as ErrorLike;
+  if (isSessionLost(e) && e.message !== 'not_authenticated') return SESSION_LOST_MESSAGE;
   if (e.message && BY_MESSAGE[e.message]) return BY_MESSAGE[e.message];
   if (e.code && AUTH_CODES[e.code]) return AUTH_CODES[e.code];
   if (e.code && BY_CODE[e.code]) return BY_CODE[e.code];

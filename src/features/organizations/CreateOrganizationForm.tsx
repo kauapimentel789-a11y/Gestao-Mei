@@ -17,7 +17,7 @@ import { PendingInvites } from '@/features/family/PendingInvites';
 import { BUSINESS_CONFIG, BUSINESS_PROFILES, type BusinessProfile, PRACTICE_AREA_INFO, PRACTICE_AREAS } from '@/config/business';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AuthShell } from '@/features/auth/AuthShell';
-import { friendlyError } from '@/lib/errors';
+import { friendlyError, isSessionLost } from '@/lib/errors';
 import { goBack } from '@/lib/navigation';
 import { slugify } from '@/lib/slug';
 import { supabase } from '@/lib/supabase';
@@ -38,6 +38,7 @@ export function CreateOrganizationForm({ inApp = false }: { inApp?: boolean }) {
   const createPersonal = useCreatePersonalSpace(session?.user.id);
   const [step, setStep] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [sessionLost, setSessionLost] = useState(false);
 
   const { control, handleSubmit, trigger, getValues, setValue, setError, formState } = useForm<CreateOrganizationInput>({
     resolver: zodResolver(createOrganizationSchema),
@@ -57,11 +58,26 @@ export function CreateOrganizationForm({ inApp = false }: { inApp?: boolean }) {
 
   const onSubmit = handleSubmit(async (input) => {
     setServerError(null);
+    setSessionLost(false);
     try {
-      const org = await create.mutateAsync(input);
+      let org;
+      try {
+        org = await create.mutateAsync(input);
+      } catch (e) {
+        // O navegador perdeu o login salvo (acontece no navegador do app do Google):
+        // devolve o login que a tela ainda tem e tenta mais uma vez.
+        if (!isSessionLost(e) || !session) throw e;
+        const restored = await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+        if (restored.error || !restored.data.session) throw e;
+        org = await create.mutateAsync(input);
+      }
       select(org.id);
       if (inApp) router.replace('/');
     } catch (e) {
+      setSessionLost(isSessionLost(e));
       setServerError(friendlyError(e));
     }
   });
@@ -192,6 +208,7 @@ export function CreateOrganizationForm({ inApp = false }: { inApp?: boolean }) {
       ) : (
         <Button label="Criar empresa" onPress={onSubmit} loading={formState.isSubmitting} />
       )}
+      {sessionLost && step > 0 ? <TextLink label="Sair da conta" onPress={() => supabase.auth.signOut()} /> : null}
       {step > 0 ? (
         <TextLink label="Voltar" onPress={() => setStep((s) => s - 1)} />
       ) : inApp ? (
